@@ -106,7 +106,7 @@ export const useGoals = () => {
         const targetYear = date.getFullYear();
 
         return goal.history.reduce((acc, item) => {
-            const itemDate = new Date(item.date);
+
             // Check if item belongs to the target month/year
             // We use local time components from the history string YYYY-MM-DD
             const [y, m] = item.date.split('-').map(Number);

@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal';
 
 
 const Goals = () => {
-    const { goals, addGoal, deleteGoal, contributeToGoal, isGoalPaidThisMonth, canPayQuota, addContribution, withdraw } = useGoals();
+    const { goals, addGoal, deleteGoal, contributeToGoal, isGoalPaidThisMonth, addContribution, withdraw } = useGoals();
     const { total: totalIncome } = useTransactions('income');
     const { total: totalExpenses } = useTransactions('expense');
     const { currency } = useSettings();
@@ -40,10 +40,7 @@ const Goals = () => {
     });
     const [transferAmount, setTransferAmount] = useState('');
 
-    const openTransferModal = (type: 'deposit' | 'withdraw', goalId: string, goalName: string) => {
-        setTransferModal({ open: true, type, goalId, goalName });
-        setTransferAmount('');
-    };
+
 
     const handleTransferSubmit = () => {
         const amount = Number(transferAmount);

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 
 interface SettingsContextType {

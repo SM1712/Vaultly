@@ -3,7 +3,7 @@ import { useSettings } from '../../context/SettingsContext';
 import { useCategories } from '../../hooks/useCategories';
 import { useTransactions } from '../../hooks/useTransactions';
 import Modal from '../ui/Modal';
-import { X, Check, Trash2, Plus, Settings } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 
 interface SettingsMenuProps {
     isOpen: boolean;

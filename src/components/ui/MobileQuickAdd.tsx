@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Plus, X, ArrowUpRight, ArrowDownLeft, Check } from 'lucide-react';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCategories } from '../../hooks/useCategories';
-import { useFinance } from '../../context/FinanceContext';
+
 import { useSettings } from '../../context/SettingsContext';
 
 const MobileQuickAdd = () => {
@@ -15,7 +15,6 @@ const MobileQuickAdd = () => {
     const { addTransaction } = useTransactions();
     const { categories: expenseCats } = useCategories('expense');
     const { categories: incomeCats } = useCategories('income');
-    const { selectedDate } = useFinance();
     const { currency } = useSettings();
 
     // ... (rest)

@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import type { Project, ProjectTransaction } from '../../types';
+import type { Project } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
 import { useProjects } from '../../hooks/useProjects';
 import {
-    X, Calendar, DollarSign, PieChart, List, Settings,
-    ArrowUpRight, ArrowDownRight, Trash2, Plus, AlertCircle
+    X, PieChart, List, Settings,
+    ArrowUpRight, ArrowDownRight, Trash2
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface ProjectDetailsProps {
     project: Project;
@@ -230,7 +230,7 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
                                         <p>No hay movimientos registrados en este proyecto.</p>
                                     </div>
                                 ) : (
-                                    project.transactions.map((tx, i) => (
+                                    project.transactions.map((tx) => (
                                         <div key={tx.id} className={clsx("p-4 flex items-center justify-between border-b last:border-0 border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group")}>
                                             <div className="flex items-center gap-4">
                                                 <div className={clsx("w-10 h-10 rounded-full flex items-center justify-center", tx.type === 'income' ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600")}>
