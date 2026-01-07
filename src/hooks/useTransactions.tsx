@@ -1,19 +1,27 @@
-import useLocalStorage from './useLocalStorage';
+import { useFirestore } from './useFirestore';
 import type { Transaction, TransactionType } from '../types';
 
 export const useTransactions = (type?: TransactionType) => {
-    const [transactions, setTransactions] = useLocalStorage<Transaction[]>('vault_transactions', []);
+    const { data: transactions, add, remove, update } = useFirestore<Transaction>('transactions');
 
     const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-        const newTransaction = {
-            ...transaction,
-            id: crypto.randomUUID(),
-        };
-        setTransactions((prev) => [newTransaction, ...prev]);
+        // Firestore creates the ID automatically
+        add(transaction);
     };
 
     const deleteTransaction = (id: string) => {
-        setTransactions((prev) => prev.filter((t) => t.id !== id));
+        remove(id);
+    };
+
+    const updateCategory = (categoryName: string, newCategoryName: string) => {
+        // Batch update would be better, but for now iterate (or let user do it one by one? Plan says migrate settings... 
+        // logic in SettingsMenu called updateCategory.
+        // We must find all transactions with this category and update them.
+        // This is expensive on client side for many items, but acceptable for MVP.
+        const toUpdate = transactions.filter(t => t.category === categoryName);
+        toUpdate.forEach(t => {
+            update(t.id, { category: newCategoryName });
+        });
     };
 
     const filteredTransactions = type
@@ -30,15 +38,6 @@ export const useTransactions = (type?: TransactionType) => {
         }, {} as Record<string, number>);
 
         return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-    };
-
-    const updateCategory = (oldCategory: string, newCategory: string) => {
-        setTransactions((prev) => prev.map(t => {
-            if (t.category === oldCategory) {
-                return { ...t, category: newCategory };
-            }
-            return t;
-        }));
     };
 
     return {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import SettingsMenu from '../components/settings/SettingsMenu';
@@ -6,12 +6,20 @@ import MobileQuickAdd from '../components/ui/MobileQuickAdd';
 import { FinanceProvider } from '../context/FinanceContext';
 import { SettingsProvider } from '../context/SettingsContext';
 import { ProjectsProvider } from '../context/ProjectsContext';
+import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 import { Menu, X } from 'lucide-react';
 import { Toaster } from 'sonner';
+import OnboardingModal from '../components/onboarding/OnboardingModal';
 
 const Layout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const { processScheduledTransactions } = useScheduledTransactions();
+
+    useEffect(() => {
+        // Run checks on mount
+        processScheduledTransactions();
+    }, [processScheduledTransactions]);
 
 
     return (
@@ -50,6 +58,7 @@ const Layout = () => {
 
                         <MobileQuickAdd />
                         <SettingsMenu isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+                        <OnboardingModal />
                         <Toaster position="top-center" />
                     </div>
                 </ProjectsProvider>

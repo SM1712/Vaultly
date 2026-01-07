@@ -1,47 +1,45 @@
-import useLocalStorage from './useLocalStorage';
+import { useFirestore } from './useFirestore';
 import type { Fund, FundTransaction } from '../types';
 
 export const useFunds = () => {
-    const [funds, setFunds] = useLocalStorage<Fund[]>('vault_funds', []);
+    const { data: funds, add, remove, update } = useFirestore<Fund>('funds');
 
     const addFund = (fundData: { name: string; icon: string; description?: string; color?: string }) => {
-        const newFund: Fund = {
-            id: crypto.randomUUID(),
+        const newFund = {
             currentAmount: 0,
             history: [],
             ...fundData
         };
-        setFunds([...funds, newFund]);
+        add(newFund);
     };
 
     const deleteFund = (id: string) => {
-        setFunds(funds.filter(f => f.id !== id));
+        remove(id);
     };
 
     const addTransaction = (fundId: string, amount: number, type: 'deposit' | 'withdraw', note?: string) => {
-        setFunds(funds.map(f => {
-            if (f.id === fundId) {
-                const newTx: FundTransaction = {
-                    id: crypto.randomUUID(),
-                    fundId,
-                    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-                    amount,
-                    type,
-                    note
-                };
+        const fund = funds.find(f => f.id === fundId);
+        if (!fund) return;
 
-                const newAmount = type === 'deposit'
-                    ? f.currentAmount + amount
-                    : f.currentAmount - amount;
+        const newTx: FundTransaction = {
+            id: crypto.randomUUID(),
+            fundId,
+            date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+            amount,
+            type,
+            note
+        };
 
-                return {
-                    ...f,
-                    currentAmount: Math.max(0, newAmount), // Prevent negative balance
-                    history: [newTx, ...f.history]
-                };
-            }
-            return f;
-        }));
+        const newAmount = type === 'deposit'
+            ? fund.currentAmount + amount
+            : fund.currentAmount - amount;
+
+        const history = fund.history ? [newTx, ...fund.history] : [newTx];
+
+        update(fundId, {
+            currentAmount: Math.max(0, newAmount),
+            history
+        });
     };
 
     return {

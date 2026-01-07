@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useGoals } from '../hooks/useGoals';
 import { useTransactions } from '../hooks/useTransactions';
 import { useSettings } from '../context/SettingsContext';
-import { Target, Calculator, Trash2 } from 'lucide-react';
+import { Target, Calculator, Trash2, Edit2 } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 
 
 const Goals = () => {
-    const { goals, addGoal, deleteGoal, contributeToGoal, isGoalPaidThisMonth, addContribution, withdraw } = useGoals();
+    const { goals, addGoal, deleteGoal, contributeToGoal, isGoalPaidThisMonth, addContribution, withdraw, getMonthlyQuota, updateGoal } = useGoals();
     const { total: totalIncome } = useTransactions('income');
     const { total: totalExpenses } = useTransactions('expense');
     const { currency } = useSettings();
@@ -19,11 +19,16 @@ const Goals = () => {
     const [formData, setFormData] = useState({
         name: '',
         targetAmount: '',
-        months: ''
+        deadline: '',
+        icon: '🎯' // Default emoji
     });
 
-    const monthlySavings = formData.targetAmount && formData.months
-        ? Number(formData.targetAmount) / Number(formData.months)
+    // Derived for UI
+    const targetDate = formData.deadline ? new Date(formData.deadline) : null;
+    const monthsRemaining = targetDate ? Math.max(1, (targetDate.getFullYear() - new Date().getFullYear()) * 12 + (targetDate.getMonth() - new Date().getMonth())) : 0;
+
+    const monthlySavings = formData.targetAmount && monthsRemaining > 0
+        ? Number(formData.targetAmount) / monthsRemaining
         : 0;
 
     const [errorModal, setErrorModal] = useState<{ open: boolean; title: string; message: React.ReactNode }>({
@@ -39,6 +44,40 @@ const Goals = () => {
         goalName: ''
     });
     const [transferAmount, setTransferAmount] = useState('');
+
+    const [editModal, setEditModal] = useState<{ open: boolean; goalId: string }>({
+        open: false,
+        goalId: ''
+    });
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        targetAmount: '',
+        deadline: '',
+        icon: ''
+    });
+
+    const openEditModal = (goal: any) => {
+        setEditModal({ open: true, goalId: goal.id });
+        setEditFormData({
+            name: goal.name,
+            targetAmount: goal.targetAmount.toString(),
+            deadline: goal.deadline || '',
+            icon: goal.icon || '🎯'
+        });
+    };
+
+    const handleEditSubmit = () => {
+        if (!editFormData.name || !editFormData.targetAmount || !editFormData.deadline) return;
+
+        updateGoal(editModal.goalId, {
+            name: editFormData.name,
+            targetAmount: Number(editFormData.targetAmount),
+            deadline: editFormData.deadline,
+            icon: editFormData.icon
+        });
+
+        setEditModal({ open: false, goalId: '' });
+    };
 
 
 
@@ -97,15 +136,17 @@ const Goals = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.name || !formData.targetAmount || !formData.months) return;
+        if (!formData.name || !formData.targetAmount || !formData.deadline) return;
 
         addGoal({
             name: formData.name,
             targetAmount: Number(formData.targetAmount),
-            months: Number(formData.months),
+            deadline: formData.deadline,
+            startDate: new Date().toISOString().split('T')[0],
+            icon: formData.icon || '🎯'
         });
 
-        setFormData({ name: '', targetAmount: '', months: '' });
+        setFormData({ name: '', targetAmount: '', deadline: '', icon: '🎯' });
     };
 
     return (
@@ -153,28 +194,40 @@ const Goals = () => {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-xs text-zinc-500 uppercase tracking-wider">Meses para alcanzarlo</label>
+                            <label className="text-xs text-zinc-500 uppercase tracking-wider">Fecha Objetivo</label>
                             <input
-                                type="number"
+                                type="date"
                                 className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-                                placeholder="12"
-                                value={formData.months}
-                                onChange={e => setFormData({ ...formData, months: e.target.value })}
+                                value={formData.deadline}
+                                onChange={e => setFormData({ ...formData, deadline: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="text-xs text-zinc-500 uppercase tracking-wider">Icono (Emoji)</label>
+                            <input
+                                type="text"
+                                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500 text-center text-lg"
+                                placeholder="🎯"
+                                value={formData.icon}
+                                onChange={e => setFormData({ ...formData, icon: e.target.value })}
+                                maxLength={2}
                             />
                         </div>
 
                         <div className="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg text-center border border-zinc-200 dark:border-zinc-800 border-dashed mt-4">
-                            <p className="text-xs text-zinc-500 uppercase mb-1">Ahorro Mensual Necesario</p>
+                            <p className="text-xs text-zinc-500 uppercase mb-1">Ahorro Mensual Sugerido</p>
                             <p className="text-2xl font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                                 {currency}{isFinite(monthlySavings) ? monthlySavings.toFixed(2) : '0.00'}
                             </p>
+                            {monthsRemaining > 0 && <p className="text-[10px] text-zinc-400 mt-1">Durante ~{monthsRemaining} meses</p>}
                         </div>
 
                         <button
                             type="submit"
                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-medium transition-colors"
                         >
-                            Guardar Meta
+                            Crear Meta
                         </button>
                     </form>
                 </div>
@@ -197,21 +250,34 @@ const Goals = () => {
                         ) : (
                             goals.map((goal) => {
                                 const isPaid = isGoalPaidThisMonth(goal);
-                                const monthlyAmount = goal.targetAmount / goal.months;
+                                const monthlyAmount = getMonthlyQuota(goal);
                                 const progress = (goal.currentAmount / goal.targetAmount) * 100;
 
                                 return (
                                     <div key={goal.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 rounded-xl group relative shadow-sm dark:shadow-none flex flex-col justify-between">
                                         <div>
                                             <div className="flex justify-between items-start">
-                                                <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-lg">{goal.name}</h4>
-                                                <button
-                                                    onClick={() => deleteGoal(goal.id)}
-                                                    className="text-zinc-400 hover:text-rose-500 transition-colors"
-                                                    title="Eliminar meta"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                <div>
+                                                    <span className="text-2xl mb-1 block">{goal.icon || '🎯'}</span>
+                                                    <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-lg">{goal.name}</h4>
+                                                    <p className="text-[10px] text-zinc-400">Vence: {goal.deadline || 'Sin fecha'}</p>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    <button
+                                                        onClick={() => openEditModal(goal)}
+                                                        className="text-zinc-400 hover:text-blue-500 transition-colors p-1"
+                                                        title="Editar meta"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteGoal(goal.id)}
+                                                        className="text-zinc-400 hover:text-rose-500 transition-colors p-1"
+                                                        title="Eliminar meta"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div className="mt-4 space-y-1">
@@ -229,7 +295,19 @@ const Goals = () => {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <div className="flex justify-between text-xs mt-1">
+
+                                                {/* Motivation Message */}
+                                                <div className="text-center py-2">
+                                                    <p className="text-xs italic text-zinc-400">
+                                                        {progress >= 100 ? "¡Meta alcanzada! 🎉"
+                                                            : progress >= 75 ? "¡Ya casi estás ahí! 🚀"
+                                                                : progress >= 50 ? "¡Más de la mitad! 💪"
+                                                                    : progress >= 25 ? "¡Buen progreso, sigue así! 👍"
+                                                                        : "¡Todo viaje empieza con un paso! 🌱"}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex justify-between text-xs mt-1 border-t border-dashed border-zinc-200 dark:border-zinc-800 pt-2">
                                                     <span className="text-zinc-400 font-mono">{currency}{goal.currentAmount.toFixed(2)}</span>
                                                     <span className="text-zinc-400 font-mono">/ {currency}{goal.targetAmount.toLocaleString()}</span>
                                                 </div>
@@ -314,6 +392,60 @@ const Goals = () => {
                             {transferModal.type === 'deposit' ? 'Confirmar Ingreso' : 'Confirmar Retiro'}
                         </button>
                     </div>
+                </div>
+            </Modal>
+
+            {/* Edit Goal Modal */}
+            <Modal
+                isOpen={editModal.open}
+                onClose={() => setEditModal({ ...editModal, open: false })}
+                title="Editar Meta"
+            >
+                <div className="space-y-4">
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-500 uppercase tracking-wider">Nombre</label>
+                        <input
+                            type="text"
+                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                            value={editFormData.name}
+                            onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-500 uppercase tracking-wider">Monto Necesario</label>
+                        <input
+                            type="number"
+                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                            value={editFormData.targetAmount}
+                            onChange={e => setEditFormData({ ...editFormData, targetAmount: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-500 uppercase tracking-wider">Fecha Objetivo</label>
+                        <input
+                            type="date"
+                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                            value={editFormData.deadline}
+                            onChange={e => setEditFormData({ ...editFormData, deadline: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-xs text-zinc-500 uppercase tracking-wider">Icono</label>
+                        <input
+                            type="text"
+                            className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                            value={editFormData.icon}
+                            onChange={e => setEditFormData({ ...editFormData, icon: e.target.value })}
+                            maxLength={2}
+                        />
+                    </div>
+
+                    <button
+                        onClick={handleEditSubmit}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition-colors mt-4"
+                    >
+                        Guardar Cambios
+                    </button>
                 </div>
             </Modal>
         </div >

@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, type ReactNode } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage';
+import { createContext, useContext, type ReactNode } from 'react';
+import { useFirestore } from '../hooks/useFirestore';
 import type { Project, ProjectTransaction } from '../types';
 
 interface ProjectsContextType {
@@ -20,89 +20,48 @@ interface ProjectsContextType {
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
 
 export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
-    const [projects, setProjects] = useLocalStorage<Project[]>('vault_projects', []);
-
-    // --- Data Migration for Legacy Projects ---
-    useEffect(() => {
-        let hasChanges = false;
-        const migratedProjects = projects.map((p: any) => {
-            if (!p.transactions || p.budget !== undefined) {
-                hasChanges = true;
-                const newProject: Project = {
-                    ...p,
-                    transactions: p.transactions || [],
-                    targetBudget: p.targetBudget ?? p.budget ?? 0,
-                    status: p.status === 'hold' ? 'paused' : (p.status || 'active'),
-                    startDate: p.startDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
-                };
-
-                if (p.spent && p.spent > 0 && newProject.transactions.length === 0) {
-                    newProject.transactions.push({
-                        id: crypto.randomUUID(),
-                        projectId: p.id,
-                        date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
-                        description: 'Saldo inicial (Migración)',
-                        amount: p.spent,
-                        type: 'expense'
-                    });
-                }
-
-                delete newProject['budget' as keyof Project];
-                delete newProject['spent' as keyof Project];
-
-                return newProject;
-            }
-            return p;
-        });
-
-        if (hasChanges) {
-            console.log('Migrating legacy projects...', migratedProjects);
-            setProjects(migratedProjects);
-        }
-    }, [projects, setProjects]);
+    const { data: projects, add, remove, update } = useFirestore<Project>('projects');
 
     const addProject = (projectData: Omit<Project, 'id' | 'transactions' | 'status' | 'startDate'>) => {
-        const newProject: Project = {
+        const newProject = {
             ...projectData,
-            id: crypto.randomUUID(),
             status: 'planning',
             startDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
             transactions: []
         };
-        setProjects([...projects, newProject]);
+        add(newProject);
     };
 
     const updateProject = (id: string, updates: Partial<Project>) => {
-        setProjects(projects.map(p =>
-            p.id === id ? { ...p, ...updates } : p
-        ));
+        update(id, updates);
     };
 
     const deleteProject = (id: string) => {
-        setProjects(projects.filter(p => p.id !== id));
+        remove(id);
     };
 
     const addProjectTransaction = (projectId: string, transaction: Omit<ProjectTransaction, 'id' | 'projectId'>) => {
-        setProjects(projects.map(p => {
-            if (p.id === projectId) {
-                const newTx: ProjectTransaction = {
-                    ...transaction,
-                    id: crypto.randomUUID(),
-                    projectId
-                };
-                return { ...p, transactions: [newTx, ...p.transactions] };
-            }
-            return p;
-        }));
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+
+        const newTx: ProjectTransaction = {
+            ...transaction,
+            id: crypto.randomUUID(),
+            projectId
+        };
+
+        const currentTx = project.transactions || [];
+        update(projectId, { transactions: [newTx, ...currentTx] });
     };
 
     const deleteProjectTransaction = (projectId: string, txId: string) => {
-        setProjects(projects.map(p => {
-            if (p.id === projectId) {
-                return { ...p, transactions: p.transactions.filter(t => t.id !== txId) };
-            }
-            return p;
-        }));
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+
+        const currentTx = project.transactions || [];
+        const newTx = currentTx.filter(t => t.id !== txId);
+
+        update(projectId, { transactions: newTx });
     };
 
     const getProjectStats = (project: Project) => {

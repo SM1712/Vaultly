@@ -1,31 +1,121 @@
 @import "tailwindcss";
 
 @theme {
-    /* Override Zinc (Cool) with Stone (Warm) */
-    --color-zinc-50: var(--color-stone-50);
-    --color-zinc-100: var(--color-stone-100);
-    --color-zinc-200: var(--color-stone-200);
-    --color-zinc-300: var(--color-stone-300);
-    --color-zinc-400: var(--color-stone-400);
-    --color-zinc-500: var(--color-stone-500);
-    --color-zinc-600: var(--color-stone-600);
-    --color-zinc-700: var(--color-stone-700);
-    --color-zinc-800: var(--color-stone-800);
-    --color-zinc-900: var(--color-stone-900);
-    --color-zinc-950: var(--color-stone-950);
+    /* Map Zinc to our Dynamic App Variables */
+    --color-zinc-50: var(--color-app-50);
+    --color-zinc-100: var(--color-app-100);
+    --color-zinc-200: var(--color-app-200);
+    --color-zinc-300: var(--color-app-300);
+    --color-zinc-400: var(--color-app-400);
+    --color-zinc-500: var(--color-app-500);
+    --color-zinc-600: var(--color-app-600);
+    --color-zinc-700: var(--color-app-700);
+    --color-zinc-800: var(--color-app-800);
+    --color-zinc-900: var(--color-app-900);
+    --color-zinc-950: var(--color-app-950);
 
-    /* Also override Gray just in case */
-    --color-gray-50: var(--color-stone-50);
-    --color-gray-100: var(--color-stone-100);
-    --color-gray-200: var(--color-stone-200);
-    --color-gray-300: var(--color-stone-300);
-    --color-gray-400: var(--color-stone-400);
-    --color-gray-500: var(--color-stone-500);
-    --color-gray-600: var(--color-stone-600);
-    --color-gray-700: var(--color-stone-700);
-    --color-gray-800: var(--color-stone-800);
-    --color-gray-900: var(--color-stone-900);
-    --color-gray-950: var(--color-stone-950);
+    /* Map Gray to App Variables too */
+    --color-gray-50: var(--color-app-50);
+    --color-gray-100: var(--color-app-100);
+    --color-gray-200: var(--color-app-200);
+    --color-gray-300: var(--color-app-300);
+    --color-gray-400: var(--color-app-400);
+    --color-gray-500: var(--color-app-500);
+    --color-gray-600: var(--color-app-600);
+    --color-gray-700: var(--color-app-700);
+    --color-gray-800: var(--color-app-800);
+    --color-gray-900: var(--color-app-900);
+    --color-gray-950: var(--color-app-950);
+}
+
+/* Default Theme (Classic - Stone/Warm) */
+:root {
+    --color-app-50: var(--color-stone-50);
+    --color-app-100: var(--color-stone-100);
+    --color-app-200: var(--color-stone-200);
+    --color-app-300: var(--color-stone-300);
+    --color-app-400: var(--color-stone-400);
+    --color-app-500: var(--color-stone-500);
+    --color-app-600: var(--color-stone-600);
+    --color-app-700: var(--color-stone-700);
+    --color-app-800: var(--color-stone-800);
+    --color-app-900: var(--color-stone-900);
+    --color-app-950: var(--color-stone-950);
+}
+
+/* Sepia Theme (Eye Protection - Amber/Orange mix) */
+:root[data-theme='sepia'] {
+    --color-app-50: var(--color-orange-50);
+    --color-app-100: var(--color-orange-100);
+    --color-app-200: var(--color-orange-200);
+    --color-app-300: var(--color-orange-300);
+    --color-app-400: var(--color-orange-400);
+    --color-app-500: var(--color-orange-500);
+    --color-app-600: var(--color-orange-600);
+    --color-app-700: var(--color-orange-700);
+    --color-app-800: var(--color-orange-800);
+    --color-app-900: var(--color-orange-900);
+    --color-app-950: var(--color-orange-950);
+}
+
+/* Ocean Theme (Deep Blue - Slate/Cyan) */
+:root[data-theme='ocean'] {
+    --color-app-50: var(--color-slate-50);
+    --color-app-100: var(--color-slate-100);
+    --color-app-200: var(--color-slate-200);
+    --color-app-300: var(--color-slate-300);
+    --color-app-400: var(--color-slate-400);
+    --color-app-500: var(--color-slate-500);
+    --color-app-600: var(--color-slate-600);
+    --color-app-700: var(--color-slate-700);
+    --color-app-800: var(--color-slate-800);
+    --color-app-900: var(--color-slate-900);
+    --color-app-950: var(--color-slate-950);
+}
+
+/* Midnight Theme (Violet/Indigo) */
+:root[data-theme='midnight'] {
+    --color-app-50: var(--color-indigo-50);
+    --color-app-100: var(--color-indigo-100);
+    --color-app-200: var(--color-indigo-200);
+    --color-app-300: var(--color-indigo-300);
+    --color-app-400: var(--color-indigo-400);
+    --color-app-500: var(--color-indigo-500);
+    --color-app-600: var(--color-indigo-600);
+    --color-app-700: var(--color-indigo-700);
+    --color-app-800: var(--color-indigo-800);
+    --color-app-900: var(--color-indigo-900);
+    --color-app-950: var(--color-indigo-950);
+}
+
+/* Bloom Flower Theme (Pink/Rose) */
+:root[data-theme='bloom'] {
+    --color-app-50: var(--color-rose-50);
+    --color-app-100: var(--color-rose-100);
+    --color-app-200: var(--color-rose-200);
+    --color-app-300: var(--color-rose-300);
+    --color-app-400: var(--color-rose-400);
+    --color-app-500: var(--color-rose-500);
+    --color-app-600: var(--color-rose-600);
+    --color-app-700: var(--color-rose-700);
+    --color-app-800: var(--color-rose-800);
+    --color-app-900: var(--color-rose-900);
+    --color-app-950: var(--color-rose-950);
+}
+
+/* Royal Theme (Purple) */
+:root[data-theme='royal'] {
+    --color-app-50: var(--color-purple-50);
+    --color-app-100: var(--color-purple-100);
+    --color-app-200: var(--color-purple-200);
+    --color-app-300: var(--color-purple-300);
+    --color-app-400: var(--color-purple-400);
+    --color-app-500: var(--color-purple-500);
+    --color-app-600: var(--color-purple-600);
+    --color-app-700: var(--color-purple-700);
+    --color-app-800: var(--color-purple-800);
+    --color-app-900: var(--color-purple-900);
+    --color-app-950: var(--color-purple-950);
 }
 
 /* Force class-based dark mode */

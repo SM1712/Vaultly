@@ -12,7 +12,7 @@ import { useState } from 'react';
 const Dashboard = () => {
     const { selectedDate } = useFinance();
     const { transactions, allTransactions } = useTransactions();
-    const { goals, getTotalSavingsAtDate, isGoalPaidThisMonth } = useGoals();
+    const { goals, getTotalSavingsAtDate, isGoalPaidThisMonth, getMonthlyQuota, getMonthsRemaining } = useGoals();
     const { funds } = useFunds(); // USE FUNDS
     const { currency } = useSettings();
 
@@ -42,7 +42,7 @@ const Dashboard = () => {
 
     const getMonthlyStatus = (goal: any) => {
         const isPaid = isGoalPaidThisMonth(goal);
-        const monthlyAmount = goal.targetAmount / goal.months;
+        const monthlyAmount = getMonthlyQuota(goal);
 
         if (isPaid) {
             return (
@@ -113,7 +113,7 @@ const Dashboard = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setIsLedgerModalOpen(true)}
-                        className="p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-900 transition-all shadow-sm"
+                        className="p-3 md:p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl md:rounded-lg text-zinc-500 md:hover:text-emerald-600 md:dark:hover:text-emerald-400 md:hover:border-emerald-200 md:dark:hover:border-emerald-900 active:scale-95 transition-all shadow-sm"
                         title="Ver Libro Contable"
                     >
                         <BookOpen size={20} />
@@ -129,7 +129,7 @@ const Dashboard = () => {
                         onClick={() => {
                             if (card.label === 'Ahorro Total') setIsSavingsModalOpen(true);
                         }}
-                        className={`${card.bg} border ${card.border} p-6 rounded-3xl transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-zinc-200/50 dark:hover:shadow-zinc-900/50 ${card.label === 'Ahorro Total' ? 'cursor-pointer ring-offset-2 hover:ring-2 ring-emerald-500/50' : ''
+                        className={`${card.bg} border ${card.border} p-6 rounded-3xl transition-all md:hover:scale-[1.02] md:hover:shadow-lg md:hover:shadow-zinc-200/50 md:dark:hover:shadow-zinc-900/50 active:scale-[0.98] ${card.label === 'Ahorro Total' ? 'cursor-pointer ring-offset-2 md:hover:ring-2 ring-emerald-500/50' : ''
                             }`}
                     >
                         <div className="flex items-center justify-between mb-4">
@@ -164,7 +164,7 @@ const Dashboard = () => {
                                     </div>
                                     <div>
                                         <p className="font-bold text-zinc-900 dark:text-zinc-100 text-base">{goal.name}</p>
-                                        <p className="text-xs text-zinc-500">{goal.months} meses restantes</p>
+                                        <p className="text-xs text-zinc-500">{getMonthsRemaining(goal)} meses restantes</p>
                                     </div>
                                 </div>
                                 {getMonthlyStatus(goal)}

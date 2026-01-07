@@ -14,13 +14,15 @@ export interface Goal {
     id: string;
     name: string;
     targetAmount: number;
-    months: number;
-    currentAmount: number; // Monto actual ahorrado (total)
-    lastContributionDate?: string; // Fecha de la última "cuota" pagada
-    isCompletedForMonth?: boolean; // Si ya cumplió este mes (opcional, derivado)
+    currentAmount: number;
+    startDate: string; // ISO Date "YYYY-MM-DD"
+    deadline: string; // ISO Date "YYYY-MM-DD"
+    icon?: string; // Emoji or Icon name
+    lastContributionDate?: string;
+    isCompletedForMonth?: boolean;
     history?: {
         id: string;
-        date: string; // YYYY-MM-DD
+        date: string;
         amount: number;
         type: 'deposit' | 'withdrawal';
         note?: string;
@@ -65,4 +67,44 @@ export interface Fund {
     description?: string;
     color?: string; // Optional: custom color for the card/icon
     history: FundTransaction[];
+}
+
+export interface Payment {
+    id: string;
+    creditId: string;
+    date: string;
+    amount: number;
+    note?: string;
+}
+
+export interface Credit {
+    id: string;
+    name: string;
+    principal: number; // Monto inicial prestado
+    interestRate: number; // % anual
+    term: number; // meses
+    startDate: string; // YYYY-MM-DD
+    status: 'active' | 'paid';
+    payments?: Payment[];
+}
+
+export interface ScheduledTransaction {
+    id: string;
+    type: 'income' | 'expense';
+    amount: number;
+    category: string;
+    description: string;
+    dayOfMonth: number; // 1-31
+    lastProcessedDate?: string; // YYYY-MM-DD
+    active: boolean;
+    createdAt: string;
+}
+
+export interface TransactionPreset {
+    id: string;
+    label: string; // e.g. "Coca Cola"
+    amount?: number; // Optional
+    category: string;
+    type: 'income' | 'expense';
+    icon?: string; // Emoji
 }

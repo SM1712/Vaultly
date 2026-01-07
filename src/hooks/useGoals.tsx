@@ -1,163 +1,146 @@
-import { useEffect } from 'react';
-import useLocalStorage from './useLocalStorage';
+import { useFirestore } from './useFirestore';
 import type { Goal } from '../types';
 
 export const useGoals = () => {
-    const [goals, setGoals] = useLocalStorage<Goal[]>('vault_goals', []);
+    const { data: goals, add, remove, update } = useFirestore<Goal>('goals');
 
-    // Migration: Backfill history for legacy goals with balance but no history
-    useEffect(() => {
-        const needsMigration = goals.some(g => g.currentAmount > 0 && (!g.history || g.history.length === 0));
-
-        if (needsMigration) {
-            setGoals(prev => prev.map(g => {
-                if (g.currentAmount > 0 && (!g.history || g.history.length === 0)) {
-                    // Create an initial deposit history entry
-                    const migrationDate = g.lastContributionDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
-                    return {
-                        ...g,
-                        history: [{
-                            id: crypto.randomUUID(),
-                            date: migrationDate,
-                            amount: g.currentAmount,
-                            type: 'deposit',
-                            note: 'Saldo inicial (Migración)'
-                        }]
-                    };
-                }
-                return g;
-            }));
-        }
-    }, [goals, setGoals]);
-
-    const addGoal = (goal: Omit<Goal, 'id' | 'currentAmount'>) => {
-        const newGoal: Goal = {
+    const addGoal = (goal: Omit<Goal, 'id' | 'currentAmount' | 'history'>) => {
+        const newGoal = {
             ...goal,
-            id: crypto.randomUUID(),
             currentAmount: 0,
             history: []
         };
-        setGoals((prev) => [newGoal, ...prev]);
+        add(newGoal);
+    };
+
+    const updateGoal = (id: string, data: Partial<Goal>) => {
+        update(id, data);
     };
 
     const deleteGoal = (id: string) => {
-        setGoals((prev) => prev.filter((g) => g.id !== id));
+        remove(id);
     };
 
     const addContribution = (id: string, amount: number, note?: string) => {
-        setGoals((prev) => prev.map(g => {
-            if (g.id === id) {
-                const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
-                const newHistoryItem = {
-                    id: crypto.randomUUID(),
-                    date: today,
-                    amount: amount,
-                    type: 'deposit' as const,
-                    note: note || 'Contribución manual'
-                };
+        const goal = goals.find(g => g.id === id);
+        if (!goal) return;
 
-                const history = g.history ? [...g.history, newHistoryItem] : [newHistoryItem];
+        const today = new Date().toISOString().split('T')[0];
+        const newHistoryItem = {
+            id: crypto.randomUUID(),
+            date: today,
+            amount: amount,
+            type: 'deposit' as const,
+            note: note || 'Contribución manual'
+        };
 
-                return {
-                    ...g,
-                    currentAmount: g.currentAmount + amount,
-                    lastContributionDate: today,
-                    history
-                };
-            }
-            return g;
-        }));
+        const history = goal.history ? [...goal.history, newHistoryItem] : [newHistoryItem];
+
+        update(id, {
+            currentAmount: (goal.currentAmount || 0) + amount,
+            lastContributionDate: today,
+            history
+        });
     };
 
     const withdraw = (id: string, amount: number, note?: string) => {
-        setGoals((prev) => prev.map(g => {
-            if (g.id === id) {
-                const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
-                const newHistoryItem = {
-                    id: crypto.randomUUID(),
-                    date: today,
-                    amount: amount,
-                    type: 'withdrawal' as const,
-                    note: note || 'Retiro de fondos'
-                };
+        const goal = goals.find(g => g.id === id);
+        if (!goal) return;
 
-                const history = g.history ? [...g.history, newHistoryItem] : [newHistoryItem];
+        const today = new Date().toISOString().split('T')[0];
+        const newHistoryItem = {
+            id: crypto.randomUUID(),
+            date: today,
+            amount: amount,
+            type: 'withdrawal' as const,
+            note: note || 'Retiro de fondos'
+        };
 
-                return {
-                    ...g,
-                    currentAmount: Math.max(0, g.currentAmount - amount),
-                    history
-                };
-            }
-            return g;
-        }));
+        const history = goal.history ? [...goal.history, newHistoryItem] : [newHistoryItem];
+
+        update(id, {
+            currentAmount: Math.max(0, (goal.currentAmount || 0) - amount),
+            history
+        });
     };
 
-    // Deprecated/Alias for backward compatibility or simplify to just call addContribution
     const contributeToGoal = (id: string, amount: number) => {
         addContribution(id, amount, 'Cuota Mensual');
     };
 
-    // Calculate net contribution for a specific month (Deposits - Withdrawals)
-    const getMonthlyContribution = (goal: Goal, date: Date) => {
-        if (!goal.history) return 0;
+    // Calculate dynamic monthly quota based on remaining time and remaining amount
+    const getMonthlyQuota = (goal: Goal): number => {
+        if (!goal.deadline) return 0; // Should not happen with new model, but safe check
 
+        const today = new Date();
+        const deadlineDate = new Date(goal.deadline);
+        const remainingAmount = goal.targetAmount - goal.currentAmount;
+
+        if (remainingAmount <= 0) return 0;
+
+        // Calculate months remaining
+        // Difference in months = (Year2 - Year1) * 12 + (Month2 - Month1)
+        // If today is Jan 15 and Deadline is Feb 15, that's 1 month.
+        // If today is Jan 15 and Deadline is Jan 25, that's < 1 month (so 1 installment basically)
+
+        const yearsDiff = deadlineDate.getFullYear() - today.getFullYear();
+        const monthsDiff = deadlineDate.getMonth() - today.getMonth();
+        let monthsRemaining = (yearsDiff * 12) + monthsDiff;
+
+        // If we are in the same month but before the deadline day? 
+        // Let's treat current month as "1" if we haven't passed the deadline day-of-month? 
+        // Simplified Logic: 
+        // If deadline is in future full months: calculate valid months.
+        // Minimum 1 month to avoid division by zero or infinity.
+
+        if (monthsRemaining < 1) monthsRemaining = 1;
+
+        // If user already paid something THIS month, technically the quota for "This Month" is reduced?
+        // But the requirement is: "If I miss a month, recalculate".
+        // Example: Target 1200, 12 months. Quota 100.
+        // Month 1: I pay 0.
+        // Month 2: Remainder 1200. Remainder Months 11. New Quota 109.
+        // This is handled automatically by using (Target - Current) / RemainingMonths.
+
+        return remainingAmount / monthsRemaining;
+    };
+
+    const isGoalPaidThisMonth = (goal: Goal) => {
+        // With dynamic quotas, "Paid this month" is a bit fuzzy. 
+        // Did they pay the *recalculated* quota? 
+        // Let's say yes.
+        const nav = new Date();
+        // Get contributions in current month
+        const contributionsThisMonth = getattrContributionsThisMonth(goal, nav);
+        const required = getMonthlyQuota(goal);
+
+        // Tolerance for floating point
+        return contributionsThisMonth >= (required - 1);
+    };
+
+    const getattrContributionsThisMonth = (goal: Goal, date: Date) => {
+        if (!goal.history) return 0;
         const targetMonth = date.getMonth();
         const targetYear = date.getFullYear();
 
         return goal.history.reduce((acc, item) => {
-
-            // Check if item belongs to the target month/year
-            // We use local time components from the history string YYYY-MM-DD
             const [y, m] = item.date.split('-').map(Number);
-            // item.date represents YYYY-MM-DD. split gives [YYYY, MM, DD]. MM is 1-indexed.
-            // date.getMonth() is 0-indexed.
-
+            // Fix timezone issue by just parsing parts, already done
             if (y === targetYear && (m - 1) === targetMonth) {
                 return item.type === 'deposit' ? acc + item.amount : acc - item.amount;
             }
             return acc;
         }, 0);
-    };
-
-    const isGoalPaidThisMonth = (goal: Goal) => {
-        // Use current date for "This Month" check
-        const now = new Date();
-        const monthlyQuota = goal.targetAmount / goal.months;
-        const netContribution = getMonthlyContribution(goal, now);
-
-        // It is paid if net contribution this month >= quota
-        // AND the goal is not already fully completed (optional check, but good for UX)
-        // But strictly for the quota:
-        return netContribution >= (monthlyQuota - 0.01); // Tolerance for small floats
-    };
-
-    const canPayQuota = (goal: Goal, availableBalance: number) => {
-        if (isGoalPaidThisMonth(goal)) return false;
-        const monthlyAmount = goal.targetAmount / goal.months;
-        return availableBalance >= monthlyAmount;
-    };
+    }
 
     const getTotalSavingsAtDate = (date: Date) => {
         return goals.reduce((acc, goal) => {
-            // After migration, if no history, balance is 0 or it's new empty goal
             if (!goal.history || goal.history.length === 0) return acc;
 
-            // Sum contributions up to the end of the selected month
-            // We want the status at the END of the selected month
-            // e.g. Selected = Jan 2026 -> Include all up to Jan 31, 2026
             const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
             const goalTotal = goal.history.reduce((hAcc, item) => {
                 const itemDate = new Date(item.date);
-                // Compare just dates to be safe from timezones or use YYYY-MM-DD string comp
-                // item.date is YYYY-MM-DD string. 
-                // endOfMonth is Date object.
-                // Let's convert itemDate strictly to midnight or just compare strings?
-                // Date object comparison is fine if we are careful.
-                // itemDate from '2025-01-01' will be 00:00 local time usually or UTC depending on browser
-                // endOfMonth is last day of month. 
-
                 if (itemDate <= endOfMonth) {
                     return item.type === 'deposit'
                         ? hAcc + item.amount
@@ -170,15 +153,28 @@ export const useGoals = () => {
         }, 0);
     };
 
+
+
+    const getMonthsRemaining = (goal: Goal) => {
+        if (!goal.deadline) return 0;
+        const today = new Date();
+        const deadlineDate = new Date(goal.deadline);
+        const yearsDiff = deadlineDate.getFullYear() - today.getFullYear();
+        const monthsDiff = deadlineDate.getMonth() - today.getMonth();
+        return Math.max(0, (yearsDiff * 12) + monthsDiff);
+    };
+
     return {
         goals,
         addGoal,
+        updateGoal,
         deleteGoal,
         contributeToGoal,
         addContribution,
         withdraw,
+        getMonthlyQuota,
         isGoalPaidThisMonth,
-        canPayQuota,
-        getTotalSavingsAtDate
+        getTotalSavingsAtDate,
+        getMonthsRemaining
     };
 };

@@ -1,12 +1,14 @@
-import { useState } from 'react';
-import { Plus, X, ArrowUpRight, ArrowDownLeft, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, ArrowUpRight, ArrowDownLeft, Check, ChevronDown } from 'lucide-react';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCategories } from '../../hooks/useCategories';
-
 import { useSettings } from '../../context/SettingsContext';
+import { usePresets } from '../../hooks/usePresets';
+import { clsx } from 'clsx';
 
 const MobileQuickAdd = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isClosing, setIsClosing] = useState(false); // For exit animations
     const [type, setType] = useState<'expense' | 'income'>('expense');
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState('');
@@ -16,16 +18,25 @@ const MobileQuickAdd = () => {
     const { categories: expenseCats } = useCategories('expense');
     const { categories: incomeCats } = useCategories('income');
     const { currency } = useSettings();
+    const { presets } = usePresets();
 
-    // ... (rest)
+    // Reset state when opening
+    useEffect(() => {
+        if (isOpen) {
+            setCategory('');
+            setAmount('');
+            setDescription('');
+            setType('expense');
+        }
+    }, [isOpen]);
 
-    // skipping to the render part
-
-    // We'll replace the top import and the start of component, then we target the specific Span line later? 
-    // replace_file_content works on contiguous block. 
-    // I need to update imports AND the usage.
-    // Let's do imports and component start first.
-
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            setIsOpen(false);
+            setIsClosing(false);
+        }, 300); // Match transition duration
+    };
 
     const handleSubmit = () => {
         const val = Number(amount);
@@ -35,131 +46,208 @@ const MobileQuickAdd = () => {
             amount: val,
             type,
             category: category || 'Otros',
-            // Use local date to avoid timezone issues (UTC vs Local)
-            date: (() => {
-                const now = new Date();
-                return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-            })(),
+            date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD local
             description: description || (type === 'expense' ? 'Gasto Rápido' : 'Ingreso Rápido')
         });
 
-        // Reset and close
-        setAmount('');
-        setDescription('');
-        setCategory('');
-        setIsOpen(false);
+        handleClose();
     };
 
-    if (!isOpen) {
+    if (!isOpen && !isClosing) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-emerald-600 text-white rounded-full shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-105 transition-transform z-50"
+                className="md:hidden fixed bottom-6 right-6 w-16 h-16 bg-zinc-900 dark:bg-emerald-600 text-white rounded-full shadow-2xl shadow-zinc-900/40 dark:shadow-emerald-600/40 flex items-center justify-center active:scale-95 transition-transform z-50"
+                aria-label="Agregar transacción"
             >
-                <Plus size={28} />
+                <Plus size={32} strokeWidth={2.5} />
             </button>
         );
     }
 
-    return (
-        <div className="fixed inset-0 z-50 md:hidden bg-zinc-100 dark:bg-zinc-950 flex flex-col animate-in slide-in-from-bottom-full duration-300">
-            {/* Header */}
-            <div className="p-4 flex items-center justify-between bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-                <button onClick={() => setIsOpen(false)} className="p-2 -ml-2 text-zinc-500">
-                    <X size={24} />
-                </button>
-                <h2 className="font-bold text-lg">Registro Rápido</h2>
-                <div className="w-8" />
-            </div>
+    const categories = type === 'expense' ? expenseCats : incomeCats;
 
-            {/* Body */}
-            <div className="flex-1 p-6 flex flex-col gap-6">
-                {/* Type Toggle */}
-                <div className="flex bg-zinc-200 dark:bg-zinc-800 p-1 rounded-2xl">
-                    <button
-                        onClick={() => setType('expense')}
-                        className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${type === 'expense'
-                            ? 'bg-white dark:bg-zinc-700 text-rose-600 shadow-sm'
-                            : 'text-zinc-500'
-                            }`}
-                    >
-                        <ArrowDownLeft size={18} /> Gasto
-                    </button>
-                    <button
-                        onClick={() => setType('income')}
-                        className={`flex-1 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${type === 'income'
-                            ? 'bg-white dark:bg-zinc-700 text-emerald-600 shadow-sm'
-                            : 'text-zinc-500'
-                            }`}
-                    >
-                        Ingreso <ArrowUpRight size={18} />
-                    </button>
+    return (
+        <div className="fixed inset-0 z-50 md:hidden flex items-end justify-center pointer-events-none">
+            {/* Backdrop */}
+            <div
+                className={clsx(
+                    "absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity duration-300",
+                    isClosing ? "opacity-0" : "opacity-100"
+                )}
+                onClick={handleClose}
+            />
+
+            {/* Bottom Sheet */}
+            <div
+                className={clsx(
+                    "w-full bg-white dark:bg-zinc-950 rounded-t-[2.5rem] shadow-2xl pointer-events-auto transform transition-transform duration-300 ease-out border-t border-zinc-100/10 max-h-[90vh] flex flex-col",
+                    isClosing ? "translate-y-full" : "translate-y-0"
+                )}
+            >
+                {/* Drag Handle Area */}
+                <div className="w-full flex justify-center pt-4 pb-2" onClick={handleClose}>
+                    <div className="w-12 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
                 </div>
 
-                {/* Amount Input */}
-                <div className="text-center">
-                    <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Monto</p>
-                    <div className="relative inline-block max-w-full">
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 text-2xl font-bold text-zinc-400">{currency}</span>
+                {/* Header Actions */}
+                <div className="px-6 pb-2 flex items-center justify-between">
+                    <button
+                        onClick={handleClose}
+                        className="p-2 -ml-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    >
+                        <ChevronDown size={28} />
+                    </button>
+                    <span className="font-bold text-zinc-400 text-xs uppercase tracking-widest">
+                        Nueva Transacción
+                    </span>
+                    <div className="w-10" /> {/* Spacer for centering */}
+                </div>
+
+                <div className="px-6 pb-8 overflow-y-auto no-scrollbar">
+
+                    {/* PRESETS SCROLL (BOTONERA) */}
+                    {presets.length > 0 && (
+                        <div className="mb-8">
+                            <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Atajos Rápidos</p>
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 no-scrollbar snap-x">
+                                {presets.map(preset => (
+                                    <button
+                                        key={preset.id}
+                                        onClick={() => {
+                                            if (preset.amount) setAmount(preset.amount.toString());
+                                            setType(preset.type);
+                                            setCategory(preset.category);
+                                            setDescription(preset.label); // Auto-fill description with label
+                                        }}
+                                        className={clsx(
+                                            "flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 rounded-2xl border-2 transition-all snap-start",
+                                            "border-zinc-100 bg-white dark:border-zinc-800 dark:bg-zinc-900 active:scale-95",
+                                            // Highlight if matching current selection
+                                            (category === preset.category && type === preset.type)
+                                                ? "border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                                                : ""
+                                        )}
+                                    >
+                                        <div className={`w-8 h-8 rounded-full mb-1 flex items-center justify-center ${preset.type === 'expense' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                            {preset.type === 'expense' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                                        </div>
+                                        <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 truncate max-w-full px-1">
+                                            {preset.label}
+                                        </span>
+                                        {preset.amount && (
+                                            <span className="text-[9px] text-zinc-400 font-mono">
+                                                {currency}{preset.amount}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {/* Segmented Control */}
+                    <div className="flex bg-zinc-100 dark:bg-zinc-900 p-1.5 rounded-2xl mb-8">
+                        <button
+                            onClick={() => setType('expense')}
+                            className={clsx(
+                                "flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all duration-200",
+                                type === 'expense'
+                                    ? "bg-white dark:bg-zinc-800 text-rose-600 shadow-md transform scale-[1.02]"
+                                    : "text-zinc-400 hover:text-zinc-600"
+                            )}
+                        >
+                            <ArrowDownLeft size={20} strokeWidth={2.5} /> Gasto
+                        </button>
+                        <button
+                            onClick={() => setType('income')}
+                            className={clsx(
+                                "flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all duration-200",
+                                type === 'income'
+                                    ? "bg-white dark:bg-zinc-800 text-emerald-600 shadow-md transform scale-[1.02]"
+                                    : "text-zinc-400 hover:text-zinc-600"
+                            )}
+                        >
+                            Ingreso <ArrowUpRight size={20} strokeWidth={2.5} />
+                        </button>
+                    </div>
+
+                    {/* Amount Display - Super Large */}
+                    <div className="mb-8 relative flex items-center justify-center">
+                        <span className={clsx(
+                            "text-3xl font-bold text-zinc-400 mr-2 pb-1 transition-all duration-300",
+                            !amount ? "opacity-30" : "opacity-100"
+                        )}>
+                            {currency}
+                        </span>
                         <input
                             type="number"
+                            inputMode="decimal"
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
-                            placeholder="0.00"
+                            placeholder="0"
                             autoFocus
-                            className="w-full bg-transparent text-center text-5xl font-mono font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none placeholder:text-zinc-200 dark:placeholder:text-zinc-800"
+                            className="bg-transparent text-center text-6xl font-black text-zinc-900 dark:text-zinc-100 focus:outline-none placeholder:text-zinc-200 dark:placeholder:text-zinc-800 py-2 caret-emerald-500 w-[180px]"
                         />
                     </div>
-                </div>
 
-                {/* Category & Desc */}
-                <div className="space-y-4 mt-auto">
-                    <div className="space-y-2">
-                        <label className="text-xs text-zinc-500 uppercase font-bold">Categoría</label>
-                        <div className="flex flex-wrap gap-2">
-                            {(type === 'expense' ? expenseCats : incomeCats).slice(0, 6).map(cat => (
+                    {/* Category Scroll - Horizontal */}
+                    <div className="mb-6 space-y-3">
+                        <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider ml-1">Categoría</p>
+                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 no-scrollbar snap-x">
+                            {categories.map(cat => (
                                 <button
                                     key={cat}
                                     onClick={() => setCategory(cat)}
-                                    className={`px-3 py-2 rounded-lg text-sm transition-colors border ${category === cat
-                                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent'
-                                        : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800'
-                                        }`}
+                                    className={clsx(
+                                        "flex-shrink-0 px-5 py-3 rounded-2xl text-sm font-bold border-2 transition-all snap-start whitespace-nowrap",
+                                        category === cat
+                                            ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                                            : "border-zinc-100 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+                                    )}
                                 >
                                     {cat}
                                 </button>
                             ))}
                             <button
                                 onClick={() => setCategory('Otros')}
-                                className={`px-3 py-2 rounded-lg text-sm transition-colors border ${category === 'Otros'
-                                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent'
-                                    : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800'
-                                    }`}
+                                className={clsx(
+                                    "flex-shrink-0 px-5 py-3 rounded-2xl text-sm font-bold border-2 transition-all snap-start",
+                                    category === 'Otros'
+                                        ? "border-zinc-900 bg-zinc-900 text-white"
+                                        : "border-zinc-100 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900"
+                                )}
                             >
-                                Otros...
+                                Otros
                             </button>
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-xs text-zinc-500 uppercase font-bold">Nota (Opcional)</label>
+                    {/* Note Input */}
+                    <div className="mb-8">
                         <input
                             type="text"
                             value={description}
                             onChange={e => setDescription(e.target.value)}
-                            placeholder="¿En qué gastaste?"
-                            className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500 transition-colors"
+                            placeholder={type === 'expense' ? "¿En qué gastaste?" : "¿De dónde provino?"}
+                            className="w-full bg-zinc-50 dark:bg-zinc-900/50 border-none rounded-2xl px-5 py-4 text-base font-medium placeholder:text-zinc-400 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                         />
                     </div>
-                </div>
 
-                <button
-                    onClick={handleSubmit}
-                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-2xl font-bold text-lg shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 mt-4"
-                >
-                    <Check size={24} />
-                    Guardar Movimiento
-                </button>
+                    {/* Submit Button */}
+                    <button
+                        onClick={handleSubmit}
+                        disabled={!amount}
+                        className={clsx(
+                            "w-full py-5 rounded-2xl font-bold text-lg text-white shadow-xl transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]",
+                            amount
+                                ? "bg-zinc-900 dark:bg-emerald-600 shadow-zinc-900/20 dark:shadow-emerald-600/20"
+                                : "bg-zinc-300 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none"
+                        )}
+                    >
+                        <Check size={28} strokeWidth={3} />
+                        {amount ? 'Confirmar' : 'Ingresa un monto'}
+                    </button>
+                </div>
             </div>
         </div>
     );
