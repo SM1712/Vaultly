@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, PiggyBank, Landmark, Calculator, X, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -24,6 +25,8 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
         { to: '/projects', icon: FolderKanban, label: 'Proyectos' }, // Changed icon from Presentation to FolderKanban
         { to: '/projections', icon: Calculator, label: 'Proyecciones' }, // Added new item
     ];
+
+    const isOnline = useNetworkStatus();
 
     return (
         <>
@@ -99,8 +102,8 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
                     </button>
 
                     <div className="flex items-center gap-2 text-zinc-400 text-[10px] justify-center tracking-widest uppercase pt-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>Online</span>
+                        <div className={clsx("w-1.5 h-1.5 rounded-full animate-pulse transition-colors duration-500", isOnline ? "bg-emerald-500" : "bg-red-500")} />
+                        <span>{isOnline ? "Online" : "Offline"}</span>
                     </div>
                 </div>
             </aside>
