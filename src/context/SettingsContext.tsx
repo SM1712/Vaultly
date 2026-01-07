@@ -66,7 +66,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     const setCurrency = (newCurrency: string) => {
         if (!user) return;
         const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
-        updateDoc(settingsRef, { currency: newCurrency }).catch(err => {
+        updateDoc(settingsRef, { currency: newCurrency }).catch(() => {
             // Fallback if doc doesn't exist (rare edge case if onSnapshot hasn't fired creation yet)
             setDoc(settingsRef, { currency: newCurrency }, { merge: true });
         });
