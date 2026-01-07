@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { useFunds } from '../hooks/useFunds';
+import { useBalance } from '../hooks/useBalance';
 import { useSettings } from '../context/SettingsContext';
 import {
     Plus, Trash2, Gift, DollarSign, Heart, Flame,
@@ -53,10 +55,17 @@ const Funds = () => {
         setIsCreateOpen(false);
     };
 
+    const { currentBalance } = useBalance();
+
     const handleTransaction = (e: React.FormEvent) => {
         e.preventDefault();
         const amount = Number(txAmount);
         if (!amount || amount <= 0) return;
+
+        if (txModal.type === 'deposit' && amount > currentBalance) {
+            toast.error(`Fondos insuficientes. Solo tienes ${currency}${currentBalance.toLocaleString()} disponibles.`);
+            return;
+        }
 
         addTransaction(txModal.fundId, amount, txModal.type, txNote);
         setTxModal({ ...txModal, open: false });
@@ -84,17 +93,17 @@ const Funds = () => {
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Fondos de Ahorro</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Espacios personalizados para tu dinero</p>
+                    <h1 className="text-3xl font-black text-zinc-900 dark:text-zinc-100">Fondos de Ahorro</h1>
+                    <p className="text-zinc-500 text-sm mt-1">Espacios personalizados para tu dinero</p>
                 </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                    className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-5 py-2.5 rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-zinc-200 dark:shadow-zinc-900/50"
                 >
-                    <Plus size={18} />
-                    <span>Nuevo Fondo</span>
+                    <Plus size={20} /> Nuevo Fondo
                 </button>
             </div>
 

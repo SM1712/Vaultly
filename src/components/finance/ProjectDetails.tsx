@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import { toast } from 'sonner';
 import type { Project } from '../../types';
 import { useSettings } from '../../context/SettingsContext';
 import { useProjects } from '../../hooks/useProjects';
+import { useBalance } from '../../hooks/useBalance';
+import { useTransactions } from '../../hooks/useTransactions';
 import {
     X, PieChart, List, Settings,
     ArrowUpRight, ArrowDownRight, Trash2
@@ -17,6 +20,8 @@ interface ProjectDetailsProps {
 const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
     const { currency } = useSettings();
     const { updateProject, deleteProject, addProjectTransaction, deleteProjectTransaction, getProjectStats } = useProjects();
+    const { currentBalance } = useBalance();
+    const { addTransaction } = useTransactions();
     const [activeTab, setActiveTab] = useState<'overview' | 'ledger' | 'settings'>('overview');
 
     // Stats
@@ -32,8 +37,29 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
 
     const handleTxSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const amount = Number(txForm.amount);
+        if (amount <= 0) return;
+
+        if (txForm.type === 'income') {
+
+            // "Inyectar Capital" -> Deduct from Main Balance
+            if (amount > currentBalance) {
+                toast.error(`Fondos insuficientes. Solo tienes ${currency}${currentBalance.toLocaleString()} disponibles.`);
+                return;
+            }
+            // 1. Deduct from Main Ledger
+            addTransaction({
+                amount,
+                type: 'expense',
+                category: 'Inversión', // Using 'Inversión' or 'Proyectos'
+                description: `Inversión Proyecto: ${project.name}`,
+                date: new Date().toISOString().split('T')[0]
+            });
+        }
+
+        // 2. Add to Project Ledger
         addProjectTransaction(project.id, {
-            amount: Number(txForm.amount),
+            amount,
             description: txForm.description,
             type: txForm.type,
             date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()

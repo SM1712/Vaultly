@@ -1,17 +1,19 @@
 import { useTransactions } from '../hooks/useTransactions';
 import { Wallet, TrendingUp, TrendingDown, Target, BookOpen } from 'lucide-react';
 import { useGoals } from '../hooks/useGoals';
-import { useFunds } from '../hooks/useFunds'; // IMPORT ADDED
+import { useFunds } from '../hooks/useFunds';
+import { useBalance } from '../hooks/useBalance';
 import { useFinance } from '../context/FinanceContext';
 import { useSettings } from '../context/SettingsContext';
 import MonthSelector from '../components/MonthSelector';
 import SavingsListModal from '../components/finance/SavingsListModal';
 import LedgerModal from '../components/finance/LedgerModal';
 import { useState } from 'react';
+import type { Goal } from '../types';
 
 const Dashboard = () => {
     const { selectedDate } = useFinance();
-    const { transactions, allTransactions } = useTransactions();
+    const { transactions } = useTransactions();
     const { goals, getTotalSavingsAtDate, isGoalPaidThisMonth, getMonthlyQuota, getMonthsRemaining } = useGoals();
     const { funds } = useFunds(); // USE FUNDS
     const { currency } = useSettings();
@@ -40,7 +42,7 @@ const Dashboard = () => {
     const fundsSaved = funds.reduce((acc, f) => acc + f.currentAmount, 0);
     const totalSaved = goalsSaved + fundsSaved;
 
-    const getMonthlyStatus = (goal: any) => {
+    const getMonthlyStatus = (goal: Goal) => {
         const isPaid = isGoalPaidThisMonth(goal);
         const monthlyAmount = getMonthlyQuota(goal);
 
@@ -64,9 +66,13 @@ const Dashboard = () => {
 
 
 
-    const globalIncome = allTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
-    const globalExpenses = allTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
-    const availableBalance = (globalIncome - globalExpenses) - totalSaved;
+    // Calculate Balance using centralized hook
+    const { availableBalance } = useBalance();
+
+    // The historical Transactions logic below was just for the balance calculation, 
+    // but we might need it for specific charts/tables if they existed? 
+    // No, currentMonthTransactions is used for 'totalIncome' and 'totalExpenses' cards.
+    // The "historical" filtering was ONLY for availableBalance. So we can remove it safely.
 
     const cards = [
         {

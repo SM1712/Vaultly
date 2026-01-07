@@ -14,6 +14,7 @@ interface ProjectsContextType {
         totalExpenses: number;
         currentBalance: number;
         percentConsumed: number;
+        percentFunded: number;
     };
 }
 
@@ -77,8 +78,9 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
         const currentBalance = totalIncome - totalExpenses;
         const budget = project.targetBudget || (project as any).budget || 0;
         const percentConsumed = budget > 0 ? (totalExpenses / budget) * 100 : 0;
+        const percentFunded = budget > 0 ? (currentBalance / budget) * 100 : 0;
 
-        return { totalIncome, totalExpenses, currentBalance, percentConsumed };
+        return { totalIncome, totalExpenses, currentBalance, percentConsumed, percentFunded };
     };
 
     return (

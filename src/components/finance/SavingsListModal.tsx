@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useGoals } from '../../hooks/useGoals';
 import { useFunds } from '../../hooks/useFunds'; // IMPORT ADDED
 import { useTransactions } from '../../hooks/useTransactions';
@@ -51,17 +52,17 @@ const SavingsListModal = ({ isOpen, onClose }: SavingsListModalProps) => {
         if (transferState.type === 'withdraw') {
             if (transferState.targetType === 'goal') {
                 const goal = goals.find(g => g.id === transferState.targetId);
-                if (!goal || goal.currentAmount < val) { return alert('Fondos insuficientes.'); }
+                if (!goal || goal.currentAmount < val) { return toast.error('Fondos insuficientes en la meta.'); }
                 withdraw(transferState.targetId, val);
             } else {
                 const fund = funds.find(f => f.id === transferState.targetId);
-                if (!fund || fund.currentAmount < val) { return alert('Fondos insuficientes.'); }
+                if (!fund || fund.currentAmount < val) { return toast.error('Fondos insuficientes en el fondo.'); }
                 addFundTransaction(transferState.targetId, val, 'withdraw', 'Retiro desde Gestión');
             }
         } else {
             // Deposit
             if (availableBalance < val) {
-                return alert('Saldo disponible insuficiente.');
+                return toast.error(`Saldo insuficiente. Disponible: ${currency}${availableBalance.toFixed(2)}`);
             }
 
             if (transferState.targetType === 'goal') {

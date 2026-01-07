@@ -20,37 +20,39 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // 1. Immediate Local Check (prevents flash)
+        const localOnboarding = localStorage.getItem('vault_has_seen_onboarding');
+        const localCurrency = localStorage.getItem('vault_currency');
+
+        if (localOnboarding) {
+            setHasSeenOnboardingState(JSON.parse(localOnboarding));
+        }
+        if (localCurrency) {
+            setCurrencyState(JSON.parse(localCurrency));
+        }
+
         if (!user) {
             setLoading(false);
             return;
         }
 
+        // 2. Sync with Firebase
         const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
 
         const unsubscribe = onSnapshot(settingsRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                setCurrencyState(data.currency || '$');
-                setHasSeenOnboardingState(data.hasSeenOnboarding || false);
-            } else {
-                // Doc doesn't exist, try to migrate from local storage or set defaults
-                const localCurrency = localStorage.getItem('vault_currency');
-                const localOnboarding = localStorage.getItem('vault_has_seen_onboarding');
+                // Update state
+                if (data.currency) {
+                    setCurrencyState(data.currency);
+                    localStorage.setItem('vault_currency', JSON.stringify(data.currency));
+                }
 
-                // If we have local data, use it, otherwise valid defaults
-                // Note: localOnboarding string 'true' need parsing
-                const initialCurrency = localCurrency ? JSON.parse(localCurrency) : '$';
-                const initialOnboarding = localOnboarding ? JSON.parse(localOnboarding) : false;
-
-                // Create the doc
-                setDoc(settingsRef, {
-                    currency: initialCurrency,
-                    hasSeenOnboarding: initialOnboarding
-                }).catch(err => console.error("Error creating settings doc", err));
-
-                // Optimistic update
-                setCurrencyState(initialCurrency);
-                setHasSeenOnboardingState(initialOnboarding);
+                // Only update from DB if true, to avoid overwriting a local 'true' with a DB 'false' during sync gaps
+                if (data.hasSeenOnboarding === true) {
+                    setHasSeenOnboardingState(true);
+                    localStorage.setItem('vault_has_seen_onboarding', 'true');
+                }
             }
             setLoading(false);
         }, (err) => {
@@ -71,13 +73,20 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         setCurrencyState(newCurrency); // Optimistic
     };
 
-    const setHasSeenOnboarding = (seen: boolean) => {
-        if (!user) return;
-        const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
-        updateDoc(settingsRef, { hasSeenOnboarding: seen }).catch(err => {
-            setDoc(settingsRef, { hasSeenOnboarding: seen }, { merge: true });
-        });
+    const setHasSeenOnboarding = async (seen: boolean) => {
+        // 1. Instant Local Update
         setHasSeenOnboardingState(seen);
+        localStorage.setItem('vault_has_seen_onboarding', JSON.stringify(seen));
+
+        if (!user) return;
+
+        // 2. Background Remote Update
+        const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
+        try {
+            await setDoc(settingsRef, { hasSeenOnboarding: seen }, { merge: true });
+        } catch (error) {
+            console.error("Failed to sync onboarding to DB", error);
+        }
     };
 
     return (

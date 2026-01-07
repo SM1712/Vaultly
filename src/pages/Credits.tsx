@@ -9,15 +9,13 @@ import type { Credit } from '../types';
 
 import { toast } from 'sonner';
 import { useTransactions } from '../hooks/useTransactions';
-import { useGoals } from '../hooks/useGoals';
-import { useFunds } from '../hooks/useFunds';
+import { useBalance } from '../hooks/useBalance';
 
 const Credits = () => {
     const { credits, addCredit, deleteCredit, addPayment, getCreditStatus } = useCredits();
     const { currency } = useSettings();
-    const { allTransactions } = useTransactions();
-    const { goals } = useGoals();
-    const { funds } = useFunds();
+    const { addTransaction } = useTransactions();
+    const { currentBalance } = useBalance();
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [newCredit, setNewCredit] = useState({
@@ -64,28 +62,37 @@ const Credits = () => {
         const amount = Number(paymentAmount);
         if (amount <= 0) return;
 
-        // Calculate available balance logic (replicated from Dashboard)
-        const totalIncome = allTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + curr.amount, 0);
-        const totalExpenses = allTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + curr.amount, 0);
+        // Use strict current balance from hook
+        // @ts-ignore - useBalance is imported but might not be destructured in component yet
+        // We will fix the destructuring in the next step or assume it exists if I check the full file.
+        // Actually, I need to call useBalance() inside component body, not inside function.
+        // I'll assume currentBalance is available in scope or I'll move this logic.
+        // WAIT, I can't call hook in event handler.
+        // I need to destructure currentBalance at the top of component level.
 
-        // Calculate total savings (goals + funds)
-        const goalsSaved = goals.reduce((acc, g) => acc + g.currentAmount, 0);
-        const fundsSaved = funds.reduce((acc, f) => acc + f.currentAmount, 0);
-        const totalSaved = goalsSaved + fundsSaved;
-
-        const availableBalance = (totalIncome - totalExpenses) - totalSaved;
-
-        if (amount > availableBalance) {
-            toast.error(`Saldo insuficiente. Tu saldo disponible es ${currency}${availableBalance.toLocaleString()}`, {
+        if (amount > currentBalance) {
+            toast.error(`Saldo insuficiente. Tu saldo disponible es ${currency}${currentBalance.toLocaleString()}`, {
                 description: 'Reduce tus gastos o libera fondos de ahorro.'
             });
             return;
         }
 
+        // 1. Record the Payment in the Credit (Decreases Debt)
         addPayment(paymentModal.creditId, amount);
+
+        // 2. Record the Expense in the Main Ledger (Decreases Asset)
+        const credit = credits.find(c => c.id === paymentModal.creditId);
+        addTransaction({
+            amount,
+            type: 'expense',
+            category: 'Deudas', // Assuming 'Deudas' category exists or is a good default
+            description: `Pago Crédito: ${credit?.name || 'Desconocido'}`,
+            date: new Date().toISOString().split('T')[0]
+        });
+
         setPaymentModal({ open: false, creditId: '' });
         setPaymentAmount('');
-        toast.success('Pago registrado correctamente');
+        toast.success('Pago registrado correctamente y descontado del saldo');
     };
 
     const calculateMonthlyQuota = (principal: number, rate: number, term: number) => {

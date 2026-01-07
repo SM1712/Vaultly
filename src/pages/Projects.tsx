@@ -187,16 +187,20 @@ const Projects = () => {
                                     {/* Progress Bar */}
                                     <div>
                                         <div className="flex justify-between text-xs mb-1.5">
-                                            <span className="text-zinc-500">Avance Presupuestal</span>
-                                            <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">{stats.percentConsumed.toFixed(0)}%</span>
+                                            <span className="text-zinc-500">
+                                                {stats.totalExpenses > 0 ? 'Presupuesto Ejecutado' : 'Fondos vs Objetivo'}
+                                            </span>
+                                            <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">
+                                                {stats.totalExpenses > 0 ? stats.percentConsumed.toFixed(0) : stats.percentFunded.toFixed(0)}%
+                                            </span>
                                         </div>
                                         <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                                             <div
                                                 className={clsx("h-full transition-all duration-500",
-                                                    stats.percentConsumed > 100 ? "bg-rose-500" :
-                                                        stats.percentConsumed > 75 ? "bg-amber-500" : "bg-emerald-500"
+                                                    (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 100 ? "bg-rose-500" :
+                                                        (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 80 ? "bg-emerald-500" : "bg-emerald-500"
                                                 )}
-                                                style={{ width: `${Math.min(stats.percentConsumed, 100)}%` }}
+                                                style={{ width: `${Math.min((stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded), 100)}%` }}
                                             />
                                         </div>
                                     </div>

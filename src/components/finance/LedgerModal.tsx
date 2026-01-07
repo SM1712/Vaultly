@@ -5,6 +5,7 @@ import { useSettings } from '../../context/SettingsContext';
 import Modal from '../ui/Modal';
 import MonthSelector from '../MonthSelector';
 import { ArrowUpLeft, ArrowDownRight, Search } from 'lucide-react';
+import { clsx } from 'clsx';
 
 interface LedgerModalProps {
     isOpen: boolean;
@@ -40,7 +41,7 @@ const LedgerModal = ({ isOpen, onClose }: LedgerModalProps) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Libro Contable">
-            <div className="space-y-6 max-h-[70vh] flex flex-col">
+            <div className="space-y-6">
                 {/* Month Selector */}
                 <div className="flex justify-center">
                     <MonthSelector />
@@ -80,32 +81,36 @@ const LedgerModal = ({ isOpen, onClose }: LedgerModalProps) => {
                     />
                 </div>
 
-                {/* List */}
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[300px]">
+                <div className="space-y-2 min-h-[300px]">
                     {monthFiltered.length === 0 ? (
-                        <p className="text-center text-zinc-500 py-10 italic text-sm">No hay movimientos este mes.</p>
+                        <div className="flex flex-col items-center justify-center py-12 text-zinc-400 opacity-60">
+                            <Search size={48} className="mb-4" />
+                            <p className="italic text-sm">No hay movimientos que coincidan.</p>
+                        </div>
                     ) : (
                         monthFiltered.map(t => (
-                            <div key={t.id} className="flex items-center justify-between p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 rounded-lg transition-colors border border-transparent hover:border-zinc-100 dark:hover:border-zinc-800">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${t.type === 'income'
-                                        ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                                        : 'bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400'
-                                        }`}>
-                                        {t.type === 'income' ? <ArrowDownRight size={14} /> : <ArrowUpLeft size={14} />}
+                            <div key={t.id} className="group flex items-center justify-between p-3 bg-zinc-50/50 dark:bg-zinc-900/30 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
+                                <div className="flex items-center gap-3.5">
+                                    <div className={clsx("w-10 h-10 rounded-full flex items-center justify-center shadow-sm",
+                                        t.type === 'income'
+                                            ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                            : 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
+                                    )}>
+                                        {t.type === 'income' ? <ArrowDownRight size={18} /> : <ArrowUpLeft size={18} />}
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{t.description || 'Sin descripción'}</p>
-                                        <div className="flex gap-2 text-xs text-zinc-500">
+                                        <p className="font-bold text-zinc-900 dark:text-zinc-100 leading-tight">{t.description || 'Sin descripción'}</p>
+                                        <div className="flex gap-2 text-[11px] text-zinc-500 mt-0.5 font-medium uppercase tracking-wide">
                                             <span>{new Date(t.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                                            <span>•</span>
+                                            <span className="opacity-50">•</span>
                                             <span>{t.category}</span>
                                         </div>
                                     </div>
                                 </div>
-                                <span className={`font-mono font-bold text-sm ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                                    }`}>
-                                    {t.type === 'income' ? '+' : '-'}{currency}{t.amount.toFixed(2)}
+                                <span className={clsx("font-mono font-bold text-sm tracking-tight",
+                                    t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                                )}>
+                                    {t.type === 'income' ? '+' : '-'}{currency}{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                             </div>
                         ))

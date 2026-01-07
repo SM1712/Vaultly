@@ -36,8 +36,8 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
             />
 
             {/* Modal Content */}
-            <div className="relative bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-800 transform transition-all animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-800/50">
+            <div className="relative bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-800 transform transition-all animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] flex flex-col">
+                <div className="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-800/50 flex-shrink-0">
                     <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                         {title}
                     </h3>
@@ -49,7 +49,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto custom-scrollbar">
                     {children}
                 </div>
             </div>

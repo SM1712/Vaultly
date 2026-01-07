@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTransactions } from '../hooks/useTransactions';
+import { useBalance } from '../hooks/useBalance';
 import { useCredits } from '../hooks/useCredits';
 import { useFunds } from '../hooks/useFunds';
 import { useGoals } from '../hooks/useGoals';
@@ -21,10 +22,10 @@ const Projections = () => {
     const currentMonth = new Date();
 
     // Global Data for "Start Balance"
-    const totalGlobalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const totalGlobalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-    const globalNetBalance = totalGlobalIncome - totalGlobalExpense;
+    const { availableBalance } = useBalance();
     const totalFundsReal = funds.reduce((sum, f) => sum + f.currentAmount, 0);
+
+
 
     // Month Data
     const currentMonthTransactions = transactions.filter(t => {
@@ -54,6 +55,7 @@ const Projections = () => {
     // Toggles
     const [includeGlobalBalance, setIncludeGlobalBalance] = useState(true);
     const [includeFundsInBalance, setIncludeFundsInBalance] = useState(false);
+
     const [autoIncludeScheduled, setAutoIncludeScheduled] = useState(true);
 
     // 3. Calculation Logic
@@ -61,9 +63,11 @@ const Projections = () => {
         // A. Starting Balance
         let baseBalance = 0;
         if (includeGlobalBalance) {
-            baseBalance = globalNetBalance;
-            if (!includeFundsInBalance) {
-                baseBalance -= totalFundsReal;
+            // availableBalance IS the real liquid money (excluding funds/goals)
+            baseBalance = availableBalance;
+
+            if (includeFundsInBalance) {
+                baseBalance += totalFundsReal;
             }
         } else {
             // If month only, we start with 0 and calculate Month Flow

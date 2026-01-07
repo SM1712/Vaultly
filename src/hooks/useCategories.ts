@@ -11,10 +11,11 @@ export const useCategories = (type: 'income' | 'expense') => {
     const { data: allCategories, add, remove, loading } = useFirestore<CategoryDoc>('categories');
     const migratedRef = useRef(false);
 
-    // Filter by type
-    const categories = allCategories
+    // Filter by type and Deduplicate
+    const categoriesRaw = allCategories
         .filter(c => c.type === type)
         .map(c => c.name);
+    const categories = Array.from(new Set(categoriesRaw)).sort(); // Unique and Sorted
 
     const defaultCategories = type === 'income'
         ? ['Salario', 'Freelance', 'Inversiones', 'Regalos', 'Ventas', 'Otros']
@@ -73,11 +74,14 @@ export const useCategories = (type: 'income' | 'expense') => {
     };
 
     const removeCategory = (category: string) => {
-        // Find the doc ID
-        const docToDelete = allCategories.find(c => c.name === category && c.type === type);
-        if (docToDelete && docToDelete.id) {
-            remove(docToDelete.id);
-        }
+        // Find ALL docs with this name and type to handle potential duplicates
+        const docsToDelete = allCategories.filter(c => c.name === category && c.type === type);
+
+        docsToDelete.forEach(doc => {
+            if (doc.id) {
+                remove(doc.id);
+            }
+        });
     };
 
     return {
