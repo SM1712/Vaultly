@@ -3,12 +3,12 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAqUzObMbnenCmuXeTan2V87YjAQ4HQ30s",
-    authDomain: "vaultly-ce7e1.firebaseapp.com",
-    projectId: "vaultly-ce7e1",
-    storageBucket: "vaultly-ce7e1.firebasestorage.app",
-    messagingSenderId: "605463352120",
-    appId: "1:605463352120:web:c89758482492ee935b67cd"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
