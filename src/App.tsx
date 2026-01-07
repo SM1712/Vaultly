@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './layouts/Layout';
@@ -26,7 +26,7 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <HashRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
 
@@ -46,7 +46,7 @@ function App() {
             </Route>
           </Routes>
           <Toaster richColors position="top-center" />
-        </BrowserRouter>
+        </HashRouter>
       </ThemeProvider>
     </AuthProvider>
   );
