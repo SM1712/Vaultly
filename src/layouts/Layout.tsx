@@ -54,10 +54,7 @@ const Layout = () => {
                         )}
 
                         <main className="flex-1 overflow-auto p-4 lg:p-8 w-full max-w-[1600px] mx-auto relative">
-                            {/* DEBUG BANNER */}
-                            <div className="bg-red-500/10 border border-red-500 text-red-500 p-2 mb-4 rounded text-center font-mono text-xs uppercase tracking-widest">
-                                Vault Ledger v2.0 (Master Doc System) - DEBUG MODE
-                            </div>
+                            {/* DEBUG BANNER REMOVED */}
                             <Outlet />
                         </main>
 

@@ -13,7 +13,7 @@ import Credits from './pages/Credits';
 import Projections from './pages/Projections';
 import Login from './pages/Login';
 import { Toaster } from 'sonner';
-import DebugFooter from './components/DebugFooter';
+// import DebugFooter from './components/DebugFooter';
 import { Loader2 } from 'lucide-react';
 
 const ProtectedRoute = () => {
@@ -61,7 +61,7 @@ function App() {
               </Route>
             </Routes>
             <Toaster richColors position="top-center" />
-            <DebugFooter />
+            {/* <DebugFooter /> Removed per user request */}
           </HashRouter>
         </ThemeProvider>
       </DataProvider>
