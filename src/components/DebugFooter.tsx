@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { collection, getDocs, limit, query } from "firebase/firestore";
 import { db } from "../lib/firebase";
-import { Wifi, WifiOff, Database, Key } from "lucide-react";
+import { Database, Key } from "lucide-react";
 
 const DebugFooter = () => {
     const { user } = useAuth();

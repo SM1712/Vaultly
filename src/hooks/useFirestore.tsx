@@ -39,8 +39,7 @@ export const useFirestore = <T extends { id?: string }>(collectionName: string) 
             setLoading(false);
             setError(null);
 
-            const source = snapshot.metadata.fromCache ? "local cache" : "server";
-            // console.log(`Data for ${collectionName} came from ${source}`); // Optional debug
+
         }, (err) => {
             console.error(`Error fetching ${collectionName}:`, err);
             setError(err);

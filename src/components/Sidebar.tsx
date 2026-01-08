@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, PiggyBank, Landmark, Calculator, X, Settings } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useNetworkStatus } from '../hooks/useNetworkStatus';
+
 import { SyncStatus } from './SyncStatus';
 
 interface SidebarProps {
