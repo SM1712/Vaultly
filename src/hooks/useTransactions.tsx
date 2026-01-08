@@ -1,27 +1,29 @@
-import { useFirestore } from './useFirestore';
+import { useData } from '../context/DataContext';
 import type { Transaction, TransactionType } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 
 export const useTransactions = (type?: TransactionType) => {
-    const { data: transactions, add, remove, update } = useFirestore<Transaction>('transactions');
+    const { data, updateData } = useData();
+    const transactions = data.transactions || [];
 
     const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-        // Firestore creates the ID automatically
-        add(transaction);
+        const newTransaction: Transaction = {
+            id: uuidv4(),
+            ...transaction
+        };
+        updateData({ transactions: [...transactions, newTransaction] });
     };
 
     const deleteTransaction = (id: string) => {
-        remove(id);
+        const newTransactions = transactions.filter(t => t.id !== id);
+        updateData({ transactions: newTransactions });
     };
 
     const updateCategory = (categoryName: string, newCategoryName: string) => {
-        // Batch update would be better, but for now iterate (or let user do it one by one? Plan says migrate settings... 
-        // logic in SettingsMenu called updateCategory.
-        // We must find all transactions with this category and update them.
-        // This is expensive on client side for many items, but acceptable for MVP.
-        const toUpdate = transactions.filter(t => t.category === categoryName);
-        toUpdate.forEach(t => {
-            update(t.id, { category: newCategoryName });
-        });
+        const newTransactions = transactions.map(t =>
+            t.category === categoryName ? { ...t, category: newCategoryName } : t
+        );
+        updateData({ transactions: newTransactions });
     };
 
     const filteredTransactions = type
@@ -46,7 +48,7 @@ export const useTransactions = (type?: TransactionType) => {
         deleteTransaction,
         total,
         getByCategory,
-        allTransactions: transactions,
+        allTransactions: transactions, // For category management if needed
         updateCategory
     };
 };

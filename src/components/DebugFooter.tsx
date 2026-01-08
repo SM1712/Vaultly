@@ -1,64 +1,76 @@
-import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { collection, getDocs, limit, query } from "firebase/firestore";
-import { db } from "../lib/firebase";
-import { Database, Key } from "lucide-react";
+import { useData } from "../context/DataContext";
+import { CloudStorage } from "../services/CloudStorage";
+import { RefreshCcw, Save, Smartphone } from "lucide-react";
+import { toast } from "sonner";
 
 const DebugFooter = () => {
     const { user } = useAuth();
-    const [dbStatus, setDbStatus] = useState<"checking" | "connected" | "error">("checking");
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [envStatus, setEnvStatus] = useState<boolean>(false);
+    const { data, isLoading, isSaving, updateData } = useData(); // Access global state
 
-    useEffect(() => {
-        // 1. Check Env Vars
-        const hasKey = !!import.meta.env.VITE_FIREBASE_API_KEY;
-        setEnvStatus(hasKey);
+    // Manual Force Save
+    const handleForceSave = async () => {
+        if (!user) return;
+        toast.info("Forzando guardado...");
+        try {
+            await CloudStorage.saveMasterDoc(user.uid, data);
+            toast.success("Guardado forzado exitoso");
+        } catch (e: any) {
+            toast.error("Error guardando: " + e.message);
+        }
+    };
 
-        if (!user || !hasKey) return;
-
-        // 2. Check Database Connection & Permissions
-        const checkConnection = async () => {
-            try {
-                const colRef = collection(db, "users", user.uid, "transactions");
-                // Try to fetch just 1 doc to verify rules and connection
-                await getDocs(query(colRef, limit(1)));
-                setDbStatus("connected");
-            } catch (err: any) {
-                setDbStatus("error");
-                console.error("Debug connection failed:", err);
-                setErrorMsg(err.code || err.message);
+    // Manual Force Load
+    const handleForceLoad = async () => {
+        if (!user) return;
+        toast.info("Forzando carga...");
+        try {
+            const freshData = await CloudStorage.fetchMasterDoc(user.uid);
+            if (freshData) {
+                // We need to bypass the 'updateData' debounce to just SET the data
+                // Ideally DataContext exposes 'setData', but 'updateData' merges. 
+                // We can just merge everything.
+                updateData(freshData);
+                toast.success("Carga exitosa: " + freshData.transactions.length + " txs");
+            } else {
+                toast.warning("No se encontraron datos en la nube");
             }
-        };
-
-        checkConnection();
-    }, [user]);
-
-    // Allow showing even if no user, to check env vars
-    // if (!user) return null;
+        } catch (e: any) {
+            toast.error("Error cargando: " + e.message);
+        }
+    };
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-zinc-950/90 text-zinc-500 text-[10px] p-2 flex flex-col items-center justify-center gap-1 backdrop-blur-sm border-t border-zinc-800 z-50 font-mono">
+        <div className="fixed bottom-0 left-0 right-0 bg-zinc-950/95 text-zinc-400 text-[10px] p-2 flex flex-wrap items-center justify-center gap-4 border-t border-zinc-800 z-50 font-mono">
 
-            {/* Env Vars Check */}
-            <div className="flex items-center gap-2">
-                <Key size={12} className={envStatus ? "text-emerald-500" : "text-rose-500"} />
-                <span>Configs: {envStatus ? "OK" : "MISSING"}</span>
+            {/* User Info */}
+            <div className="flex items-center gap-1">
+                <Smartphone size={12} />
+                <span>{user ? user.email : "No User"}</span>
             </div>
 
-            {/* Database Check */}
+            {/* Data Stats */}
             <div className="flex items-center gap-2">
-                <Database size={12} className={dbStatus === "connected" ? "text-emerald-500" : "text-rose-500"} />
-                <span>
-                    DB: {dbStatus === "checking" ? "..." : dbStatus === "connected" ? "Connected" : `ERROR (${errorMsg})`}
+                <span className={isLoading ? "text-yellow-500" : "text-green-500"}>
+                    {isLoading ? "LOADING..." : "READY"}
+                </span>
+                <span>TXs: {data.transactions?.length || 0}</span>
+                <span className={isSaving ? "text-blue-500 animate-pulse" : "text-zinc-600"}>
+                    {isSaving ? "SAVING..." : "IDLE"}
                 </span>
             </div>
 
-            {/* UID Display */}
-            <div className="flex items-center gap-2 opacity-75">
-                <span>UID: {user ? user.uid.slice(0, 5) + "..." : "No User"}</span>
+            {/* Controls */}
+            <div className="flex items-center gap-2">
+                <button onClick={handleForceLoad} className="flex items-center gap-1 bg-zinc-800 px-2 py-1 rounded hover:bg-zinc-700">
+                    <RefreshCcw size={10} /> LOAD
+                </button>
+                <button onClick={handleForceSave} className="flex items-center gap-1 bg-zinc-800 px-2 py-1 rounded hover:bg-zinc-700">
+                    <Save size={10} /> SAVE
+                </button>
             </div>
 
+            <div className="text-zinc-600">v2.0 DEBUG</div>
         </div>
     );
 };
