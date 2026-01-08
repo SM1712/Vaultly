@@ -11,6 +11,7 @@ import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 import { Menu, X } from 'lucide-react';
 import { Toaster } from 'sonner';
 import OnboardingModal from '../components/onboarding/OnboardingModal';
+import DebugFooter from '../components/DebugFooter';
 
 const Layout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -61,6 +62,7 @@ const Layout = () => {
                         <SettingsMenu isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
                         <OnboardingModal />
                         <Toaster position="top-center" />
+                        <DebugFooter />
                     </div>
                 </ProjectsProvider>
             </SettingsProvider>
