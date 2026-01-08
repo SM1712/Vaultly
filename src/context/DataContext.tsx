@@ -36,7 +36,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                 const cloudData = await CloudStorage.fetchMasterDoc(user.uid);
 
                 // Artificial delay to let user see "Checking cloud..."
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 500));
 
                 if (cloudData) {
                     setData(cloudData);
