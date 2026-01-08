@@ -7,7 +7,9 @@ import { usePresets } from '../../hooks/usePresets';
 import { useTheme } from '../../context/ThemeContext';
 import Modal from '../ui/Modal';
 import { useAuth } from '../../context/AuthContext';
-import { Trash2, Plus, LogOut, User, CalendarClock, PlayCircle, PauseCircle, MousePointerClick } from 'lucide-react';
+import { useData } from '../../context/DataContext';
+import { toast } from 'sonner';
+import { Trash2, Plus, LogOut, User, CalendarClock, PlayCircle, PauseCircle, MousePointerClick, Database, Download, Upload } from 'lucide-react';
 
 
 interface SettingsMenuProps {
@@ -19,13 +21,14 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const { currency, setCurrency } = useSettings();
     const { themeStyle, setThemeStyle } = useTheme();
     const { logout, user } = useAuth();
+    const { data: appData, updateData } = useData();
     const { categories: incomeCats, addCategory: addIncomeCat, removeCategory: removeIncomeCat } = useCategories('income');
     const { categories: expenseCats, addCategory: addExpenseCat, removeCategory: removeExpenseCat } = useCategories('expense');
     const { updateCategory } = useTransactions();
     const { scheduled, toggleActive, deleteScheduled } = useScheduledTransactions();
     const { presets, addPreset, deletePreset } = usePresets();
 
-    const [activeTab, setActiveTab] = useState<'general' | 'categories' | 'scheduled' | 'presets'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'categories' | 'scheduled' | 'presets' | 'data'>('general');
     const [catType, setCatType] = useState<'income' | 'expense'>('expense');
     const [newCatName, setNewCatName] = useState('');
 
@@ -36,6 +39,44 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const [newPresetType, setNewPresetType] = useState<'income' | 'expense'>('expense');
 
     const currencies = ['$', '€', '£', '¥', 'COP', 'MXN', 'ARS', 'S/'];
+
+    const handleExport = () => {
+        const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
+            JSON.stringify(appData)
+        )}`;
+        const link = document.createElement("a");
+        link.href = jsonString;
+        link.download = `vault_backup_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        toast.success("Copia de seguridad descargada");
+    };
+
+    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const fileReader = new FileReader();
+        if (e.target.files && e.target.files[0]) {
+            fileReader.readAsText(e.target.files[0], "UTF-8");
+            fileReader.onload = (event) => {
+                try {
+                    if (event.target?.result) {
+                        const parsedData = JSON.parse(event.target.result as string);
+                        // Basic validation
+                        if (!parsedData.transactions || !parsedData.version) {
+                            throw new Error("Formato inválido");
+                        }
+
+                        if (confirm("ADVERTENCIA: Esto sobrescribirá TODOS tus datos actuales. ¿Estás seguro?")) {
+                            updateData(parsedData);
+                            toast.success("Datos restaurados correctamente");
+                            onClose();
+                        }
+                    }
+                } catch (error) {
+                    console.error(error);
+                    toast.error("Error al leer el archivo. Formato inválido.");
+                }
+            };
+        }
+    };
 
     const handleAddCategory = () => {
         if (!newCatName.trim()) return;
@@ -94,9 +135,18 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                     >
                         Atajos
                     </button>
+                    <button
+                        onClick={() => setActiveTab('data')}
+                        className={`pb-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'data'
+                            ? 'text-emerald-600 border-b-2 border-emerald-600'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                            }`}
+                    >
+                        Datos
+                    </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto overflow-x-hidden pr-1">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden pr-1 no-scrollbar">
                     {activeTab === 'general' && (
                         <div className="space-y-8">
                             {/* Account Section */}
@@ -395,6 +445,54 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                         Crea botones rápidos para tus gastos frecuentes
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'data' && (
+                        <div className="space-y-6">
+                            <div className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-200 dark:border-amber-900/30">
+                                <h4 className="text-amber-800 dark:text-amber-400 font-bold mb-2 flex items-center gap-2">
+                                    <Database size={18} /> Zona de Peligro Nuclear
+                                </h4>
+                                <p className="text-sm text-amber-700 dark:text-amber-500/80 mb-4">
+                                    Descarga tu "Master Doc" para tener una copia de seguridad física o cárgalo para restaurar tus finanzas.
+                                </p>
+                            </div>
+
+                            <div className="grid gap-4">
+                                <button
+                                    onClick={handleExport}
+                                    className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                            <Download size={20} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-bold text-zinc-900 dark:text-zinc-100">Exportar Datos</p>
+                                            <p className="text-xs text-zinc-500">Descargar backup .json</p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <label className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-blue-500 dark:hover:border-blue-500 transition-all cursor-pointer">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                            <Upload size={20} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-bold text-zinc-900 dark:text-zinc-100">Restaurar Datos</p>
+                                            <p className="text-xs text-zinc-500">Sobrescribir desde .json</p>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        accept=".json"
+                                        onChange={handleImport}
+                                        className="hidden"
+                                    />
+                                </label>
                             </div>
                         </div>
                     )}

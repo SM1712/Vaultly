@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { useFirestore } from '../hooks/useFirestore';
+import { useData } from './DataContext';
 import type { Project, ProjectTransaction } from '../types';
 
 interface ProjectsContextType {
@@ -21,24 +21,29 @@ interface ProjectsContextType {
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
 
 export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
-    const { data: projects, add, remove, update } = useFirestore<Project>('projects');
+    const { data, updateData } = useData();
+    const projects = data.projects || [];
 
     const addProject = (projectData: Omit<Project, 'id' | 'transactions' | 'status' | 'startDate'>) => {
-        const newProject = {
+        const newProject: Project = {
+            id: crypto.randomUUID(),
             ...projectData,
             status: 'planning',
             startDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
-            transactions: []
+            transactions: [],
+            targetBudget: projectData.targetBudget || 0
         };
-        add(newProject);
+        updateData({ projects: [newProject, ...projects] });
     };
 
     const updateProject = (id: string, updates: Partial<Project>) => {
-        update(id, updates);
+        const newProjects = projects.map(p => p.id === id ? { ...p, ...updates } : p);
+        updateData({ projects: newProjects });
     };
 
     const deleteProject = (id: string) => {
-        remove(id);
+        const newProjects = projects.filter(p => p.id !== id);
+        updateData({ projects: newProjects });
     };
 
     const addProjectTransaction = (projectId: string, transaction: Omit<ProjectTransaction, 'id' | 'projectId'>) => {
@@ -46,23 +51,29 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
         if (!project) return;
 
         const newTx: ProjectTransaction = {
-            ...transaction,
             id: crypto.randomUUID(),
-            projectId
+            projectId,
+            ...transaction
         };
 
-        const currentTx = project.transactions || [];
-        update(projectId, { transactions: [newTx, ...currentTx] });
+        const updatedProject = {
+            ...project,
+            transactions: [newTx, ...(project.transactions || [])]
+        };
+
+        updateProject(projectId, updatedProject);
     };
 
     const deleteProjectTransaction = (projectId: string, txId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
-        const currentTx = project.transactions || [];
-        const newTx = currentTx.filter(t => t.id !== txId);
+        const updatedProject = {
+            ...project,
+            transactions: (project.transactions || []).filter(t => t.id !== txId)
+        };
 
-        update(projectId, { transactions: newTx });
+        updateProject(projectId, updatedProject);
     };
 
     const getProjectStats = (project: Project) => {

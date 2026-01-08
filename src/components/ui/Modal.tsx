@@ -49,7 +49,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto custom-scrollbar">
+                <div className="p-6 overflow-y-auto no-scrollbar">
                     {children}
                 </div>
             </div>

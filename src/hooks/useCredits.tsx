@@ -1,22 +1,26 @@
-import { useFirestore } from './useFirestore';
+import { useData } from '../context/DataContext';
 import type { Credit, Payment } from '../types';
 import { toast } from 'sonner';
 
 export const useCredits = () => {
-    const { data: credits, add, remove, update } = useFirestore<Credit>('credits');
+    const { data, updateData } = useData();
+    const credits: Credit[] = data.credits || [];
 
     const addCredit = (creditData: Omit<Credit, 'id' | 'payments'>) => {
-        add({
+        const newCredit: Credit = {
+            id: crypto.randomUUID(),
             ...creditData,
             payments: []
-        });
+        };
+        updateData({ credits: [...credits, newCredit] });
     };
 
     const deleteCredit = (id: string) => {
-        remove(id);
+        const newCredits = credits.filter(c => c.id !== id);
+        updateData({ credits: newCredits });
     };
 
-    const addPayment = async (creditId: string, amount: number, note?: string) => {
+    const addPayment = (creditId: string, amount: number, note?: string) => {
         const credit = credits.find(c => c.id === creditId);
         if (!credit) {
             toast.error("Error: Crédito no encontrado");
@@ -35,7 +39,8 @@ export const useCredits = () => {
 
         // Check if fully paid
         const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-        // Recalculate full debt to be safe
+
+        // Recalculate full debt logic (simplified for replication)
         const monthlyRate = credit.interestRate / 100 / 12;
         let quota = 0;
         let totalToPay = 0;
@@ -44,21 +49,30 @@ export const useCredits = () => {
             quota = credit.principal / credit.term;
             totalToPay = credit.principal;
         } else {
-            // Avoid NaN if term or principal are weird
             const p = Number(credit.principal);
             const t = Number(credit.term);
-            quota = (p * monthlyRate * Math.pow(1 + monthlyRate, t)) / (Math.pow(1 + monthlyRate, t) - 1);
+            const denom = Math.pow(1 + monthlyRate, t) - 1;
+            if (denom === 0) { // Safety
+                quota = p / t;
+            } else {
+                quota = (p * monthlyRate * Math.pow(1 + monthlyRate, t)) / denom;
+            }
             totalToPay = quota * t;
         }
 
-        const newStatus = totalPaid >= (totalToPay - 1) ? 'paid' : 'active'; // Tolerance
+        const newStatus = totalPaid >= (totalToPay - 1) ? 'paid' : 'active';
+
+        const updatedCredit = {
+            ...credit,
+            payments,
+            status: newStatus
+        };
+
+        const newCredits = credits.map(c => c.id === creditId ? updatedCredit : c);
 
         try {
-            await update(creditId, {
-                payments,
-                status: newStatus
-            });
-            // toast.success("Pago registrado en historial"); 
+            updateData({ credits: newCredits });
+            // toast.success("Pago registrado");
         } catch (e) {
             console.error("Failed to update credit payment", e);
             toast.error("Error al guardar el historial del pago");

@@ -36,21 +36,25 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                 const cloudData = await CloudStorage.fetchMasterDoc(user.uid);
 
                 if (cloudData) {
-                    setData(cloudData);
-                    console.log("[DataContext] Master Doc Loaded:", cloudData);
+                    // Deep merge to ensure all fields exist even if cloud doc is partial/old
+                    const mergedData = {
+                        ...INITIAL_DATA,
+                        ...cloudData,
+                        // Ensure nested objects are also merged if they exist
+                        settings: { ...INITIAL_DATA.settings, ...(cloudData.settings || {}) },
+                        categories: { ...INITIAL_DATA.categories, ...(cloudData.categories || {}) }
+                    };
+                    setData(mergedData);
+                    console.log("[DataContext] Master Doc Loaded:", mergedData);
                 } else {
                     // New user or empty doc
                     console.log("[DataContext] No master doc found, creating new...");
-                    // OPTIMISTIC UPDATE: Show data immediately, don't wait for save
                     setData(INITIAL_DATA);
-                    // Save in background
-                    CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA).catch(e => {
-                        console.warn("[DataContext] Initial creation saved locally (offline?)", e);
-                    });
+                    // Force save immediately to create the doc
+                    await CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA);
                 }
             } catch (error) {
                 console.error("Failed to load master doc, defaulting to empty", error);
-                // Non-blocking error: Let user use the app
                 toast.warning("Modo Offline: Usando datos locales");
                 setData(INITIAL_DATA);
             } finally {

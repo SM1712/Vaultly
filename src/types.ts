@@ -100,7 +100,7 @@ export interface ScheduledTransaction {
     createdAt: string;
 }
 
-export interface TransactionPreset {
+export interface Preset {
     id: string;
     label: string; // e.g. "Coca Cola"
     amount?: number; // Optional

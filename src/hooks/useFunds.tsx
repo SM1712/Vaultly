@@ -1,20 +1,23 @@
-import { useFirestore } from './useFirestore';
+import { useData } from '../context/DataContext';
 import type { Fund, FundTransaction } from '../types';
 
 export const useFunds = () => {
-    const { data: funds, add, remove, update } = useFirestore<Fund>('funds');
+    const { data, updateData } = useData();
+    const funds: Fund[] = data.funds || [];
 
     const addFund = (fundData: { name: string; icon: string; description?: string; color?: string }) => {
-        const newFund = {
+        const newFund: Fund = {
+            id: crypto.randomUUID(),
             currentAmount: 0,
             history: [],
             ...fundData
         };
-        add(newFund);
+        updateData({ funds: [...funds, newFund] });
     };
 
     const deleteFund = (id: string) => {
-        remove(id);
+        const newFunds = funds.filter(f => f.id !== id);
+        updateData({ funds: newFunds });
     };
 
     const addTransaction = (fundId: string, amount: number, type: 'deposit' | 'withdraw', note?: string) => {
@@ -31,15 +34,19 @@ export const useFunds = () => {
         };
 
         const newAmount = type === 'deposit'
-            ? fund.currentAmount + amount
-            : fund.currentAmount - amount;
+            ? (fund.currentAmount || 0) + amount
+            : (fund.currentAmount || 0) - amount;
 
         const history = fund.history ? [newTx, ...fund.history] : [newTx];
 
-        update(fundId, {
+        const updatedFund = {
+            ...fund,
             currentAmount: Math.max(0, newAmount),
             history
-        });
+        };
+
+        const newFunds = funds.map(f => f.id === fundId ? updatedFund : f);
+        updateData({ funds: newFunds });
     };
 
     return {

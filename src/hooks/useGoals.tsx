@@ -1,24 +1,28 @@
-import { useFirestore } from './useFirestore';
+import { useData } from '../context/DataContext';
 import type { Goal } from '../types';
 
 export const useGoals = () => {
-    const { data: goals, add, remove, update } = useFirestore<Goal>('goals');
+    const { data, updateData } = useData();
+    const goals: Goal[] = data.goals || [];
 
-    const addGoal = (goal: Omit<Goal, 'id' | 'currentAmount' | 'history'>) => {
-        const newGoal = {
-            ...goal,
+    const addGoal = (goalData: Omit<Goal, 'id' | 'currentAmount' | 'history'>) => {
+        const newGoal: Goal = {
+            id: crypto.randomUUID(),
+            ...goalData,
             currentAmount: 0,
             history: []
         };
-        add(newGoal);
+        updateData({ goals: [...goals, newGoal] });
     };
 
-    const updateGoal = (id: string, data: Partial<Goal>) => {
-        update(id, data);
+    const updateGoal = (id: string, updates: Partial<Goal>) => {
+        const newGoals = goals.map(g => g.id === id ? { ...g, ...updates } : g);
+        updateData({ goals: newGoals });
     };
 
     const deleteGoal = (id: string) => {
-        remove(id);
+        const newGoals = goals.filter(g => g.id !== id);
+        updateData({ goals: newGoals });
     };
 
     const addContribution = (id: string, amount: number, note?: string) => {
@@ -35,12 +39,14 @@ export const useGoals = () => {
         };
 
         const history = goal.history ? [...goal.history, newHistoryItem] : [newHistoryItem];
-
-        update(id, {
+        const updatedGoal = {
+            ...goal,
             currentAmount: (goal.currentAmount || 0) + amount,
             lastContributionDate: today,
             history
-        });
+        };
+
+        updateGoal(id, updatedGoal);
     };
 
     const withdraw = (id: string, amount: number, note?: string) => {
@@ -57,11 +63,13 @@ export const useGoals = () => {
         };
 
         const history = goal.history ? [...goal.history, newHistoryItem] : [newHistoryItem];
-
-        update(id, {
+        const updatedGoal = {
+            ...goal,
             currentAmount: Math.max(0, (goal.currentAmount || 0) - amount),
             history
-        });
+        };
+
+        updateGoal(id, updatedGoal);
     };
 
     const contributeToGoal = (id: string, amount: number) => {

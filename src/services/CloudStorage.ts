@@ -1,6 +1,6 @@
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { Transaction } from '../types';
+import type { Transaction, Project, ScheduledTransaction, Preset } from '../types';
 
 export interface AppData {
     transactions: Transaction[];
@@ -8,7 +8,15 @@ export interface AppData {
         income: string[];
         expense: string[];
     };
-    goals: any[]; // Define specific type if available
+    projects: Project[];
+    scheduledTransactions: ScheduledTransaction[];
+    presets: Preset[];
+    settings: {
+        currency: string;
+        theme: string;
+        hasSeenOnboarding: boolean;
+    };
+    goals: any[];
     funds: any[];
     credits: any[];
     version: number;
@@ -21,10 +29,18 @@ export const INITIAL_DATA: AppData = {
         income: ['Salario', 'Freelance', 'Inversiones', 'Regalos', 'Ventas', 'Otros'],
         expense: ['Comida', 'Transporte', 'Entretenimiento', 'Servicios', 'Vivienda', 'Salud', 'Educación', 'Otros']
     },
+    projects: [],
+    scheduledTransactions: [],
+    presets: [],
+    settings: {
+        currency: '$',
+        theme: 'classic',
+        hasSeenOnboarding: false
+    },
     goals: [],
     funds: [],
     credits: [],
-    version: 1,
+    version: 2,
     lastUpdated: Date.now()
 };
 
