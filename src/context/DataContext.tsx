@@ -48,8 +48,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                     setData(INITIAL_DATA);
                 }
             } catch (error) {
-                console.error("Failed to load master doc", error);
-                toast.error("Error al cargar datos de la nube");
+                console.error("Failed to load master doc, defaulting to empty", error);
+                // Non-blocking error: Let user use the app
+                toast.warning("Modo Offline: Usando datos locales");
+                setData(INITIAL_DATA);
             } finally {
                 setIsLoading(false);
             }

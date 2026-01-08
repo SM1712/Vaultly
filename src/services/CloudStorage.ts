@@ -1,4 +1,4 @@
-import { doc, getDoc, getDocFromCache, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Transaction } from '../types';
 
@@ -30,18 +30,28 @@ export const INITIAL_DATA: AppData = {
 
 export const CloudStorage = {
     async fetchMasterDoc(uid: string): Promise<AppData | null> {
-        try {
+        return new Promise((resolve) => {
             const docRef = doc(db, 'users', uid, 'data', 'master');
-            const snapshot = await getDoc(docRef);
 
-            if (snapshot.exists()) {
-                return snapshot.data() as AppData;
-            }
-            return null;
-        } catch (error) {
-            console.error("Error fetching master doc:", error);
-            throw error;
-        }
+            // onSnapshot gives us the most robust offline support.
+            // It fires immediately with cache if available, or waits for server.
+            // If offline and no cache, it works too (fires 'doesn't exist').
+            const unsubscribe = onSnapshot(docRef,
+                (snapshot) => {
+                    unsubscribe(); // We only need the first value
+                    if (snapshot.exists()) {
+                        resolve(snapshot.data() as AppData);
+                    } else {
+                        resolve(null);
+                    }
+                },
+                (error) => {
+                    console.warn("Snapshot error (likely offline with no cache):", error);
+                    unsubscribe();
+                    resolve(null); // Fallback to empty/new data on critical failure
+                }
+            );
+        });
     },
 
     async saveMasterDoc(uid: string, data: AppData): Promise<void> {
