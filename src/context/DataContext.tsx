@@ -35,17 +35,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const cloudData = await CloudStorage.fetchMasterDoc(user.uid);
 
-                // Artificial delay to let user see "Checking cloud..."
-                await new Promise(resolve => setTimeout(resolve, 500));
-
                 if (cloudData) {
                     setData(cloudData);
                     console.log("[DataContext] Master Doc Loaded:", cloudData);
                 } else {
-                    // New user or empty doc: Save initial data to create file
+                    // New user or empty doc
                     console.log("[DataContext] No master doc found, creating new...");
-                    await CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA);
+                    // OPTIMISTIC UPDATE: Show data immediately, don't wait for save
                     setData(INITIAL_DATA);
+                    // Save in background
+                    CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA).catch(e => {
+                        console.warn("[DataContext] Initial creation saved locally (offline?)", e);
+                    });
                 }
             } catch (error) {
                 console.error("Failed to load master doc, defaulting to empty", error);

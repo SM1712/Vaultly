@@ -53,19 +53,20 @@ const Layout = () => {
                             />
                         )}
 
-                        <div className="fixed bottom-2 right-2 text-[10px] text-zinc-500 font-mono opacity-50 pointer-events-none">
-                            v2.1 - Offline Core
-                        </div>
-                        <Outlet />
-                    </main>
+                        <main className="flex-1 overflow-auto p-4 lg:p-8 w-full max-w-[1600px] mx-auto relative">
+                            <div className="fixed bottom-2 right-2 text-[10px] text-zinc-500 font-mono opacity-50 pointer-events-none">
+                                v2.2 - Non-Blocking Load
+                            </div>
+                            <Outlet />
+                        </main>
 
-                    <MobileQuickAdd />
-                    <SettingsMenu isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-                    <OnboardingModal />
-                    <Toaster position="top-center" />
-                </div>
-            </ProjectsProvider>
-        </SettingsProvider>
+                        <MobileQuickAdd />
+                        <SettingsMenu isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+                        <OnboardingModal />
+                        <Toaster position="top-center" />
+                    </div>
+                </ProjectsProvider>
+            </SettingsProvider>
         </FinanceProvider >
     );
 };
