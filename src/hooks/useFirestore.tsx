@@ -37,6 +37,11 @@ export const useFirestore = <T extends { id?: string }>(collectionName: string) 
             setLoading(false);
         }, (error) => {
             console.error(`Error fetching ${collectionName}:`, error);
+            if (error.code === 'permission-denied') {
+                toast.error(`Sin permisos para leer ${collectionName}`);
+            } else {
+                toast.error(`Error de sincronización (${collectionName})`);
+            }
             setLoading(false);
         });
 
