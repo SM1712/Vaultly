@@ -7,7 +7,7 @@ const OnboardingModal = () => {
     const [step, setStep] = useState(0);
     const [isOpen, setIsOpen] = useState(!hasSeenOnboarding);
 
-    if (hasSeenOnboarding && !isOpen) return null;
+
 
     useEffect(() => {
         if (hasSeenOnboarding) {
@@ -143,6 +143,8 @@ const OnboardingModal = () => {
         setHasSeenOnboarding(true);
         setIsOpen(false);
     };
+
+    if (hasSeenOnboarding && !isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
