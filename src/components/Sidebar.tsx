@@ -5,6 +5,7 @@ import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, Pigg
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { SyncStatus } from './SyncStatus';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -26,7 +27,7 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
         { to: '/projections', icon: Calculator, label: 'Proyecciones' }, // Added new item
     ];
 
-    const isOnline = useNetworkStatus();
+    // const isOnline = useNetworkStatus(); // Replaced by internal logic in SyncStatus
 
     return (
         <>
@@ -101,9 +102,8 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
                         {theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
                     </button>
 
-                    <div className="flex items-center gap-2 text-zinc-400 text-[10px] justify-center tracking-widest uppercase pt-1">
-                        <div className={clsx("w-1.5 h-1.5 rounded-full animate-pulse transition-colors duration-500", isOnline ? "bg-emerald-500" : "bg-red-500")} />
-                        <span>{isOnline ? "Online" : "Offline"}</span>
+                    <div className="flex justify-center pt-1">
+                        <SyncStatus />
                     </div>
                 </div>
             </aside>

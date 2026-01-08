@@ -31,36 +31,11 @@ export const useCategories = (type: 'income' | 'expense') => {
         if (!hasCategories) {
             migratedRef.current = true; // Prevent double execution
 
-            // 1. Try to get from LocalStorage
-            const localKey = `vault_categories_${type}`;
-            const localItem = window.localStorage.getItem(localKey);
+            // If no data in Firestore, interpret as "New User" or "Empty Collection"
+            // We use default categories.
+            console.log(`Seeding default ${type} categories to Firestore...`);
+            const categoriesToSeed = defaultCategories;
 
-            let categoriesToSeed: string[] = [];
-
-            if (localItem) {
-                try {
-                    const parsed = JSON.parse(localItem);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        categoriesToSeed = parsed;
-                        console.log(`Migrating ${type} categories from LocalStorage to Firestore...`);
-                    }
-                } catch (e) {
-                    console.error("Error parsing local categories", e);
-                }
-            }
-
-            // 2. If no local data, use defaults
-            if (categoriesToSeed.length === 0) {
-                categoriesToSeed = defaultCategories;
-                console.log(`Seeding default ${type} categories to Firestore...`);
-            }
-
-            // 3. Add valid categories to Firestore
-            // We throttle or process this safely. Since it's < 20 items usually, basic loop is fine for now but Promise.all is better
-            // However, 'add' from useFirestore might not return a promise we can await in parallel easily if it relies on state updates?
-            // Checked useFirestore: 'add' is async and awaits addDoc. It is safe.
-
-            // To avoid flooding, let's do it sequentially or parallel.
             categoriesToSeed.forEach(catName => {
                 add({ name: catName, type });
             });

@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 export const useFirestore = <T extends { id?: string }>(collectionName: string) => {
     const [data, setData] = useState<T[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
     const { user } = useAuth();
 
     useEffect(() => {
@@ -25,6 +26,7 @@ export const useFirestore = <T extends { id?: string }>(collectionName: string) 
             return;
         }
 
+        setLoading(true);
         const colRef = collection(db, 'users', user.uid, collectionName);
         const q = query(colRef);
 
@@ -35,11 +37,20 @@ export const useFirestore = <T extends { id?: string }>(collectionName: string) 
             });
             setData(items);
             setLoading(false);
-        }, (error) => {
-            console.error(`Error fetching ${collectionName}:`, error);
-            if (error.code === 'permission-denied') {
+            setError(null);
+
+            const source = snapshot.metadata.fromCache ? "local cache" : "server";
+            // console.log(`Data for ${collectionName} came from ${source}`); // Optional debug
+        }, (err) => {
+            console.error(`Error fetching ${collectionName}:`, err);
+            setError(err);
+
+            // Don't toast for offline errors as they are expected behavior in some cases
+            // But 'permission-denied' IS actionable.
+            if (err.code === 'permission-denied') {
                 toast.error(`Sin permisos para leer ${collectionName}`);
-            } else {
+            } else if (err.code !== 'unavailable') {
+                // 'unavailable' often happens when offline, which is fine.
                 toast.error(`Error de sincronización (${collectionName})`);
             }
             setLoading(false);
@@ -53,13 +64,16 @@ export const useFirestore = <T extends { id?: string }>(collectionName: string) 
         try {
             const colRef = collection(db, 'users', user.uid, collectionName);
             const { id, ...rest } = item;
+            // addDoc works offline! It updates cache immediately and promises resolve when server ack (if awaited)
+            // If we don't await responsibly or if we want "optimistic" feel, just await it.
+            // Firestore SDK handles the retries.
             await addDoc(colRef, rest);
         } catch (error: any) {
             console.error(`Error adding to ${collectionName}:`, error);
             if (error.code === 'permission-denied') {
                 toast.error('Error de permisos. No se pudo guardar.');
             } else {
-                toast.error('Error al guardar datos.');
+                toast.error('Error al guardar datos. (Se reintentará cuando haya conexión)');
             }
             throw error;
         }
@@ -97,5 +111,5 @@ export const useFirestore = <T extends { id?: string }>(collectionName: string) 
         }
     };
 
-    return { data, add, remove, update, loading };
+    return { data, add, remove, update, loading, error };
 };
