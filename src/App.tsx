@@ -12,6 +12,7 @@ import Credits from './pages/Credits';
 import Projections from './pages/Projections';
 import Login from './pages/Login';
 import { Toaster } from 'sonner';
+import DebugFooter from './components/DebugFooter';
 
 const ProtectedRoute = () => {
   const { user, loading } = useAuth();
@@ -46,6 +47,7 @@ function App() {
             </Route>
           </Routes>
           <Toaster richColors position="top-center" />
+          <DebugFooter />
         </HashRouter>
       </ThemeProvider>
     </AuthProvider>

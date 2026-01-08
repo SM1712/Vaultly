@@ -34,7 +34,8 @@ const DebugFooter = () => {
         checkConnection();
     }, [user]);
 
-    if (!user) return null;
+    // Allow showing even if no user, to check env vars
+    // if (!user) return null;
 
     return (
         <div className="fixed bottom-0 left-0 right-0 bg-zinc-950/90 text-zinc-500 text-[10px] p-2 flex flex-col items-center justify-center gap-1 backdrop-blur-sm border-t border-zinc-800 z-50 font-mono">
@@ -55,7 +56,7 @@ const DebugFooter = () => {
 
             {/* UID Display */}
             <div className="flex items-center gap-2 opacity-75">
-                <span>UID: {user.uid.slice(0, 5)}...{user.uid.slice(-5)}</span>
+                <span>UID: {user ? user.uid.slice(0, 5) + "..." : "No User"}</span>
             </div>
 
         </div>
