@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSettings } from '../../context/SettingsContext';
 import { ChevronRight, Rocket, Shield, Hourglass, Zap, Wallet, Layers } from 'lucide-react';
 
@@ -8,6 +8,12 @@ const OnboardingModal = () => {
     const [isOpen, setIsOpen] = useState(!hasSeenOnboarding);
 
     if (hasSeenOnboarding && !isOpen) return null;
+
+    useEffect(() => {
+        if (hasSeenOnboarding) {
+            setIsOpen(false);
+        }
+    }, [hasSeenOnboarding]);
 
     const steps = [
         {

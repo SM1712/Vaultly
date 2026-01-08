@@ -56,7 +56,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Configuración">
-            <div className="flex flex-col h-[55vh] md:h-[500px]">
+            <div className="flex flex-col h-[55vh] md:h-[500px] max-h-[70vh]">
                 <div className="flex gap-4 border-b border-zinc-200 dark:border-zinc-800 mb-4 overflow-x-auto shrink-0">
                     <button
                         onClick={() => setActiveTab('general')}
