@@ -28,94 +28,200 @@
     --color-gray-950: var(--color-app-950);
 }
 
-/* Default Theme (Classic - Stone/Warm) */
+/* Default Theme (Classic - Stone/Warm - Now 'Sand' essence) */
 :root {
-    --color-app-50: var(--color-stone-50);
-    --color-app-100: var(--color-stone-100);
-    --color-app-200: var(--color-stone-200);
-    --color-app-300: var(--color-stone-300);
-    --color-app-400: var(--color-stone-400);
-    --color-app-500: var(--color-stone-500);
-    --color-app-600: var(--color-stone-600);
-    --color-app-700: var(--color-stone-700);
-    --color-app-800: var(--color-stone-800);
-    --color-app-900: var(--color-stone-900);
-    --color-app-950: var(--color-stone-950);
+    --color-app-50: #fafaf9;
+    /* stone-50 */
+    --color-app-100: #f5f5f4;
+    /* stone-100 */
+    --color-app-200: #e7e5e4;
+    /* stone-200 */
+    --color-app-300: #d6d3d1;
+    /* stone-300 */
+    --color-app-400: #a8a29e;
+    /* stone-400 */
+    --color-app-500: #78716c;
+    /* stone-500 */
+    --color-app-600: #57534e;
+    /* stone-600 */
+    --color-app-700: #44403c;
+    /* stone-700 */
+    --color-app-800: #292524;
+    /* stone-800 */
+    --color-app-900: #1c1917;
+    /* stone-900 */
+    --color-app-950: #0c0a09;
+    /* stone-950 */
 }
 
-/* Sepia Theme (Eye Protection - Amber/Orange mix) */
-:root[data-theme='sepia'] {
-    --color-app-50: var(--color-orange-50);
-    --color-app-100: var(--color-orange-100);
-    --color-app-200: var(--color-orange-200);
-    --color-app-300: var(--color-orange-300);
-    --color-app-400: var(--color-orange-400);
-    --color-app-500: var(--color-orange-500);
-    --color-app-600: var(--color-orange-600);
-    --color-app-700: var(--color-orange-700);
-    --color-app-800: var(--color-orange-800);
-    --color-app-900: var(--color-orange-900);
-    --color-app-950: var(--color-orange-950);
+/* Sepia -> 'Clay' (More terracotta/pastel earth) */
+:root[data-theme='clay'] {
+    --color-app-50: #fff7ed;
+    /* orange-50 (base) */
+    --color-app-100: #ffedd5;
+    /* orange-100 */
+    --color-app-200: #fed7aa;
+    /* orange-200 */
+    --color-app-300: #fdba74;
+    /* orange-300 */
+    --color-app-400: #fb923c;
+    /* orange-400 */
+    --color-app-500: #f97316;
+    /* orange-500 */
+    --color-app-600: #ea580c;
+    /* orange-600 */
+    --color-app-700: #c2410c;
+    /* orange-700 */
+    --color-app-800: #9a3412;
+    /* orange-800 */
+    --color-app-900: #7c2d12;
+    /* orange-900 */
+    --color-app-950: #431407;
+    /* orange-950 */
 }
 
-/* Ocean Theme (Deep Blue - Slate/Cyan) */
-:root[data-theme='ocean'] {
-    --color-app-50: var(--color-slate-50);
-    --color-app-100: var(--color-slate-100);
-    --color-app-200: var(--color-slate-200);
-    --color-app-300: var(--color-slate-300);
-    --color-app-400: var(--color-slate-400);
-    --color-app-500: var(--color-slate-500);
-    --color-app-600: var(--color-slate-600);
-    --color-app-700: var(--color-slate-700);
-    --color-app-800: var(--color-slate-800);
-    --color-app-900: var(--color-slate-900);
-    --color-app-950: var(--color-slate-950);
+/* Ocean -> 'Mist' (Desaturated Blue/Grey) */
+:root[data-theme='mist'] {
+    --color-app-50: #f8fafc;
+    /* slate-50 */
+    --color-app-100: #f1f5f9;
+    /* slate-100 */
+    --color-app-200: #e2e8f0;
+    /* slate-200 */
+    --color-app-300: #cbd5e1;
+    /* slate-300 */
+    --color-app-400: #94a3b8;
+    /* slate-400 */
+    --color-app-500: #64748b;
+    /* slate-500 */
+    --color-app-600: #475569;
+    /* slate-600 */
+    --color-app-700: #334155;
+    /* slate-700 */
+    --color-app-800: #1e293b;
+    /* slate-800 */
+    --color-app-900: #0f172a;
+    /* slate-900 */
+    --color-app-950: #020617;
+    /* slate-950 */
 }
 
-/* Midnight Theme (Violet/Indigo) */
-:root[data-theme='midnight'] {
-    --color-app-50: var(--color-indigo-50);
-    --color-app-100: var(--color-indigo-100);
-    --color-app-200: var(--color-indigo-200);
-    --color-app-300: var(--color-indigo-300);
-    --color-app-400: var(--color-indigo-400);
-    --color-app-500: var(--color-indigo-500);
-    --color-app-600: var(--color-indigo-600);
-    --color-app-700: var(--color-indigo-700);
-    --color-app-800: var(--color-indigo-800);
-    --color-app-900: var(--color-indigo-900);
-    --color-app-950: var(--color-indigo-950);
-}
-
-/* Bloom Flower Theme (Pink/Rose) */
-:root[data-theme='bloom'] {
-    --color-app-50: var(--color-rose-50);
-    --color-app-100: var(--color-rose-100);
-    --color-app-200: var(--color-rose-200);
-    --color-app-300: var(--color-rose-300);
-    --color-app-400: var(--color-rose-400);
-    --color-app-500: var(--color-rose-500);
-    --color-app-600: var(--color-rose-600);
-    --color-app-700: var(--color-rose-700);
-    --color-app-800: var(--color-rose-800);
-    --color-app-900: var(--color-rose-900);
-    --color-app-950: var(--color-rose-950);
-}
-
-/* Royal Theme (Purple) */
+/* Midnight -> 'Royal' (Softened Lavender/Indigo) */
 :root[data-theme='royal'] {
-    --color-app-50: var(--color-purple-50);
-    --color-app-100: var(--color-purple-100);
-    --color-app-200: var(--color-purple-200);
-    --color-app-300: var(--color-purple-300);
-    --color-app-400: var(--color-purple-400);
-    --color-app-500: var(--color-purple-500);
-    --color-app-600: var(--color-purple-600);
-    --color-app-700: var(--color-purple-700);
-    --color-app-800: var(--color-purple-800);
-    --color-app-900: var(--color-purple-900);
-    --color-app-950: var(--color-purple-950);
+    --color-app-50: #f5f3ff;
+    /* violet-50 */
+    --color-app-100: #ede9fe;
+    /* violet-100 */
+    --color-app-200: #ddd6fe;
+    /* violet-200 */
+    --color-app-300: #c4b5fd;
+    /* violet-300 */
+    --color-app-400: #a78bfa;
+    /* violet-400 */
+    --color-app-500: #8b5cf6;
+    /* violet-500 */
+    --color-app-600: #7c3aed;
+    /* violet-600 */
+    --color-app-700: #6d28d9;
+    /* violet-700 */
+    --color-app-800: #5b21b6;
+    /* violet-800 */
+    --color-app-900: #4c1d95;
+    /* violet-900 */
+    --color-app-950: #2e1065;
+    /* violet-950 */
+}
+
+/* Bloom -> 'Bloom' (Pastel Pink) */
+:root[data-theme='bloom'] {
+    --color-app-50: #fff1f2;
+    /* rose-50 */
+    --color-app-100: #ffe4e6;
+    /* rose-100 */
+    --color-app-200: #fecdd3;
+    /* rose-200 */
+    --color-app-300: #fda4af;
+    /* rose-300 */
+    --color-app-400: #fb7185;
+    /* rose-400 */
+    --color-app-500: #f43f5e;
+    /* rose-500 */
+    --color-app-600: #e11d48;
+    /* rose-600 */
+    --color-app-700: #be123c;
+    /* rose-700 */
+    --color-app-800: #9f1239;
+    /* rose-800 */
+    --color-app-900: #881337;
+    /* rose-900 */
+    --color-app-950: #4c0519;
+    /* rose-950 */
+}
+
+/* NEW: Sage (Natural Green) */
+:root[data-theme='sage'] {
+    --color-app-50: #f4fbf7;
+    /* custom soft green */
+    --color-app-100: #e2f2e7;
+    --color-app-200: #c3e4ce;
+    --color-app-300: #96ccab;
+    --color-app-400: #64ad84;
+    --color-app-500: #449168;
+    /* primary */
+    --color-app-600: #327351;
+    --color-app-700: #295c42;
+    --color-app-800: #234936;
+    --color-app-900: #1d3c2e;
+    --color-app-950: #0f2219;
+}
+
+/* NEW: Sand (Warm Beige/Yellow) */
+:root[data-theme='sand'] {
+    --color-app-50: #fdfbf7;
+    /* custom warm sand */
+    --color-app-100: #f9f5eb;
+    --color-app-200: #f1e9d6;
+    --color-app-300: #e6d6b3;
+    --color-app-400: #d6b885;
+    --color-app-500: #c29961;
+    /* primary */
+    --color-app-600: #a67c48;
+    --color-app-700: #856138;
+    --color-app-800: #6e4f32;
+    --color-app-900: #59402b;
+    --color-app-950: #332316;
+}
+
+/* NEW: Coffee (Rich Espresso/Mocha) */
+:root[data-theme='coffee'] {
+    --color-app-50: #fff7f5;
+    --color-app-100: #fff1eb;
+    --color-app-200: #ebd5c0;
+    --color-app-300: #dcbfa6;
+    --color-app-400: #ac8e74;
+    --color-app-500: #8d6e53;
+    /* Primary: Deep Mocha */
+    --color-app-600: #71553e;
+    --color-app-700: #5a4130;
+    --color-app-800: #463126;
+    --color-app-900: #36261f;
+    --color-app-950: #201511;
+}
+
+/* NEW: Nordic (Crisp Ice/Slate) */
+:root[data-theme='nordic'] {
+    --color-app-50: #f0f4fa;
+    --color-app-100: #e1e8f5;
+    --color-app-200: #c5d4ed;
+    --color-app-300: #9cbce0;
+    --color-app-400: #6f9ecf;
+    --color-app-500: #4a82bf;
+    /* Primary: Steel Blue */
+    --color-app-600: #37659e;
+    --color-app-700: #2e517e;
+    --color-app-800: #294466;
+    --color-app-900: #263a54;
+    --color-app-950: #1a2738;
 }
 
 /* Force class-based dark mode */
@@ -130,6 +236,12 @@
     color-scheme: dark;
 }
 
+/* Global Selection Style (Highlight) */
+::selection {
+    background-color: var(--color-app-200);
+    color: var(--color-app-900);
+}
+
 /* Utility to hide scrollbar but keep functionality */
 .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -140,4 +252,32 @@
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+}
+
+/* Custom Scrollbar Styling - Global */
+@layer base {
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--color-app-300);
+        border-radius: 99px;
+        transition: background 0.2s;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-app-500);
+    }
+
+    /* Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-app-300) transparent;
+    }
 }

@@ -28,7 +28,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const { scheduled, toggleActive, deleteScheduled } = useScheduledTransactions();
     const { presets, addPreset, deletePreset } = usePresets();
 
-    const [activeTab, setActiveTab] = useState<'general' | 'categories' | 'scheduled' | 'presets' | 'data'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'appearance' | 'categories' | 'scheduled' | 'presets' | 'data'>('general');
     const [catType, setCatType] = useState<'income' | 'expense'>('expense');
     const [newCatName, setNewCatName] = useState('');
 
@@ -37,6 +37,19 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const [newPresetAmount, setNewPresetAmount] = useState('');
     const [newPresetCategory, setNewPresetCategory] = useState('');
     const [newPresetType, setNewPresetType] = useState<'income' | 'expense'>('expense');
+
+    // Theme Definitions
+    const themes = [
+        { id: 'classic', name: 'Clásico', color: 'bg-[#a8a29e]' }, // stone-400
+        { id: 'clay', name: 'Arcilla', color: 'bg-[#fb923c]' }, // orange-400
+        { id: 'sand', name: 'Arena', color: 'bg-[#d6b885]' }, // custom sand
+        { id: 'coffee', name: 'Café', color: 'bg-[#b97f6a]' }, // custom coffee
+        { id: 'sage', name: 'Salvia', color: 'bg-[#64ad84]' }, // custom sage
+        { id: 'nordic', name: 'Nórdico', color: 'bg-[#0ea5e9]' }, // sky-500
+        { id: 'mist', name: 'Niebla', color: 'bg-[#94a3b8]' }, // slate-400
+        { id: 'royal', name: 'Royal', color: 'bg-[#a78bfa]' }, // violet-400
+        { id: 'bloom', name: 'Bloom', color: 'bg-[#fb7185]' }, // rose-400
+    ];
 
     // Nuclear & Update State
     const [showNuclearModal, setShowNuclearModal] = useState(false);
@@ -136,17 +149,26 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                     <button
                         onClick={() => setActiveTab('general')}
                         className={`pb-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'general'
-                            ? 'text-emerald-600 border-b-2 border-emerald-600'
-                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                            ? 'text-zinc-900 dark:text-zinc-100 border-zinc-800 dark:border-zinc-100'
+                            : 'text-zinc-500 border-transparent hover:text-zinc-800 dark:hover:text-zinc-300'
                             }`}
                     >
                         General
                     </button>
                     <button
+                        onClick={() => setActiveTab('appearance')}
+                        className={`pb-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'appearance'
+                            ? 'text-zinc-900 dark:text-zinc-100 border-zinc-800 dark:border-zinc-100'
+                            : 'text-zinc-500 border-transparent hover:text-zinc-800 dark:hover:text-zinc-300'
+                            }`}
+                    >
+                        Apariencia
+                    </button>
+                    <button
                         onClick={() => setActiveTab('categories')}
                         className={`pb-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'categories'
-                            ? 'text-emerald-600 border-b-2 border-emerald-600'
-                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                            ? 'text-zinc-900 dark:text-zinc-100 border-zinc-800 dark:border-zinc-100'
+                            : 'text-zinc-500 border-transparent hover:text-zinc-800 dark:hover:text-zinc-300'
                             }`}
                     >
                         Categorías
@@ -154,8 +176,8 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                     <button
                         onClick={() => setActiveTab('scheduled')}
                         className={`pb-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'scheduled'
-                            ? 'text-emerald-600 border-b-2 border-emerald-600'
-                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                            ? 'text-zinc-900 dark:text-zinc-100 border-zinc-800 dark:border-zinc-100'
+                            : 'text-zinc-500 border-transparent hover:text-zinc-800 dark:hover:text-zinc-300'
                             }`}
                     >
                         Programados
@@ -163,8 +185,8 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                     <button
                         onClick={() => setActiveTab('presets')}
                         className={`pb-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'presets'
-                            ? 'text-emerald-600 border-b-2 border-emerald-600'
-                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                            ? 'text-zinc-900 dark:text-zinc-100 border-zinc-800 dark:border-zinc-100'
+                            : 'text-zinc-500 border-transparent hover:text-zinc-800 dark:hover:text-zinc-300'
                             }`}
                     >
                         Atajos
@@ -172,8 +194,8 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                     <button
                         onClick={() => setActiveTab('data')}
                         className={`pb-2 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'data'
-                            ? 'text-emerald-600 border-b-2 border-emerald-600'
-                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+                            ? 'text-zinc-900 dark:text-zinc-100 border-zinc-800 dark:border-zinc-100'
+                            : 'text-zinc-500 border-transparent hover:text-zinc-800 dark:hover:text-zinc-300'
                             }`}
                     >
                         Datos
@@ -216,8 +238,35 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                 </div>
                             </div>
 
+                        </div>
+                    )}
+
+                    {activeTab === 'appearance' && (
+                        <div className="space-y-8">
+                            {/* Visual Style Selector */}
                             <div>
-                                <label className="block text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2">Moneda Principal</label>
+                                <label className="block text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3">Tema de Color</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {themes.map((style) => (
+                                        <button
+                                            key={style.id}
+                                            onClick={() => setThemeStyle(style.id as any)}
+                                            className={`p-3 rounded-xl border-2 flex items-center gap-3 transition-all ${themeStyle === style.id
+                                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10 ring-1 ring-emerald-500'
+                                                : 'border-transparent bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900'
+                                                }`}
+                                        >
+                                            <div className={`w-8 h-8 rounded-full ${style.color} shadow-sm`} />
+                                            <span className={`text-sm font-medium ${themeStyle === style.id ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                                                {style.name}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                                <label className="block text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-3">Moneda Principal</label>
                                 <div className="flex gap-2 flex-wrap">
                                     {currencies.map(c => (
                                         <button
@@ -229,35 +278,6 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                 }`}
                                         >
                                             {c}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Theme Style Selector */}
-                            <div>
-                                <label className="block text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-2">Estilo Visual</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {[
-                                        { id: 'classic', name: 'Clásico', color: 'bg-stone-500' },
-                                        { id: 'sepia', name: 'Sepia (Eye Care)', color: 'bg-orange-500' },
-                                        { id: 'ocean', name: 'Océano', color: 'bg-slate-500' },
-                                        { id: 'midnight', name: 'Medianoche', color: 'bg-indigo-500' },
-                                        { id: 'bloom', name: 'Bloom Flower', color: 'bg-rose-500' },
-                                        { id: 'royal', name: 'Royal Purple', color: 'bg-purple-500' },
-                                    ].map((style) => (
-                                        <button
-                                            key={style.id}
-                                            onClick={() => setThemeStyle(style.id as any)} // setThemeStyle comes from custom hook
-                                            className={`p-3 rounded-xl border-2 flex items-center gap-3 transition-all ${themeStyle === style.id
-                                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10 ring-1 ring-emerald-500'
-                                                : 'border-transparent bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-                                                }`}
-                                        >
-                                            <div className={`w-8 h-8 rounded-full ${style.color}`} />
-                                            <span className={`text-sm font-medium ${themeStyle === style.id ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
-                                                {style.name}
-                                            </span>
                                         </button>
                                     ))}
                                 </div>

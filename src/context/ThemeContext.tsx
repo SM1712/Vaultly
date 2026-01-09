@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
 type Theme = 'dark' | 'light';
-export type ThemeStyle = 'classic' | 'sepia' | 'ocean' | 'midnight' | 'bloom' | 'royal';
+// Updated Theme Styles
+export type ThemeStyle = 'classic' | 'clay' | 'mist' | 'royal' | 'bloom' | 'sage' | 'sand' | 'coffee' | 'nordic';
 
 interface ThemeContextType {
     theme: Theme; // Light/Dark
@@ -14,10 +15,10 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-    // Mode (Light/Dark)
+    // Mode (Light/Dark) - DEFAULT LIGHT
     const [theme, setTheme] = useState<Theme>(() => {
         const saved = localStorage.getItem('vault_theme');
-        return (saved as Theme) || 'dark';
+        return (saved as Theme) || 'light';
     });
 
     // Style (Color Palette)
