@@ -9,6 +9,7 @@ interface DataContextType {
     updateData: (newData: Partial<AppData>) => void;
     isLoading: boolean;
     isSaving: boolean;
+    resetData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -112,8 +113,23 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
+    const resetData = async () => {
+        if (!user) return;
+        try {
+            setIsSaving(true);
+            await CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA);
+            setData(INITIAL_DATA);
+            toast.success("Mundo reinstalado desde cero.");
+        } catch (error) {
+            console.error("Failed to nuke data:", error);
+            toast.error("Fallo en la detonación. Los datos persisten.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return (
-        <DataContext.Provider value={{ data, updateData, isLoading, isSaving }}>
+        <DataContext.Provider value={{ data, updateData, isLoading, isSaving, resetData }}>
             {children}
         </DataContext.Provider>
     );

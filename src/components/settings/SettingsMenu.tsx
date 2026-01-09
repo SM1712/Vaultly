@@ -9,7 +9,7 @@ import Modal from '../ui/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { toast } from 'sonner';
-import { Trash2, Plus, LogOut, User, CalendarClock, PlayCircle, PauseCircle, MousePointerClick, Database, Download, Upload } from 'lucide-react';
+import { Trash2, Plus, LogOut, User, CalendarClock, PlayCircle, PauseCircle, MousePointerClick, Database, Download, Upload, Bomb, Radiation, RefreshCw, Siren } from 'lucide-react';
 
 
 interface SettingsMenuProps {
@@ -21,7 +21,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const { currency, setCurrency } = useSettings();
     const { themeStyle, setThemeStyle } = useTheme();
     const { logout, user } = useAuth();
-    const { data: appData, updateData } = useData();
+    const { data: appData } = useData();
     const { categories: incomeCats, addCategory: addIncomeCat, removeCategory: removeIncomeCat } = useCategories('income');
     const { categories: expenseCats, addCategory: addExpenseCat, removeCategory: removeExpenseCat } = useCategories('expense');
     const { updateCategory } = useTransactions();
@@ -38,6 +38,65 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const [newPresetCategory, setNewPresetCategory] = useState('');
     const [newPresetType, setNewPresetType] = useState<'income' | 'expense'>('expense');
 
+    // Nuclear & Update State
+    const [showNuclearModal, setShowNuclearModal] = useState(false);
+    const [nuclearCode, setNuclearCode] = useState(['', '', '', '']);
+    const [isDetonating, setIsDetonating] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [updateStatus, setUpdateStatus] = useState('');
+    const { resetData } = useData();
+
+    // Helper for nuclear code input
+    const handleNuclearInput = (index: number, value: string) => {
+        if (value.length > 1) value = value[value.length - 1]; // Take last char
+        if (!/^\d*$/.test(value)) return; // Only numbers
+
+        const newCode = [...nuclearCode];
+        newCode[index] = value;
+        setNuclearCode(newCode);
+
+        // Auto-focus next input
+        if (value && index < 3) {
+            const nextInput = document.getElementById(`nuclear-digit-${index + 1}`);
+            nextInput?.focus();
+        }
+    };
+
+    const handleDetonate = async () => {
+        if (nuclearCode.join('').length !== 4) {
+            toast.error("CÓDIGO DE LANZAMIENTO INCOMPLETO");
+            return;
+        }
+
+        setIsDetonating(true);
+        // Dramatic delay
+        await new Promise(r => setTimeout(r, 2000));
+
+        await resetData();
+        setIsDetonating(false);
+        setShowNuclearModal(false);
+        setNuclearCode(['', '', '', '']);
+        onClose();
+    };
+
+    const handleSystemUpdate = async () => {
+        setIsUpdating(true);
+        setUpdateStatus('INICIANDO ENLACE SATELITAL...');
+
+        await new Promise(r => setTimeout(r, 1500));
+        setUpdateStatus('BUSCANDO PAQUETES DE DATOS...');
+
+        await new Promise(r => setTimeout(r, 1500));
+        setUpdateStatus('OPTIMIZANDO NÚCLEO...');
+
+        await new Promise(r => setTimeout(r, 1000));
+        setUpdateStatus('SISTEMA ACTUALIZADO. REINICIANDO.');
+
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    };
+
     const currencies = ['$', '€', '£', '¥', 'COP', 'MXN', 'ARS', 'S/'];
 
     const handleExport = () => {
@@ -51,32 +110,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
         toast.success("Copia de seguridad descargada");
     };
 
-    const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const fileReader = new FileReader();
-        if (e.target.files && e.target.files[0]) {
-            fileReader.readAsText(e.target.files[0], "UTF-8");
-            fileReader.onload = (event) => {
-                try {
-                    if (event.target?.result) {
-                        const parsedData = JSON.parse(event.target.result as string);
-                        // Basic validation
-                        if (!parsedData.transactions || !parsedData.version) {
-                            throw new Error("Formato inválido");
-                        }
 
-                        if (confirm("ADVERTENCIA: Esto sobrescribirá TODOS tus datos actuales. ¿Estás seguro?")) {
-                            updateData(parsedData);
-                            toast.success("Datos restaurados correctamente");
-                            onClose();
-                        }
-                    }
-                } catch (error) {
-                    console.error(error);
-                    toast.error("Error al leer el archivo. Formato inválido.");
-                }
-            };
-        }
-    };
 
     const handleAddCategory = () => {
         if (!newCatName.trim()) return;
@@ -486,18 +520,111 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                             <p className="text-xs text-zinc-500">Sobrescribir desde .json</p>
                                         </div>
                                     </div>
-                                    <input
-                                        type="file"
-                                        accept=".json"
-                                        onChange={handleImport}
-                                        className="hidden"
-                                    />
                                 </label>
+
+                                <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-4">
+                                    {/* System Update Button */}
+                                    <button
+                                        onClick={handleSystemUpdate}
+                                        disabled={isUpdating}
+                                        className="w-full flex items-center justify-between p-4 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 rounded-xl hover:opacity-90 disabled:opacity-70 transition-all"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-full bg-zinc-800 dark:bg-zinc-200 ${isUpdating ? 'animate-spin' : ''}`}>
+                                                <RefreshCw size={20} />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="font-bold text-sm">{isUpdating ? updateStatus : 'Buscar Actualizaciones'}</p>
+                                                <p className="text-xs opacity-70">Forzar sincronización PWA</p>
+                                            </div>
+                                        </div>
+                                    </button>
+
+                                    {/* Nuclear Option */}
+                                    <button
+                                        onClick={() => setShowNuclearModal(true)}
+                                        className="group w-full relative overflow-hidden flex items-center justify-between p-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl transition-all shadow-lg hover:shadow-rose-500/40 hover:scale-[1.02]"
+                                    >
+                                        <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,#00000010_10px,#00000010_20px)]" />
+
+                                        <div className="relative flex items-center gap-3 z-10">
+                                            <div className="p-2 rounded-full bg-rose-700 animate-[pulse_1.5s_ease-in-out_infinite]">
+                                                <Bomb size={24} />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="font-bold font-mono tracking-wider">OPCIÓN NUCLEAR</p>
+                                                <p className="text-xs opacity-90 font-mono">BORRADO TOTAL DE DATOS</p>
+                                            </div>
+                                        </div>
+                                        <Radiation className="relative z-10 opacity-50 group-hover:rotate-180 transition-transform duration-700" size={32} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Nuclear Launch Modal */}
+            {showNuclearModal && (
+                <div className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-6 animate-in fade-in duration-200 backdrop-blur-sm rounded-2xl">
+                    <div className="w-full max-w-sm space-y-6 text-center">
+                        <div className="animate-[bounce_1s_infinite]">
+                            <Siren size={64} className="text-rose-500 mx-auto" />
+                        </div>
+
+                        <div>
+                            <h3 className="text-2xl font-black text-rose-500 font-mono tracking-widest mb-2">¡PELIGRO!</h3>
+                            <p className="text-zinc-400 text-sm font-mono leading-relaxed">
+                                ESTA ACCIÓN ES IRREVERSIBLE.<br />
+                                SE ELIMINARÁN TODAS LAS TRANSACCIONES Y CONFIGURACIONES.<br />
+                                INTRODUZCA CÓDIGO DE LANZAMIENTO PARA CONFIRMAR.
+                            </p>
+                        </div>
+
+                        <div className="flex justify-center gap-3 my-6">
+                            {nuclearCode.map((digit, idx) => (
+                                <input
+                                    key={idx}
+                                    id={`nuclear-digit-${idx}`}
+                                    type="text"
+                                    maxLength={1}
+                                    value={digit}
+                                    onChange={(e) => handleNuclearInput(idx, e.target.value)}
+                                    className="w-12 h-16 bg-zinc-900 border-2 border-rose-500/50 focus:border-rose-500 text-rose-500 text-3xl font-mono text-center rounded-lg shadow-[0_0_15px_rgba(244,63,94,0.3)] focus:shadow-[0_0_25px_rgba(244,63,94,0.6)] outline-none transition-all"
+                                />
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowNuclearModal(false);
+                                    setNuclearCode(['', '', '', '']);
+                                }}
+                                className="py-3 px-4 bg-zinc-800 text-zinc-300 font-mono font-bold rounded-lg hover:bg-zinc-700 transition-colors"
+                            >
+                                ABORTAR
+                            </button>
+                            <button
+                                onClick={handleDetonate}
+                                disabled={isDetonating}
+                                className="py-3 px-4 bg-rose-600 text-white font-mono font-bold rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-rose-600/50"
+                            >
+                                {isDetonating ? (
+                                    <>
+                                        <Radiation className="animate-spin" size={18} /> DETONANDO
+                                    </>
+                                ) : (
+                                    <>
+                                        <Bomb size={18} /> DETONAR
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Modal>
     );
 };
