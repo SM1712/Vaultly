@@ -19,10 +19,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
+    const [isError, setIsError] = useState(false);
+
     // Timer ref for debounce
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Initial Load
+    // Initial Load & Realtime Sync
     useEffect(() => {
         if (!user) {
             setData(INITIAL_DATA);
@@ -30,44 +32,59 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
-        const load = async () => {
-            setIsLoading(true);
-            try {
-                const cloudData = await CloudStorage.fetchMasterDoc(user.uid);
+        setIsLoading(true);
+        setIsError(false);
 
+        // Real-time subscription
+        const unsubscribe = CloudStorage.subscribeToMasterDoc(
+            user.uid,
+            (cloudData) => {
                 if (cloudData) {
-                    // Deep merge to ensure all fields exist even if cloud doc is partial/old
+                    // Deep merge to ensure all fields exist
                     const mergedData = {
                         ...INITIAL_DATA,
                         ...cloudData,
-                        // Ensure nested objects are also merged if they exist
                         settings: { ...INITIAL_DATA.settings, ...(cloudData.settings || {}) },
                         categories: { ...INITIAL_DATA.categories, ...(cloudData.categories || {}) }
                     };
                     setData(mergedData);
-                    console.log("[DataContext] Master Doc Loaded:", mergedData);
                 } else {
-                    // New user or empty doc
-                    console.log("[DataContext] No master doc found, creating new...");
+                    // Start fresh if document truly doesn't exist
+                    console.log("[DataContext] New user setup initialized");
                     setData(INITIAL_DATA);
-                    // Force save immediately to create the doc
-                    await CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA);
+                    // Only auto-save default data if we are SURE it's a new user (null returned), not an error
+                    // But to be safe, we wait for user interaction or handle it explicitly.
+                    // Let's safe-create it only if we have confirmed "null" (not error)
+                    CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA)
+                        .catch(err => {
+                            console.error("Failed to create initial doc:", err);
+                            setIsError(true);
+                        });
                 }
-            } catch (error) {
-                console.error("Failed to load master doc, defaulting to empty", error);
-                toast.warning("Modo Offline: Usando datos locales");
-                setData(INITIAL_DATA);
-            } finally {
+                setIsLoading(false);
+                setIsError(false); // Clear error on successful data rx
+            },
+            (error) => {
+                console.error("[DataContext] Sync Error:", error);
+                setIsError(true); // BLOCK SAVING
+                toast.error("Error de sincronización. Cambios no se guardarán en la nube.");
                 setIsLoading(false);
             }
-        };
+        );
 
-        load();
+        return () => unsubscribe();
     }, [user]);
 
     // Save Function with Debounce
     const triggerSave = (newData: AppData) => {
         if (!user) return;
+
+        // CRITICAL: Protection against overwriting cloud data with empty local data if load failed
+        if (isError) {
+            console.warn("[DataContext] Save blocked due to sync error state");
+            toast.error("No se puede guardar: Error de conexión previo");
+            return;
+        }
 
         setIsSaving(true);
         if (saveTimeoutRef.current) {
