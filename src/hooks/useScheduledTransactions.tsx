@@ -70,19 +70,7 @@ export const useScheduledTransactions = () => {
                 };
             }
 
-            // Alerts logic... (removed for brevity of state update, kept in logic if needed)
-            if (!alreadyProcessedThisMonth) {
-                const daysUntilDue = item.dayOfMonth - currentDay;
-                if (daysUntilDue > 0 && daysUntilDue <= 2) {
-                    // Since this is a side effect (toast), it's fine.
-                    setTimeout(() => {
-                        toast.warning(`Próximo vencimiento: ${item.description} ($${item.amount})`, {
-                            description: `Vence el día ${item.dayOfMonth}`,
-                            duration: 5000,
-                        });
-                    }, 1000 * Math.random()); // Stagger slightly
-                }
-            }
+            // Alerts logic removed by user request.
 
             return item;
         });

@@ -6,9 +6,20 @@ import { useFunds } from '../hooks/useFunds';
 import { useGoals } from '../hooks/useGoals';
 import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 import { useSettings } from '../context/SettingsContext';
-import { Calculator, RefreshCw, TrendingUp, TrendingDown, PiggyBank, Target, ToggleLeft, ToggleRight, Info, Landmark } from 'lucide-react';
+import {
+    Calculator, RefreshCw, TrendingUp, TrendingDown, PiggyBank,
+    Target, ToggleLeft, ToggleRight, Info, Landmark, Plus, Trash2,
+    ShoppingBag
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import { toast } from 'sonner';
+
+interface SimulatedTransaction {
+    id: string;
+    description: string;
+    amount: number;
+    type: 'income' | 'expense';
+}
 
 const Projections = () => {
     const { transactions } = useTransactions();
@@ -24,8 +35,6 @@ const Projections = () => {
     // Global Data for "Start Balance"
     const { availableBalance } = useBalance();
     const totalFundsReal = funds.reduce((sum, f) => sum + f.currentAmount, 0);
-
-
 
     // Month Data
     const currentMonthTransactions = transactions.filter(t => {
@@ -46,7 +55,13 @@ const Projections = () => {
     }, [currentMonthTransactions]);
 
     // 2. Simulation State (The "What If")
-    const [projectedExtraIncome, setProjectedExtraIncome] = useState<string>('');
+    const [simulatedTransactions, setSimulatedTransactions] = useState<SimulatedTransaction[]>([]);
+
+    // New Simulation Input State
+    const [simDescription, setSimDescription] = useState('');
+    const [simAmount, setSimAmount] = useState('');
+    const [simType, setSimType] = useState<'income' | 'expense'>('expense');
+
     const [categoryBudgets, setCategoryBudgets] = useState<Record<string, string>>({});
     const [simulatedCreditPayments, setSimulatedCreditPayments] = useState<Set<string>>(new Set());
     const [simulatedGoalContributions, setSimulatedGoalContributions] = useState<Set<string>>(new Set());
@@ -55,8 +70,30 @@ const Projections = () => {
     // Toggles
     const [includeGlobalBalance, setIncludeGlobalBalance] = useState(true);
     const [includeFundsInBalance, setIncludeFundsInBalance] = useState(false);
-
     const [autoIncludeScheduled, setAutoIncludeScheduled] = useState(true);
+
+    // Add Simulated Transaction Handler
+    const handleAddSimulation = () => {
+        if (!simDescription || !simAmount) return;
+        const amount = Number(simAmount);
+        if (isNaN(amount) || amount <= 0) return;
+
+        const newItem: SimulatedTransaction = {
+            id: Math.random().toString(36).substr(2, 9),
+            description: simDescription,
+            amount,
+            type: simType
+        };
+
+        setSimulatedTransactions([...simulatedTransactions, newItem]);
+        setSimDescription('');
+        setSimAmount('');
+        // Keep type same for rapid entry
+    };
+
+    const removeSimulation = (id: string) => {
+        setSimulatedTransactions(simulatedTransactions.filter(t => t.id !== id));
+    };
 
     // 3. Calculation Logic
     const calculateProjection = () => {
@@ -74,13 +111,15 @@ const Projections = () => {
             baseBalance = 0; // Net Flow mode
         }
 
-        // B. Income (Real Month + Extra + Scheduled Income)
-        const extraInc = Number(projectedExtraIncome) || 0;
+        // B. Income (Real Month + Simulated Income + Scheduled Income)
+        const simulatedIncomeTotal = simulatedTransactions
+            .filter(t => t.type === 'income')
+            .reduce((sum, t) => sum + t.amount, 0);
+
         let scheduledIncome = 0;
 
         if (autoIncludeScheduled) {
             scheduled.filter(s => s.type === 'income' && s.active).forEach(s => {
-                // Check if already processed this month
                 const lastProcessed = s.lastProcessedDate ? new Date(s.lastProcessedDate + 'T12:00:00') : null;
                 const processedThisMonth = lastProcessed && lastProcessed.getMonth() === currentMonth.getMonth() && lastProcessed.getFullYear() === currentMonth.getFullYear();
 
@@ -90,9 +129,7 @@ const Projections = () => {
             });
         }
 
-
-
-        // C. Expenses (Real Month vs Projected + Scheduled Expenses)
+        // C. Expenses (Real Month vs Projected + Scheduled + Simulated Expenses)
         let totalProjectedExpenses = 0;
         let scheduledExpenses = 0;
 
@@ -107,19 +144,8 @@ const Projections = () => {
             });
         }
 
+        // Category budgets logic
         const categoryComparisons: { category: string; real: number; projected: number; diff: number }[] = [];
-        // Note: Scheduled expenses should ideally merge into categories, but for simplicity here we add them on top OR 
-        // we should realize that "Real Expenses" might already include processed ones.
-        // The "Category Budget" usually usually implies "Total for this category for the month".
-        // If I have a scheduled "Netflix" ($15) in "Services", and I set "Services" budget to $50.
-        // If it hasn't happened yet, Real is $0. Projected $50.
-        // If we add scheduled separately, we might double count if the user intended $50 to COVER Netflix.
-        // DECISION: We will list Scheduled items separately in the details for visibility, 
-        // BUT numerically, we should arguably treat them as "Committed Spend".
-        // Let's keep them separate in sum to be safe: Budgeting is usually "Variable Spend" + "Fixed Bills".
-        // OR: We add them to the "Real" column of the category comparison? No, that's confusing.
-        // Let's add them as a separate line item sum for now named "Gastos Programados Pendientes".
-
         Object.keys(expensesByCategory).forEach(cat => {
             const real = expensesByCategory[cat];
             const userProjection = categoryBudgets[cat] ? Number(categoryBudgets[cat]) : real;
@@ -134,6 +160,12 @@ const Projections = () => {
             });
         });
 
+        // Granular Simulated Expenses
+        const simulatedExpenseTotal = simulatedTransactions
+            .filter(t => t.type === 'expense')
+            .reduce((sum, t) => sum + t.amount, 0);
+
+
         // D. Credit Payments (Simulated)
         let totalCreditSimulated = 0;
         credits.filter(c => c.status === 'active' && simulatedCreditPayments.has(c.id)).forEach(c => {
@@ -144,7 +176,6 @@ const Projections = () => {
         // E. Goal Contributions (Simulated)
         let totalGoalSimulated = 0;
         goals.filter(g => simulatedGoalContributions.has(g.id)).forEach(g => {
-            // Simple quota: Target / Months
             const quota = getMonthlyQuota(g);
             totalGoalSimulated += quota;
         });
@@ -156,29 +187,35 @@ const Projections = () => {
         });
 
         // G. Final Balance
-        // Logic: Base Balance + (Projected Income - Real Income used in base? No.)
-        // If Base is Global Balance, it ALREADY includes Real Income - Real Expense.
-        // So we add: Extra Income + Scheduled Income
-        // We subtract: (Projected Category Expense - Real Category Expense) -> The "Additional" spend
-        // We subtract: Scheduled Expenses
-        // We subtract: Simulated Credits + Goals + Funds
+        // If Base Balance (Global) is used, it already factors in Real Income and Real Expenses (Current).
+        // So we only add/subtract FUTURE/SIMULATED deltas.
 
-        const additionalProjectedExpense = totalProjectedExpenses - expenseMonthReal;
+        // Income Delta = Simulated Income + Scheduled Income
+        // Expense Delta = (Projected Category Expense - Real Category Expense) + Scheduled Expenses + Simulated Expenses + Goals + Funds + Credits
 
-        // Wait, if !includeGlobalBalance, we act as "Month Flow".
-        // Flow = (Real Inc + Extra + Sched Inc) - (Real Exp + Additional Exp + Sched Exp + Sim Credits/Goals/Funds)
+        const additionalCategoryExpense = totalProjectedExpenses - expenseMonthReal;
 
         const finalBalance = includeGlobalBalance
-            ? (baseBalance + extraInc + scheduledIncome - additionalProjectedExpense - scheduledExpenses - totalCreditSimulated - totalGoalSimulated - totalFundSimulated)
-            : ((incomeMonthReal + extraInc + scheduledIncome) - (expenseMonthReal + additionalProjectedExpense + scheduledExpenses + totalCreditSimulated + totalGoalSimulated + totalFundSimulated));
+            ? (baseBalance
+                + simulatedIncomeTotal
+                + scheduledIncome
+                - additionalCategoryExpense
+                - scheduledExpenses
+                - simulatedExpenseTotal
+                - totalCreditSimulated
+                - totalGoalSimulated
+                - totalFundSimulated)
+            : ((incomeMonthReal + simulatedIncomeTotal + scheduledIncome)
+                - (expenseMonthReal + additionalCategoryExpense + scheduledExpenses + simulatedExpenseTotal + totalCreditSimulated + totalGoalSimulated + totalFundSimulated));
 
         return {
             baseBalance,
             incomeMonthReal,
-            extraInc,
+            simulatedIncomeTotal,
             scheduledIncome,
             expenseMonthReal,
-            totalProjectedExpenses, // Total of categories (Real + Added)
+            totalProjectedExpenses,
+            simulatedExpenseTotal,
             scheduledExpenses,
             totalCreditSimulated,
             totalGoalSimulated,
@@ -211,7 +248,7 @@ const Projections = () => {
                     <Calculator size={32} className="text-emerald-500" />
                     Sala de Proyecciones
                 </h1>
-                <p className="text-zinc-500 mt-2">Simula el cierre de mes. Juega con los números, lo que pasa aquí se queda aquí.</p>
+                <p className="text-zinc-500 mt-2">Simula ingresos y gastos del futuro. Agrega el pan de mañana o la combi de pasado.</p>
             </div>
 
             {/* 0. CONTROLS */}
@@ -226,7 +263,7 @@ const Projections = () => {
 
                 <button
                     onClick={() => {
-                        if (!includeGlobalBalance) setIncludeGlobalBalance(true); // Force global on if funds on
+                        if (!includeGlobalBalance) setIncludeGlobalBalance(true);
                         setIncludeFundsInBalance(!includeFundsInBalance);
                     }}
                     className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all", includeFundsInBalance ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-white text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600")}
@@ -255,11 +292,6 @@ const Projections = () => {
                             {currency}{projection.baseBalance.toFixed(2)}
                         </p>
                     </div>
-                    {includeGlobalBalance && !includeFundsInBalance && (
-                        <p className="text-[10px] text-amber-500 font-bold mt-1 flex items-center gap-1">
-                            <Info size={10} /> Excluyendo fondos ({currency}{totalFundsReal})
-                        </p>
-                    )}
                 </div>
 
                 <div className={clsx(
@@ -281,36 +313,110 @@ const Projections = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* 2. INCOME SIMULATION */}
-                <div className="space-y-6">
-                    <h3 className="font-bold text-lg flex items-center gap-2"><TrendingUp size={20} className="text-emerald-500" /> Ingresos</h3>
+                {/* 2. GRANULAR SIMULATIONS (NEW) */}
+                <div className="lg:col-span-1 space-y-6">
+                    <h3 className="font-bold text-lg flex items-center gap-2"><ShoppingBag size={20} className="text-purple-500" /> Simulador de Diario</h3>
+
+                    {/* Add Simulation Form */}
                     <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-zinc-500">Reales del Mes</span>
-                            <span className="font-bold">{currency}{incomeMonthReal}</span>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-zinc-400 uppercase">¿Qué quieres simular?</label>
+                            <input
+                                type="text"
+                                placeholder="Ej. Pan, Combi, Cachuelo..."
+                                className="w-full bg-zinc-50 dark:bg-zinc-950 px-4 py-2 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500/20"
+                                value={simDescription}
+                                onChange={e => setSimDescription(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleAddSimulation()}
+                            />
                         </div>
-                        {autoIncludeScheduled && projection.scheduledIncome > 0 && (
-                            <div className="flex justify-between items-center text-sm text-blue-500">
-                                <span>+ Programados Pendientes</span>
-                                <span className="font-bold">{currency}{projection.scheduledIncome}</span>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="text-xs font-bold text-zinc-400 uppercase">Monto</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">{currency}</span>
+                                    <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        className="w-full bg-zinc-50 dark:bg-zinc-950 pl-8 pr-4 py-2 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500/20"
+                                        value={simAmount}
+                                        onChange={e => setSimAmount(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && handleAddSimulation()}
+                                    />
+                                </div>
                             </div>
-                        )}
-                        <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                            <label className="block text-xs font-bold text-zinc-400 uppercase mb-2">Ingreso Extra Esperado</label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">{currency}</span>
-                                <input
-                                    type="number"
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border-none rounded-xl pl-8 py-3 font-bold text-right outline-none focus:ring-2 focus:ring-emerald-500/20"
-                                    placeholder="0"
-                                    value={projectedExtraIncome}
-                                    onChange={e => setProjectedExtraIncome(e.target.value)}
-                                />
+                            <div>
+                                <label className="text-xs font-bold text-zinc-400 uppercase">Tipo</label>
+                                <div className="flex bg-zinc-50 dark:bg-zinc-950 rounded-xl p-1">
+                                    <button
+                                        onClick={() => setSimType('expense')}
+                                        className={clsx("flex-1 rounded-lg text-xs font-bold py-1.5 transition-all text-center", simType === 'expense' ? "bg-rose-500 text-white shadow-md" : "text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
+                                    >
+                                        Gasto
+                                    </button>
+                                    <button
+                                        onClick={() => setSimType('income')}
+                                        className={clsx("flex-1 rounded-lg text-xs font-bold py-1.5 transition-all text-center", simType === 'income' ? "bg-emerald-500 text-white shadow-md" : "text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
+                                    >
+                                        Ingreso
+                                    </button>
+                                </div>
                             </div>
                         </div>
+                        <button
+                            onClick={handleAddSimulation}
+                            className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold py-2 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        >
+                            <Plus size={18} /> Agregar
+                        </button>
                     </div>
 
-                    {/* 3. FUNDS SIMULATION */}
+                    {/* Simulation List */}
+                    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                        {simulatedTransactions.length === 0 ? (
+                            <div className="p-8 text-center text-zinc-400 text-sm italic">
+                                No has agregado simulaciones aún.
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-zinc-100 dark:divide-zinc-800 max-h-60 overflow-y-auto">
+                                {simulatedTransactions.map(item => (
+                                    <div key={item.id} className="p-3 flex items-center justify-between group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center", item.type === 'income' ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20" : "bg-rose-100 text-rose-600 dark:bg-rose-900/20")}>
+                                                {item.type === 'income' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-sm text-zinc-700 dark:text-zinc-300">{item.description}</p>
+                                                <p className="text-xs text-zinc-400 capitalize">{item.type === 'income' ? 'Ingreso' : 'Gasto'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className={clsx("font-mono font-bold text-sm", item.type === 'income' ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                                                {item.type === 'income' ? '+' : '-'}{currency}{item.amount.toLocaleString()}
+                                            </span>
+                                            <button
+                                                onClick={() => removeSimulation(item.id)}
+                                                className="text-zinc-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {simulatedTransactions.length > 0 && (
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center text-xs font-bold uppercase text-zinc-500">
+                                <span>Total Simulado</span>
+                                <span className={clsx(
+                                    (projection.simulatedIncomeTotal - projection.simulatedExpenseTotal) >= 0 ? "text-emerald-500" : "text-rose-500"
+                                )}>
+                                    {currency}{(projection.simulatedIncomeTotal - projection.simulatedExpenseTotal).toFixed(2)}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
                     <h3 className="font-bold text-lg flex items-center gap-2 mt-8"><PiggyBank size={20} className="text-amber-500" /> Fondos (Simulados)</h3>
                     <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
                         {funds.map(fund => (
@@ -336,11 +442,12 @@ const Projections = () => {
                         ))}
                         {funds.length === 0 && <p className="text-sm text-zinc-400 italic">No tienes fondos creados.</p>}
                     </div>
+
                 </div>
 
-                {/* 4. EXPENSE BUDGETING column */}
+                {/* 3. EXPENSE BUDGETING column */}
                 <div className="lg:col-span-2 space-y-6">
-                    <h3 className="font-bold text-lg flex items-center gap-2"><TrendingDown size={20} className="text-rose-500" /> Presupuesto de Gastos</h3>
+                    <h3 className="font-bold text-lg flex items-center gap-2"><TrendingDown size={20} className="text-rose-500" /> Presupuesto y Categorías</h3>
 
                     {autoIncludeScheduled && projection.scheduledExpenses > 0 && (
                         <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 p-3 rounded-xl flex justify-between items-center px-4">
@@ -451,7 +558,7 @@ const Projections = () => {
             <div className="flex justify-end pt-8">
                 <button
                     onClick={() => {
-                        setProjectedExtraIncome('');
+                        setSimulatedTransactions([]);
                         setCategoryBudgets({});
                         setSimulatedCreditPayments(new Set());
                         setSimulatedGoalContributions(new Set());

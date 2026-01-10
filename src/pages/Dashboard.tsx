@@ -1,5 +1,7 @@
 import { useTransactions } from '../hooks/useTransactions';
-import { Wallet, TrendingUp, TrendingDown, Target, BookOpen } from 'lucide-react';
+import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
+import { Wallet, TrendingUp, TrendingDown, Target, BookOpen, Clock } from 'lucide-react';
+import { clsx } from 'clsx';
 import { useGoals } from '../hooks/useGoals';
 import { useFunds } from '../hooks/useFunds';
 import { useBalance } from '../hooks/useBalance';
@@ -15,7 +17,8 @@ const Dashboard = () => {
     const { selectedDate } = useFinance();
     const { transactions } = useTransactions();
     const { goals, getTotalSavingsAtDate, isGoalPaidThisMonth, getMonthlyQuota, getMonthsRemaining } = useGoals();
-    const { funds } = useFunds(); // USE FUNDS
+    const { funds } = useFunds();
+    const { scheduled } = useScheduledTransactions();
     const { currency } = useSettings();
 
     // Modals state
@@ -109,6 +112,30 @@ const Dashboard = () => {
         }
     ];
 
+    // Calculate upcoming scheduled transactions
+    const upcoming = scheduled
+        .filter(s => s.active)
+        .map(s => {
+            const today = new Date();
+            const currentDay = today.getDate();
+            const lastProcessed = s.lastProcessedDate ? new Date(s.lastProcessedDate + 'T12:00:00') : null;
+            const processedThisMonth = lastProcessed &&
+                lastProcessed.getMonth() === today.getMonth() &&
+                lastProcessed.getFullYear() === today.getFullYear();
+
+            if (processedThisMonth) return null;
+
+            const diff = s.dayOfMonth - currentDay;
+            let status: 'overdue' | 'urgent' | 'normal' = 'normal';
+
+            if (diff < 0) status = 'overdue';
+            else if (diff <= 3) status = 'urgent';
+
+            return { ...s, diff, status };
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== null)
+        .sort((a, b) => a.dayOfMonth - b.dayOfMonth);
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -151,6 +178,55 @@ const Dashboard = () => {
                     </div>
                 ))}
             </div>
+
+            {/* Alertas de Programados (Passive Alerts) */}
+            {upcoming.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                        <Clock size={20} className="text-zinc-400" />
+                        Ingresos y Gastos Programados
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {upcoming.map(item => (
+                            <div key={item.id} className={clsx(
+                                "p-4 rounded-2xl border flex items-center justify-between shadow-sm",
+                                item.status === 'overdue' ? "bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-900/30" :
+                                    item.status === 'urgent' ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-900/30" :
+                                        "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                            )}>
+                                <div className="flex gap-3 items-center">
+                                    <div className={clsx(
+                                        "w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs",
+                                        item.status === 'overdue' ? "bg-rose-100 text-rose-600 dark:bg-rose-900/20" :
+                                            item.status === 'urgent' ? "bg-amber-100 text-amber-600 dark:bg-amber-900/20" :
+                                                "bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                                    )}>
+                                        {item.dayOfMonth}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{item.description}</p>
+                                        <p className="text-xs text-zinc-500 capitalize">{item.category}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className={clsx("font-mono font-bold text-sm", item.type === 'income' ? 'text-emerald-500' : 'text-rose-500')}>
+                                        {item.type === 'income' ? '+' : '-'}{currency}{item.amount}
+                                    </p>
+                                    <p className={clsx(
+                                        "text-[10px] font-bold uppercase tracking-wider",
+                                        item.status === 'overdue' ? "text-rose-500" :
+                                            item.status === 'urgent' ? "text-amber-500" :
+                                                "text-zinc-400"
+                                    )}>
+                                        {item.status === 'overdue' ? 'Vencido' :
+                                            item.status === 'urgent' ? 'Pronto' : 'Pendiente'}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Metas Widget */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 shadow-sm dark:shadow-none">
