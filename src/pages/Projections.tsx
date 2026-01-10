@@ -8,7 +8,7 @@ import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 import { useSettings } from '../context/SettingsContext';
 import {
     Calculator, RefreshCw, TrendingUp, TrendingDown, PiggyBank,
-    Target, ToggleLeft, ToggleRight, Info, Landmark, Plus, Trash2,
+    Target, ToggleLeft, ToggleRight, Landmark, Plus, Trash2,
     ShoppingBag
 } from 'lucide-react';
 import { clsx } from 'clsx';

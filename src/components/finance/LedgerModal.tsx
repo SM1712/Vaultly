@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLedger, type LedgerEntry } from '../../hooks/useLedger';
+import { useLedger } from '../../hooks/useLedger';
 import { useFinance } from '../../context/FinanceContext';
 import { useSettings } from '../../context/SettingsContext';
 import Modal from '../ui/Modal';
