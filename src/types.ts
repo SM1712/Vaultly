@@ -20,6 +20,8 @@ export interface Goal {
     icon?: string; // Emoji or Icon name
     lastContributionDate?: string;
     isCompletedForMonth?: boolean;
+    recoveryStrategy?: 'spread' | 'catch_up';
+    calculationMethod?: 'dynamic' | 'static';
     history?: {
         id: string;
         date: string;

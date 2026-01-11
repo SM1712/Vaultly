@@ -15,6 +15,10 @@ export interface AppData {
         currency: string;
         theme: string;
         hasSeenOnboarding: boolean;
+        goalPreferences?: {
+            defaultCalculationMethod: 'dynamic' | 'static';
+            defaultRecoveryStrategy: 'spread' | 'catch_up';
+        };
     };
     goals: any[];
     funds: any[];
@@ -23,6 +27,8 @@ export interface AppData {
     version: number;
     lastUpdated: number;
 }
+
+export type AppSettings = AppData['settings'];
 
 export const INITIAL_DATA: AppData = {
     transactions: [],

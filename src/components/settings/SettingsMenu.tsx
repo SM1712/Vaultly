@@ -13,7 +13,7 @@ import {
     Trash2, Plus, LogOut, User, CalendarClock,
     PlayCircle, PauseCircle, Database,
     Download, Upload, Bomb, Radiation, RefreshCw, Siren,
-    LayoutGrid, Palette, List, Zap, History, Sparkles, ChevronRight
+    LayoutGrid, Palette, List, Zap, History, Sparkles, ChevronRight, SlidersHorizontal
 } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import Logo from '../ui/Logo';
@@ -25,7 +25,7 @@ interface SettingsMenuProps {
 }
 
 const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
-    const { currency, setCurrency } = useSettings();
+    const { currency, setCurrency, goalPreferences, setGoalPreferences } = useSettings();
     const { themeStyle, setThemeStyle } = useTheme();
     const { logout, user } = useAuth();
     const { data: appData } = useData();
@@ -35,7 +35,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const { scheduled, toggleActive, deleteScheduled } = useScheduledTransactions();
     const { presets, addPreset, deletePreset } = usePresets();
 
-    const [activeTab, setActiveTab] = useState<'general' | 'appearance' | 'categories' | 'scheduled' | 'presets' | 'data' | 'changelog'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'appearance' | 'categories' | 'scheduled' | 'presets' | 'preferences' | 'data' | 'changelog'>('general');
     const [catType, setCatType] = useState<'income' | 'expense'>('expense');
     const [newCatName, setNewCatName] = useState('');
 
@@ -202,6 +202,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
 
     const menuItems = [
         { id: 'general', label: 'General', icon: LayoutGrid, desc: 'Moneda, cuenta y sesión' },
+        { id: 'preferences', label: 'Preferencias', icon: SlidersHorizontal, desc: 'Comportamiento de Metas' },
         { id: 'appearance', label: 'Apariencia', icon: Palette, desc: 'Temas, colores y modo oscuro' },
         { id: 'categories', label: 'Categorías', icon: List, desc: 'Gestionar tipos de ingresos y gastos' },
         { id: 'scheduled', label: 'Programados', icon: CalendarClock, desc: 'Pagos y cobros recurrentes' },
@@ -286,6 +287,74 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                     </div>
 
                     <div className="p-4 md:p-6 pb-20 md:pb-6">
+
+                        {activeTab === 'preferences' && (
+                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="bg-zinc-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4">Cálculo de Cuota Mensual</h3>
+                                    <div className="space-y-4">
+                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultCalculationMethod === 'dynamic' ? 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'}`}>
+                                            <input
+                                                type="radio"
+                                                name="calculationMethod"
+                                                checked={goalPreferences.defaultCalculationMethod === 'dynamic'}
+                                                onChange={() => setGoalPreferences({ ...goalPreferences, defaultCalculationMethod: 'dynamic' })}
+                                                className="mt-1"
+                                            />
+                                            <div>
+                                                <span className="block font-bold text-zinc-900 dark:text-zinc-100">Dinámico (Recomendado)</span>
+                                                <p className="text-sm text-zinc-500 mt-1">La cuota se ajusta automáticamente cada mes. Si ahorras de más, la cuota baja. Si te atrasas, sube. Ideal para mantener el objetivo final fijo.</p>
+                                            </div>
+                                        </label>
+                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultCalculationMethod === 'static' ? 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'}`}>
+                                            <input
+                                                type="radio"
+                                                name="calculationMethod"
+                                                checked={goalPreferences.defaultCalculationMethod === 'static'}
+                                                onChange={() => setGoalPreferences({ ...goalPreferences, defaultCalculationMethod: 'static' })}
+                                                className="mt-1"
+                                            />
+                                            <div>
+                                                <span className="block font-bold text-zinc-900 dark:text-zinc-100">Estático</span>
+                                                <p className="text-sm text-zinc-500 mt-1">La cuota es fija (Monto / Total Meses). No cambia aunque adelantes pagos. Ideal si prefieres previsibilidad total y terminar antes si pagas extra.</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="bg-zinc-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4">Estrategia de Recuperación (Default)</h3>
+                                    <div className="space-y-4">
+                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultRecoveryStrategy === 'spread' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 ring-1 ring-emerald-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'}`}>
+                                            <input
+                                                type="radio"
+                                                name="recoveryStrategy"
+                                                checked={goalPreferences.defaultRecoveryStrategy === 'spread'}
+                                                onChange={() => setGoalPreferences({ ...goalPreferences, defaultRecoveryStrategy: 'spread' })}
+                                                className="mt-1"
+                                            />
+                                            <div>
+                                                <span className="block font-bold text-zinc-900 dark:text-zinc-100">Redistribuir (Spread)</span>
+                                                <p className="text-sm text-zinc-500 mt-1">Si retiras dinero, el faltante se divide entre todos los meses restantes.</p>
+                                            </div>
+                                        </label>
+                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultRecoveryStrategy === 'catch_up' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 ring-1 ring-emerald-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'}`}>
+                                            <input
+                                                type="radio"
+                                                name="recoveryStrategy"
+                                                checked={goalPreferences.defaultRecoveryStrategy === 'catch_up'}
+                                                onChange={() => setGoalPreferences({ ...goalPreferences, defaultRecoveryStrategy: 'catch_up' })}
+                                                className="mt-1"
+                                            />
+                                            <div>
+                                                <span className="block font-bold text-zinc-900 dark:text-zinc-100">Pagar Próximo Mes (Catch Up)</span>
+                                                <p className="text-sm text-zinc-500 mt-1">Si retiras dinero, se suma todo a la cuota del mes siguiente para recuperar el ritmo inmediatamente.</p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {activeTab === 'general' && (
                             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -686,11 +755,46 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                 </div>
 
                                 <div className="relative pl-8 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-10">
-                                    {/* v1.5.1 Item (Current) */}
+                                    {/* v1.7 Item (Current) */}
                                     <div className="relative">
+                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-emerald-500 border-4 border-white dark:border-zinc-950 shadow-sm" />
+                                        <div className="flex flex-col mb-2">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Versión Actual</span>
+                                                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.7 - Dynamic Goals Rework</p>
+                                                </div>
+                                                <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full font-bold">Rework</span>
+                                            </div>
+                                            <span className="text-xs text-zinc-400">Enero 2026</span>
+                                        </div>
+                                        <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
+                                            <li><strong>Cuotas Dinámicas Reales:</strong> Curva de pagos variable y ajuste proporcional por adelantos.</li>
+                                            <li><strong>Botón Adelantar:</strong> Inyecta capital extra directamente para reducir cuotas futuras.</li>
+                                            <li><strong>Ahorro Dinámico Individual:</strong> Switch (⚡) por meta para activar/desactivar la variabilidad.</li>
+                                            <li><strong>Créditos y Deudas:</strong> Modo Simple vs Avanzado (Amortización Francesa) y búsqueda inversa de tasas.</li>
+                                            <li><strong>Mobile First:</strong> Diseño 100% adaptativo en Metas y Créditos.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* v1.6 Item */}
+                                    <div className="relative opacity-70 hover:opacity-100 transition-opacity">
+                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
+                                        <div className="flex flex-col mb-2">
+                                            <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.6 - Smart Goals</span>
+                                            <span className="text-xs text-zinc-400">Enero 2026</span>
+                                        </div>
+                                        <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
+                                            <li><strong>Metas Inteligentes:</strong> Estrategias de recuperación (Spread vs Catch-up).</li>
+                                            <li><strong>Indicadores de Salud:</strong> Visualiza si vas adelantado o atrasado en tus ahorros.</li>
+                                            <li>Nueva interfaz de tarjetas premium.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* v1.5.1 Item */}
+                                    <div className="relative opacity-70 hover:opacity-100 transition-opacity">
                                         <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-primary border-4 border-white dark:border-zinc-950 shadow-sm" />
                                         <div className="flex flex-col mb-2">
-                                            <span className="text-xs font-bold text-primary uppercase tracking-widest">Versión Actual</span>
                                             <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.5.1 - Mobile Polish</span>
                                             <span className="text-xs text-zinc-400">Enero 2026</span>
                                         </div>

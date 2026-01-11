@@ -59,7 +59,7 @@ const Layout = () => {
 
                         <main className="flex-1 overflow-auto p-4 lg:p-8 w-full max-w-[1600px] mx-auto relative">
                             <div className="fixed bottom-2 right-2 text-[10px] text-zinc-500 font-mono opacity-50 pointer-events-none">
-                                v1.5.1 - Mobile Stack
+                                v1.6 - Smart Goals
                             </div>
                             <Outlet />
                         </main>

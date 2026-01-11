@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import { useData } from './DataContext';
+import type { AppSettings } from '../services/CloudStorage';
 
 interface SettingsContextType {
     currency: string;
@@ -7,6 +8,8 @@ interface SettingsContextType {
     hasSeenOnboarding: boolean;
     setHasSeenOnboarding: (seen: boolean) => void;
     loading: boolean;
+    goalPreferences: Required<NonNullable<AppSettings['goalPreferences']>>;
+    setGoalPreferences: (prefs: AppSettings['goalPreferences']) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -19,6 +22,12 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     // Derived state for easier consumption
     const currency = settings.currency || '$';
     const hasSeenOnboarding = settings.hasSeenOnboarding || false;
+
+    // Default Goal Preferences
+    const goalPreferences = {
+        defaultCalculationMethod: settings.goalPreferences?.defaultCalculationMethod || 'dynamic',
+        defaultRecoveryStrategy: settings.goalPreferences?.defaultRecoveryStrategy || 'spread'
+    };
 
     const setCurrency = (newCurrency: string) => {
         updateData({
@@ -33,13 +42,28 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('vault_has_seen_onboarding', JSON.stringify(seen));
     };
 
+    const setGoalPreferences = (prefs: AppSettings['goalPreferences']) => {
+        updateData({
+            settings: {
+                ...settings,
+                goalPreferences: { ...goalPreferences, ...prefs }
+            }
+        });
+    };
+
     return (
-        <SettingsContext.Provider value={{ currency, setCurrency, hasSeenOnboarding, setHasSeenOnboarding, loading: isLoading }}>
+        <SettingsContext.Provider value={{
+            currency,
+            setCurrency,
+            hasSeenOnboarding,
+            setHasSeenOnboarding,
+            loading: isLoading,
+            goalPreferences,
+            setGoalPreferences
+        }}>
             {children}
         </SettingsContext.Provider>
     );
-
-
 };
 
 export const useSettings = () => {
