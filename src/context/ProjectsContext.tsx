@@ -8,6 +8,7 @@ interface ProjectsContextType {
     updateProject: (id: string, updates: Partial<Project>) => void;
     deleteProject: (id: string) => void;
     addProjectTransaction: (projectId: string, transaction: Omit<ProjectTransaction, 'id' | 'projectId'>) => void;
+    updateProjectTransaction: (projectId: string, txId: string, updates: Partial<ProjectTransaction>) => void;
     deleteProjectTransaction: (projectId: string, txId: string) => void;
     getProjectStats: (project: Project) => {
         totalIncome: number;
@@ -64,6 +65,18 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
         updateProject(projectId, updatedProject);
     };
 
+    const updateProjectTransaction = (projectId: string, txId: string, updates: Partial<ProjectTransaction>) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+
+        const updatedProject = {
+            ...project,
+            transactions: (project.transactions || []).map(t => t.id === txId ? { ...t, ...updates } : t)
+        };
+
+        updateProject(projectId, updatedProject);
+    };
+
     const deleteProjectTransaction = (projectId: string, txId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
@@ -101,6 +114,7 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
             updateProject,
             deleteProject,
             addProjectTransaction,
+            updateProjectTransaction,
             deleteProjectTransaction,
             getProjectStats
         }}>

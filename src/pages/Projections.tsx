@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useProjections } from '../hooks/useProjections';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBalance } from '../hooks/useBalance';
 import { useCredits } from '../hooks/useCredits';
@@ -14,12 +15,7 @@ import {
 import { clsx } from 'clsx';
 import { toast } from 'sonner';
 
-interface SimulatedTransaction {
-    id: string;
-    description: string;
-    amount: number;
-    type: 'income' | 'expense';
-}
+
 
 const Projections = () => {
     const { transactions } = useTransactions();
@@ -54,23 +50,38 @@ const Projections = () => {
         return grouped;
     }, [currentMonthTransactions]);
 
-    // 2. Simulation State (The "What If")
-    const [simulatedTransactions, setSimulatedTransactions] = useState<SimulatedTransaction[]>([]);
+    // 2. Simulation State (Global Persistence)
+    const {
+        projections,
+        addSimulatedTransaction,
+        removeSimulatedTransaction,
+        clearSimulation,
+        setCategoryBudgets,
+        setSimulatedCreditPayments,
+        setSimulatedGoalContributions,
+        setSimulatedFundTransfers,
+        setToggle
+    } = useProjections();
 
-    // New Simulation Input State
+    const {
+        simulatedTransactions,
+        categoryBudgets,
+        simulatedCreditPayments: simCreditIds, // array of IDs
+        simulatedGoalContributions: simGoalIds, // array of IDs
+        simulatedFundTransfers,
+        toggles
+    } = projections;
+
+    // Local Helper State (Forms)
     const [simDescription, setSimDescription] = useState('');
     const [simAmount, setSimAmount] = useState('');
     const [simType, setSimType] = useState<'income' | 'expense'>('expense');
 
-    const [categoryBudgets, setCategoryBudgets] = useState<Record<string, string>>({});
-    const [simulatedCreditPayments, setSimulatedCreditPayments] = useState<Set<string>>(new Set());
-    const [simulatedGoalContributions, setSimulatedGoalContributions] = useState<Set<string>>(new Set());
-    const [simulatedFundTransfers, setSimulatedFundTransfers] = useState<Record<string, string>>({});
+    // Sets for easy lookup
+    const simulatedCreditPayments = useMemo(() => new Set(simCreditIds), [simCreditIds]);
+    const simulatedGoalContributions = useMemo(() => new Set(simGoalIds), [simGoalIds]);
 
-    // Toggles
-    const [includeGlobalBalance, setIncludeGlobalBalance] = useState(true);
-    const [includeFundsInBalance, setIncludeFundsInBalance] = useState(false);
-    const [autoIncludeScheduled, setAutoIncludeScheduled] = useState(true);
+    const { includeGlobalBalance, includeFundsInBalance, autoIncludeScheduled } = toggles;
 
     // Add Simulated Transaction Handler
     const handleAddSimulation = () => {
@@ -78,21 +89,16 @@ const Projections = () => {
         const amount = Number(simAmount);
         if (isNaN(amount) || amount <= 0) return;
 
-        const newItem: SimulatedTransaction = {
+        addSimulatedTransaction({
             id: Math.random().toString(36).substr(2, 9),
             description: simDescription,
             amount,
             type: simType
-        };
+        });
 
-        setSimulatedTransactions([...simulatedTransactions, newItem]);
         setSimDescription('');
         setSimAmount('');
         // Keep type same for rapid entry
-    };
-
-    const removeSimulation = (id: string) => {
-        setSimulatedTransactions(simulatedTransactions.filter(t => t.id !== id));
     };
 
     // 3. Calculation Logic
@@ -228,17 +234,21 @@ const Projections = () => {
     const projection = calculateProjection();
 
     const toggleCreditSimulation = (id: string) => {
-        const newSet = new Set(simulatedCreditPayments);
-        if (newSet.has(id)) newSet.delete(id);
-        else newSet.add(id);
-        setSimulatedCreditPayments(newSet);
+        const current = [...simCreditIds];
+        if (current.includes(id)) {
+            setSimulatedCreditPayments(current.filter(i => i !== id));
+        } else {
+            setSimulatedCreditPayments([...current, id]);
+        }
     };
 
     const toggleGoalSimulation = (id: string) => {
-        const newSet = new Set(simulatedGoalContributions);
-        if (newSet.has(id)) newSet.delete(id);
-        else newSet.add(id);
-        setSimulatedGoalContributions(newSet);
+        const current = [...simGoalIds];
+        if (current.includes(id)) {
+            setSimulatedGoalContributions(current.filter(i => i !== id));
+        } else {
+            setSimulatedGoalContributions([...current, id]);
+        }
     };
 
     return (
@@ -254,7 +264,7 @@ const Projections = () => {
             {/* 0. CONTROLS */}
             <div className="flex flex-wrap gap-4 bg-zinc-100 dark:bg-zinc-900/50 p-4 rounded-2xl md:items-center">
                 <button
-                    onClick={() => setIncludeGlobalBalance(!includeGlobalBalance)}
+                    onClick={() => setToggle('includeGlobalBalance', !includeGlobalBalance)}
                     className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all", includeGlobalBalance ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600")}
                 >
                     {includeGlobalBalance ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
@@ -263,8 +273,8 @@ const Projections = () => {
 
                 <button
                     onClick={() => {
-                        if (!includeGlobalBalance) setIncludeGlobalBalance(true);
-                        setIncludeFundsInBalance(!includeFundsInBalance);
+                        if (!includeGlobalBalance) setToggle('includeGlobalBalance', true);
+                        setToggle('includeFundsInBalance', !includeFundsInBalance);
                     }}
                     className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all", includeFundsInBalance ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-white text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600")}
                 >
@@ -273,7 +283,7 @@ const Projections = () => {
                 </button>
 
                 <button
-                    onClick={() => setAutoIncludeScheduled(!autoIncludeScheduled)}
+                    onClick={() => setToggle('autoIncludeScheduled', !autoIncludeScheduled)}
                     className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all", autoIncludeScheduled ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-white text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600")}
                 >
                     {autoIncludeScheduled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
@@ -395,7 +405,7 @@ const Projections = () => {
                                                 {item.type === 'income' ? '+' : '-'}{currency}{item.amount.toLocaleString()}
                                             </span>
                                             <button
-                                                onClick={() => removeSimulation(item.id)}
+                                                onClick={() => removeSimulatedTransaction(item.id)}
                                                 className="text-zinc-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
                                             >
                                                 <Trash2 size={16} />
@@ -558,11 +568,7 @@ const Projections = () => {
             <div className="flex justify-end pt-8">
                 <button
                     onClick={() => {
-                        setSimulatedTransactions([]);
-                        setCategoryBudgets({});
-                        setSimulatedCreditPayments(new Set());
-                        setSimulatedGoalContributions(new Set());
-                        setSimulatedFundTransfers({});
+                        clearSimulation();
                         toast.success('Simulación reiniciada');
                     }}
                     className="flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold hover:opacity-90 active:scale-95 transition-all shadow-xl"

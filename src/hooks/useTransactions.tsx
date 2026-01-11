@@ -19,6 +19,11 @@ export const useTransactions = (type?: TransactionType) => {
         updateData({ transactions: newTransactions });
     };
 
+    const updateTransaction = (id: string, updates: Partial<Transaction>) => {
+        const newTransactions = transactions.map(t => t.id === id ? { ...t, ...updates } : t);
+        updateData({ transactions: newTransactions });
+    };
+
     const updateCategory = (categoryName: string, newCategoryName: string) => {
         const newTransactions = transactions.map(t =>
             t.category === categoryName ? { ...t, category: newCategoryName } : t
@@ -45,6 +50,7 @@ export const useTransactions = (type?: TransactionType) => {
     return {
         transactions: filteredTransactions,
         addTransaction,
+        updateTransaction,
         deleteTransaction,
         total,
         getByCategory,

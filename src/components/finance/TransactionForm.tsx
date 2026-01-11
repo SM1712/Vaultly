@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Save, CalendarClock, RotateCcw, AlignLeft } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { useScheduledTransactions } from '../../hooks/useScheduledTransactions';
@@ -9,16 +9,33 @@ interface TransactionFormProps {
     onSubmit: (data: any) => void;
     categories: string[];
     onAddCategory: (category: string) => void;
+    initialData?: {
+        amount: number;
+        category: string;
+        description: string;
+        date: string;
+        id?: string;
+    };
 }
 
-const TransactionForm = ({ type, onSubmit, categories, onAddCategory }: TransactionFormProps) => {
+const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialData }: TransactionFormProps) => {
     const { currency } = useSettings();
     const { addScheduled } = useScheduledTransactions();
 
-    const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState(categories[0] || '');
-    const [description, setDescription] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [amount, setAmount] = useState(initialData?.amount?.toString() || '');
+    const [category, setCategory] = useState(initialData?.category || categories[0] || '');
+    const [description, setDescription] = useState(initialData?.description || '');
+    const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
+
+    // Update state if initialData changes (for modal reuse)
+    useEffect(() => {
+        if (initialData) {
+            setAmount(initialData.amount.toString());
+            setCategory(initialData.category);
+            setDescription(initialData.description);
+            setDate(initialData.date);
+        }
+    }, [initialData]);
 
     // Recurring State
     const [isRecurring, setIsRecurring] = useState(false);
@@ -72,7 +89,7 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory }: Transact
                 type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
             )}>
                 <Plus size={20} />
-                {isRecurring ? 'Programar' : 'Registrar'} {type === 'income' ? 'Ingreso' : 'Gasto'}
+                {initialData ? 'Editar' : (isRecurring ? 'Programar' : 'Registrar')} {type === 'income' ? 'Ingreso' : 'Gasto'}
             </h3>
 
             <div className="space-y-4">
@@ -245,7 +262,7 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory }: Transact
                 )}
             >
                 <Save size={20} />
-                {isRecurring ? 'Programar Recurrencia' : 'Guardar Transacción'}
+                {initialData ? 'Guardar Cambios' : (isRecurring ? 'Programar Recurrencia' : 'Guardar Transacción')}
             </button>
         </form>
     );

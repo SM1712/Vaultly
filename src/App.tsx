@@ -12,23 +12,25 @@ import Funds from './pages/Funds';
 import Credits from './pages/Credits';
 import Projections from './pages/Projections';
 import Login from './pages/Login';
+import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
-// import DebugFooter from './components/DebugFooter';
-import { Loader2 } from 'lucide-react';
+import LoadingScreen from './components/ui/LoadingScreen';
 
 const ProtectedRoute = () => {
   const { user, loading: authLoading } = useAuth();
   const { isLoading: dataLoading } = useData();
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
-  if (authLoading || dataLoading) {
-    return (
-      <div className="h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4 text-emerald-500">
-        <Loader2 className="animate-spin w-10 h-10" />
-        <span className="font-mono text-sm tracking-wider animate-pulse">
-          {authLoading ? 'AUTENTICANDO...' : 'CARGANDO DATOS...'}
-        </span>
-      </div>
-    );
+  useEffect(() => {
+    // Ensure splash screen is visible for at least 2.5s to show full animation
+    const timer = setTimeout(() => {
+      setMinTimeElapsed(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (authLoading || dataLoading || !minTimeElapsed) {
+    return <LoadingScreen message={authLoading ? 'AUTENTICANDO...' : 'CARGANDO DATOS...'} />;
   }
 
   if (!user) return <Navigate to="/login" replace />;

@@ -1,6 +1,6 @@
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { Transaction, Project, ScheduledTransaction, Preset } from '../types';
+import type { Transaction, Project, ScheduledTransaction, Preset, ProjectionsData } from '../types';
 
 export interface AppData {
     transactions: Transaction[];
@@ -19,6 +19,7 @@ export interface AppData {
     goals: any[];
     funds: any[];
     credits: any[];
+    projections: ProjectionsData;
     version: number;
     lastUpdated: number;
 }
@@ -40,7 +41,19 @@ export const INITIAL_DATA: AppData = {
     goals: [],
     funds: [],
     credits: [],
-    version: 2,
+    projections: {
+        simulatedTransactions: [],
+        categoryBudgets: {},
+        simulatedCreditPayments: [],
+        simulatedGoalContributions: [],
+        simulatedFundTransfers: {},
+        toggles: {
+            includeGlobalBalance: true,
+            includeFundsInBalance: false,
+            autoIncludeScheduled: true
+        }
+    },
+    version: 3,
     lastUpdated: Date.now()
 };
 
@@ -109,6 +122,27 @@ export const CloudStorage = {
                 throw new Error("Permiso denegado al guardar. ¿Estás logueado?");
             }
             throw error;
+        }
+    },
+
+    // --- Offline Capabilities ---
+    saveLocalBackup(uid: string, data: AppData) {
+        try {
+            localStorage.setItem(`vaultly_data_${uid}`, JSON.stringify(data));
+            console.log("[CloudStorage] Local Backup Saved");
+        } catch (e) {
+            console.error("Local Backup Failed (Quota?)", e);
+        }
+    },
+
+    loadLocalBackup(uid: string): AppData | null {
+        try {
+            const raw = localStorage.getItem(`vaultly_data_${uid}`);
+            if (!raw) return null;
+            return JSON.parse(raw) as AppData;
+        } catch (e) {
+            console.error("Local Backup Corrupted", e);
+            return null;
         }
     }
 };

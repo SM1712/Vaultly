@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
 import { useSettings } from '../context/SettingsContext';
-import { FolderKanban, Plus } from 'lucide-react';
+import { FolderKanban, Plus, Pencil, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import ProjectDetails from '../components/finance/ProjectDetails';
 import type { Project } from '../types';
 
 const Projects = () => {
-    const { projects, addProject, updateProject, getProjectStats } = useProjects();
+    const { projects, addProject, updateProject, deleteProject, getProjectStats } = useProjects();
     const { currency } = useSettings();
     const [showForm, setShowForm] = useState(false);
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+    const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -22,14 +23,43 @@ const Projects = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        addProject({
+
+        const projectData = {
             name: formData.name,
             targetBudget: Number(formData.targetBudget),
             deadline: formData.deadline,
             description: formData.description
-        });
+        };
+
+        if (editingProjectId) {
+            updateProject(editingProjectId, projectData);
+        } else {
+            addProject(projectData);
+        }
+
         setFormData({ name: '', targetBudget: '', deadline: '', description: '' });
         setShowForm(false);
+        setEditingProjectId(null);
+    };
+
+    const handleEdit = (e: React.MouseEvent, project: Project) => {
+        e.stopPropagation();
+        setFormData({
+            name: project.name,
+            targetBudget: project.targetBudget.toString(),
+            deadline: project.deadline || '',
+            description: project.description || ''
+        });
+        setEditingProjectId(project.id);
+        setShowForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDelete = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (confirm('¿Estás seguro de eliminar este proyecto? Se eliminarán también sus transacciones.')) {
+            deleteProject(id);
+        }
     };
 
     const getStatusColor = (status: Project['status']) => {
@@ -74,7 +104,9 @@ const Projects = () => {
             {/* Create Project Wizard (Simplified) */}
             {showForm && (
                 <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-xl animate-in fade-in slide-in-from-top-4 shadow-lg">
-                    <h3 className="font-bold text-lg mb-4 text-zinc-900 dark:text-zinc-100">Iniciar Nuevo Proyecto</h3>
+                    <h3 className="font-bold text-lg mb-4 text-zinc-900 dark:text-zinc-100">
+                        {editingProjectId ? 'Editar Proyecto' : 'Iniciar Nuevo Proyecto'}
+                    </h3>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1">
@@ -129,7 +161,7 @@ const Projects = () => {
                                 type="submit"
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-900/20"
                             >
-                                Crear Proyecto
+                                {editingProjectId ? 'Guardar Cambios' : 'Crear Proyecto'}
                             </button>
                         </div>
                     </form>
@@ -168,41 +200,57 @@ const Projects = () => {
                                             </span>
                                         </div>
                                     </div>
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => handleEdit(e, project)}
+                                            className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                            title="Editar"
+                                        >
+                                            <Pencil size={18} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDelete(e, project.id)}
+                                            className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4 py-2">
+                                    <div>
+                                        <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Balance</p>
+                                        <p className={clsx("font-mono font-bold text-lg", stats.currentBalance >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                                            {currency}{stats.currentBalance.toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Ejecutado</p>
+                                        <p className="font-mono font-bold text-zinc-500 text-lg">{currency}{stats.totalExpenses.toLocaleString()}</p>
+                                    </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4 py-2">
-                                        <div>
-                                            <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Balance</p>
-                                            <p className={clsx("font-mono font-bold text-lg", stats.currentBalance >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                                                {currency}{stats.currentBalance.toLocaleString()}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Ejecutado</p>
-                                            <p className="font-mono font-bold text-zinc-500 text-lg">{currency}{stats.totalExpenses.toLocaleString()}</p>
-                                        </div>
+                                {/* Progress Bar */}
+                                <div>
+                                    <div className="flex justify-between text-xs mb-1.5">
+                                        <span className="text-zinc-500">
+                                            {stats.totalExpenses > 0 ? 'Presupuesto Ejecutado' : 'Fondos vs Objetivo'}
+                                        </span>
+                                        <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">
+                                            {stats.totalExpenses > 0 ? stats.percentConsumed.toFixed(0) : stats.percentFunded.toFixed(0)}%
+                                        </span>
                                     </div>
-
-                                    {/* Progress Bar */}
-                                    <div>
-                                        <div className="flex justify-between text-xs mb-1.5">
-                                            <span className="text-zinc-500">
-                                                {stats.totalExpenses > 0 ? 'Presupuesto Ejecutado' : 'Fondos vs Objetivo'}
-                                            </span>
-                                            <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">
-                                                {stats.totalExpenses > 0 ? stats.percentConsumed.toFixed(0) : stats.percentFunded.toFixed(0)}%
-                                            </span>
-                                        </div>
-                                        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                            <div
-                                                className={clsx("h-full transition-all duration-500",
-                                                    (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 100 ? "bg-rose-500" :
-                                                        (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 80 ? "bg-emerald-500" : "bg-emerald-500"
-                                                )}
-                                                style={{ width: `${Math.min((stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded), 100)}%` }}
-                                            />
-                                        </div>
+                                    <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                        <div
+                                            className={clsx("h-full transition-all duration-500",
+                                                (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 100 ? "bg-rose-500" :
+                                                    (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 80 ? "bg-emerald-500" : "bg-emerald-500"
+                                            )}
+                                            style={{ width: `${Math.min((stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded), 100)}%` }}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -225,12 +273,14 @@ const Projects = () => {
             </div>
 
             {/* Project Details Modal */}
-            {selectedProject && (
-                <ProjectDetails
-                    project={projects.find(p => p.id === selectedProject.id) || selectedProject}
-                    onClose={() => setSelectedProject(null)}
-                />
-            )}
+            {
+                selectedProject && (
+                    <ProjectDetails
+                        project={projects.find(p => p.id === selectedProject.id) || selectedProject}
+                        onClose={() => setSelectedProject(null)}
+                    />
+                )
+            }
         </div >
     );
 };

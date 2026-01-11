@@ -6,9 +6,12 @@ interface ModalProps {
     onClose: () => void;
     title: string;
     children: React.ReactNode;
+    maxWidth?: string;
+    noPadding?: boolean;
+    className?: string;
 }
 
-const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md", noPadding = false, className = "" }: ModalProps) => {
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -28,15 +31,15 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity"
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             />
 
             {/* Modal Content */}
-            <div className="relative bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-800 transform transition-all animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] flex flex-col">
+            <div className={`relative bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full ${maxWidth} ${className} border border-zinc-200 dark:border-zinc-800 transform transition-all animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] flex flex-col overflow-hidden`}>
                 <div className="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-800/50 flex-shrink-0">
                     <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
                         {title}
@@ -49,7 +52,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
                     </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto no-scrollbar">
+                <div className={noPadding ? "flex-1 min-h-0 flex flex-col overflow-hidden" : "p-6 overflow-y-auto no-scrollbar"}>
                     {children}
                 </div>
             </div>

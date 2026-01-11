@@ -108,3 +108,23 @@ export interface Preset {
     type: 'income' | 'expense';
     icon?: string; // Emoji
 }
+
+export interface SimulatedTransaction {
+    id: string;
+    description: string;
+    amount: number;
+    type: 'income' | 'expense';
+}
+
+export interface ProjectionsData {
+    simulatedTransactions: SimulatedTransaction[];
+    categoryBudgets: Record<string, string>;
+    simulatedCreditPayments: string[]; // IDs
+    simulatedGoalContributions: string[]; // IDs
+    simulatedFundTransfers: Record<string, string>;
+    toggles: {
+        includeGlobalBalance: boolean;
+        includeFundsInBalance: boolean;
+        autoIncludeScheduled: boolean;
+    };
+}

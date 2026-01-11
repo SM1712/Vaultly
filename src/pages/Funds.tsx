@@ -7,7 +7,8 @@ import {
     Plus, Trash2, Gift, DollarSign, Heart, Flame,
     PiggyBank, Wallet, Star, Smile, Briefcase, Car,
     Plane, Home, Coffee, Gamepad2, Smartphone,
-    MoreHorizontal, ArrowUpRight, ArrowDownLeft, Check
+    MoreHorizontal, ArrowUpRight, ArrowDownLeft, Check,
+    Pencil
 } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import { clsx } from 'clsx';
@@ -33,11 +34,12 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const Funds = () => {
-    const { funds, addFund, deleteFund, addTransaction } = useFunds();
+    const { funds, addFund, deleteFund, addTransaction, updateFund } = useFunds();
     const { currency } = useSettings();
 
-    // Create Modal State
+    // Create/Edit Modal State
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [editingFundId, setEditingFundId] = useState<string | null>(null);
     const [newFund, setNewFund] = useState({ name: '', icon: 'piggy', description: '', color: 'emerald' });
 
     // Transaction Modal State
@@ -47,12 +49,38 @@ const Funds = () => {
     const [txAmount, setTxAmount] = useState('');
     const [txNote, setTxNote] = useState('');
 
-    const handleCreate = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newFund.name) return;
-        addFund(newFund);
+
+        if (editingFundId) {
+            updateFund(editingFundId, newFund);
+            toast.success('Fondo actualizado');
+        } else {
+            addFund(newFund);
+            toast.success('Fondo creado');
+        }
+
         setNewFund({ name: '', icon: 'piggy', description: '', color: 'emerald' });
+        setEditingFundId(null);
         setIsCreateOpen(false);
+    };
+
+    const openCreate = () => {
+        setEditingFundId(null);
+        setNewFund({ name: '', icon: 'piggy', description: '', color: 'emerald' });
+        setIsCreateOpen(true);
+    };
+
+    const openEdit = (fund: any) => {
+        setEditingFundId(fund.id);
+        setNewFund({
+            name: fund.name,
+            icon: fund.icon,
+            description: fund.description || '',
+            color: fund.color || 'emerald'
+        });
+        setIsCreateOpen(true);
     };
 
     const { currentBalance } = useBalance();
@@ -100,7 +128,7 @@ const Funds = () => {
                     <p className="text-zinc-500 text-sm mt-1">Espacios personalizados para tu dinero</p>
                 </div>
                 <button
-                    onClick={() => setIsCreateOpen(true)}
+                    onClick={openCreate}
                     className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-5 py-2.5 rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-zinc-200 dark:shadow-zinc-900/50"
                 >
                     <Plus size={20} /> Nuevo Fondo
@@ -128,12 +156,22 @@ const Funds = () => {
                                     <div className={clsx("p-3 rounded-xl transition-colors", colorClass)}>
                                         {getIcon(fund.icon)}
                                     </div>
-                                    <button
-                                        onClick={() => deleteFund(fund.id)}
-                                        className="text-zinc-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => openEdit(fund)}
+                                            className="text-zinc-300 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                                            title="Editar"
+                                        >
+                                            <Pencil size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteFund(fund.id)}
+                                            className="text-zinc-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-1">{fund.name}</h3>
@@ -166,9 +204,9 @@ const Funds = () => {
                 )}
             </div>
 
-            {/* Create Modal */}
-            <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Crear Nuevo Fondo">
-                <form onSubmit={handleCreate} className="space-y-6">
+            {/* Create/Edit Modal */}
+            <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title={editingFundId ? "Editar Fondo" : "Crear Nuevo Fondo"}>
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
                         <div className="space-y-1">
                             <label className="text-xs text-zinc-500 uppercase tracking-wider">Nombre</label>
@@ -242,7 +280,7 @@ const Funds = () => {
                         type="submit"
                         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-medium transition-colors"
                     >
-                        Crear Fondo
+                        {editingFundId ? 'Guardar Cambios' : 'Crear Fondo'}
                     </button>
                 </form>
             </Modal>

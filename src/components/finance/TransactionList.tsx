@@ -1,13 +1,14 @@
 import type { Transaction } from '../../types';
-import { Trash2, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { Trash2, ArrowUpRight, ArrowDownLeft, Pencil } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface TransactionListProps {
     transactions: Transaction[];
     onDelete: (id: string) => void;
+    onEdit?: (transaction: Transaction) => void;
 }
 
-const TransactionList = ({ transactions, onDelete }: TransactionListProps) => {
+const TransactionList = ({ transactions, onDelete, onEdit }: TransactionListProps) => {
     if (transactions.length === 0) {
         return (
             <div className="bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800/50 rounded-xl p-8 text-center">
@@ -64,6 +65,15 @@ const TransactionList = ({ transactions, onDelete }: TransactionListProps) => {
                                     ${t.amount.toFixed(2)}
                                 </td>
                                 <td className="px-6 py-4 text-center">
+                                    {onEdit && (
+                                        <button
+                                            onClick={() => onEdit(t)}
+                                            className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100 mr-2"
+                                            title="Editar"
+                                        >
+                                            <Pencil size={18} />
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => onDelete(t.id)}
                                         className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-100 dark:hover:bg-rose-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"

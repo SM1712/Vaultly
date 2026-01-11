@@ -31,197 +31,147 @@
 /* Default Theme (Classic - Stone/Warm - Now 'Sand' essence) */
 :root {
     --color-app-50: #fafaf9;
-    /* stone-50 */
     --color-app-100: #f5f5f4;
-    /* stone-100 */
     --color-app-200: #e7e5e4;
-    /* stone-200 */
     --color-app-300: #d6d3d1;
-    /* stone-300 */
     --color-app-400: #a8a29e;
-    /* stone-400 */
     --color-app-500: #78716c;
-    /* stone-500 */
     --color-app-600: #57534e;
-    /* stone-600 */
     --color-app-700: #44403c;
-    /* stone-700 */
     --color-app-800: #292524;
-    /* stone-800 */
     --color-app-900: #1c1917;
-    /* stone-900 */
     --color-app-950: #0c0a09;
-    /* stone-950 */
+    --color-primary: #57534e;
+    /* Stone 600 */
 }
 
-/* Sepia -> 'Clay' (More terracotta/pastel earth) */
+/* Sepia -> 'Clay' (Soft Terracotta) */
 :root[data-theme='clay'] {
-    --color-app-50: #fff7ed;
-    /* orange-50 (base) */
-    --color-app-100: #ffedd5;
-    /* orange-100 */
-    --color-app-200: #fed7aa;
-    /* orange-200 */
-    --color-app-300: #fdba74;
-    /* orange-300 */
-    --color-app-400: #fb923c;
-    /* orange-400 */
-    --color-app-500: #f97316;
-    /* orange-500 */
-    --color-app-600: #ea580c;
-    /* orange-600 */
-    --color-app-700: #c2410c;
-    /* orange-700 */
-    --color-app-800: #9a3412;
-    /* orange-800 */
-    --color-app-900: #7c2d12;
-    /* orange-900 */
-    --color-app-950: #431407;
-    /* orange-950 */
+    --color-app-50: #fff8f1;
+    --color-app-100: #ffe8d1;
+    --color-app-200: #fed0a0;
+    --color-app-300: #fdb072;
+    --color-app-400: #fb8c45;
+    --color-app-500: #f96d20;
+    --color-app-600: #ea500c;
+    --color-app-700: #c23a0c;
+    --color-app-800: #9a2b12;
+    --color-app-900: #7c2412;
+    --color-app-950: #431007;
+    --color-primary: #ea500c;
 }
 
-/* Ocean -> 'Mist' (Desaturated Blue/Grey) */
+/* Ocean -> 'Mist' (Soft Blue Grey) */
 :root[data-theme='mist'] {
     --color-app-50: #f8fafc;
-    /* slate-50 */
     --color-app-100: #f1f5f9;
-    /* slate-100 */
     --color-app-200: #e2e8f0;
-    /* slate-200 */
     --color-app-300: #cbd5e1;
-    /* slate-300 */
     --color-app-400: #94a3b8;
-    /* slate-400 */
     --color-app-500: #64748b;
-    /* slate-500 */
     --color-app-600: #475569;
-    /* slate-600 */
     --color-app-700: #334155;
-    /* slate-700 */
     --color-app-800: #1e293b;
-    /* slate-800 */
     --color-app-900: #0f172a;
-    /* slate-900 */
     --color-app-950: #020617;
-    /* slate-950 */
+    --color-primary: #475569;
 }
 
-/* Midnight -> 'Royal' (Softened Lavender/Indigo) */
+/* Midnight -> 'Royal' (Soft Lavender/Pastel Indigo - FIXED: Much softer) */
 :root[data-theme='royal'] {
-    --color-app-50: #f5f3ff;
-    /* violet-50 */
-    --color-app-100: #ede9fe;
-    /* violet-100 */
-    --color-app-200: #ddd6fe;
-    /* violet-200 */
-    --color-app-300: #c4b5fd;
-    /* violet-300 */
-    --color-app-400: #a78bfa;
-    /* violet-400 */
-    --color-app-500: #8b5cf6;
-    /* violet-500 */
-    --color-app-600: #7c3aed;
-    /* violet-600 */
-    --color-app-700: #6d28d9;
-    /* violet-700 */
-    --color-app-800: #5b21b6;
-    /* violet-800 */
-    --color-app-900: #4c1d95;
-    /* violet-900 */
-    --color-app-950: #2e1065;
-    /* violet-950 */
+    --color-app-50: #faf9ff;
+    --color-app-100: #f3f0ff;
+    --color-app-200: #e9e5ff;
+    --color-app-300: #d8d1ff;
+    --color-app-400: #c0b3ff;
+    --color-app-500: #a594ff;
+    --color-app-600: #8b75ff;
+    /* Soft Indigo */
+    --color-app-700: #7457e8;
+    --color-app-800: #5f42c1;
+    --color-app-900: #4e3599;
+    --color-app-950: #2d1b5e;
+    --color-primary: #8b75ff;
 }
 
-/* Bloom -> 'Bloom' (Pastel Pink) */
+/* Bloom -> 'Bloom' (Soft Pastel Pink) */
 :root[data-theme='bloom'] {
-    --color-app-50: #fff1f2;
-    /* rose-50 */
-    --color-app-100: #ffe4e6;
-    /* rose-100 */
-    --color-app-200: #fecdd3;
-    /* rose-200 */
-    --color-app-300: #fda4af;
-    /* rose-300 */
-    --color-app-400: #fb7185;
-    /* rose-400 */
-    --color-app-500: #f43f5e;
-    /* rose-500 */
-    --color-app-600: #e11d48;
-    /* rose-600 */
-    --color-app-700: #be123c;
-    /* rose-700 */
+    --color-app-50: #fff5f6;
+    --color-app-100: #ffe9ec;
+    --color-app-200: #ffcfd6;
+    --color-app-300: #fda4b3;
+    --color-app-400: #fa748d;
+    --color-app-500: #f43f63;
+    --color-app-600: #e11d4d;
+    --color-app-700: #be123e;
     --color-app-800: #9f1239;
-    /* rose-800 */
     --color-app-900: #881337;
-    /* rose-900 */
     --color-app-950: #4c0519;
-    /* rose-950 */
+    --color-primary: #e11d4d;
 }
 
-/* NEW: Sage (Natural Green) */
+/* NEW: Sage (Soft Natural Green) */
 :root[data-theme='sage'] {
-    --color-app-50: #f4fbf7;
-    /* custom soft green */
-    --color-app-100: #e2f2e7;
-    --color-app-200: #c3e4ce;
-    --color-app-300: #96ccab;
-    --color-app-400: #64ad84;
-    --color-app-500: #449168;
-    /* primary */
-    --color-app-600: #327351;
-    --color-app-700: #295c42;
-    --color-app-800: #234936;
-    --color-app-900: #1d3c2e;
-    --color-app-950: #0f2219;
+    --color-app-50: #f6fbf7;
+    --color-app-100: #eaf7ed;
+    --color-app-200: #cfead6;
+    --color-app-300: #a7d6b3;
+    --color-app-400: #7bc08d;
+    --color-app-500: #53a36c;
+    --color-app-600: #3d8556;
+    --color-app-700: #336a46;
+    --color-app-800: #2b543a;
+    --color-app-900: #244531;
+    --color-app-950: #112218;
+    --color-primary: #53a36c;
 }
 
-/* NEW: Sand (Warm Beige/Yellow) */
+/* NEW: Sand (Soft Warm Beige) */
 :root[data-theme='sand'] {
-    --color-app-50: #fdfbf7;
-    /* custom warm sand */
-    --color-app-100: #f9f5eb;
-    --color-app-200: #f1e9d6;
-    --color-app-300: #e6d6b3;
-    --color-app-400: #d6b885;
-    --color-app-500: #c29961;
-    /* primary */
-    --color-app-600: #a67c48;
-    --color-app-700: #856138;
-    --color-app-800: #6e4f32;
-    --color-app-900: #59402b;
-    --color-app-950: #332316;
+    --color-app-50: #fdfcfa;
+    --color-app-100: #fbf9f4;
+    --color-app-200: #f3efe6;
+    --color-app-300: #e5ded0;
+    --color-app-400: #d1c4ae;
+    --color-app-500: #b5a489;
+    --color-app-600: #968469;
+    --color-app-700: #786854;
+    --color-app-800: #625546;
+    --color-app-900: #50463b;
+    --color-app-950: #2b251f;
+    --color-primary: #968469;
 }
 
-/* NEW: Coffee (Rich Espresso/Mocha) */
+/* NEW: Coffee (Soft Mocha) */
 :root[data-theme='coffee'] {
-    --color-app-50: #fff7f5;
-    --color-app-100: #fff1eb;
-    --color-app-200: #ebd5c0;
-    --color-app-300: #dcbfa6;
-    --color-app-400: #ac8e74;
-    --color-app-500: #8d6e53;
-    /* Primary: Deep Mocha */
-    --color-app-600: #71553e;
-    --color-app-700: #5a4130;
-    --color-app-800: #463126;
-    --color-app-900: #36261f;
-    --color-app-950: #201511;
+    --color-app-50: #fdfafd;
+    --color-app-100: #f9f4f1;
+    --color-app-200: #eee4de;
+    --color-app-300: #dec9bd;
+    --color-app-400: #c4a492;
+    --color-app-500: #a68470;
+    --color-app-600: #8a6a58;
+    --color-app-700: #715546;
+    --color-app-800: #5c473b;
+    --color-app-900: #4b3b33;
+    --color-app-950: #29201b;
+    --color-primary: #8a6a58;
 }
 
-/* NEW: Nordic (Crisp Ice/Slate) */
+/* NEW: Nordic (Soft Ice Blue) */
 :root[data-theme='nordic'] {
-    --color-app-50: #f0f4fa;
-    --color-app-100: #e1e8f5;
-    --color-app-200: #c5d4ed;
-    --color-app-300: #9cbce0;
-    --color-app-400: #6f9ecf;
-    --color-app-500: #4a82bf;
-    /* Primary: Steel Blue */
-    --color-app-600: #37659e;
-    --color-app-700: #2e517e;
-    --color-app-800: #294466;
-    --color-app-900: #263a54;
-    --color-app-950: #1a2738;
+    --color-app-50: #f4f7fb;
+    --color-app-100: #e6ecf6;
+    --color-app-200: #cddbe9;
+    --color-app-300: #a5c2de;
+    --color-app-400: #76a0cc;
+    --color-app-500: #5181b8;
+    --color-app-600: #3b6699;
+    --color-app-700: #31527a;
+    --color-app-800: #2a4463;
+    --color-app-900: #263a53;
+    --color-app-950: #1a2736;
+    --color-primary: #5181b8;
 }
 
 /* Force class-based dark mode */
@@ -254,25 +204,38 @@
     /* Firefox */
 }
 
+/* Global Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
 /* Custom Scrollbar Styling - Global */
 @layer base {
+
+    /* Webkit (Chrome, Safari, Edge) */
     ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
     }
 
     ::-webkit-scrollbar-track {
         background: transparent;
+        margin-block: 4px;
     }
 
     ::-webkit-scrollbar-thumb {
-        background: var(--color-app-300);
+        background-color: var(--color-app-200);
+        /* Lighter default */
+        border: 2px solid transparent;
+        /* Creates padding around thumb */
+        background-clip: content-box;
         border-radius: 99px;
-        transition: background 0.2s;
+        transition: background-color 0.2s;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: var(--color-app-500);
+        background-color: var(--color-app-400);
+        /* Darker on hover */
     }
 
     /* Firefox */
@@ -280,4 +243,34 @@
         scrollbar-width: thin;
         scrollbar-color: var(--color-app-300) transparent;
     }
+}
+
+/* Colortly Dynamic Utilities */
+.text-primary {
+    color: var(--color-primary);
+}
+
+.bg-primary {
+    background-color: var(--color-primary);
+}
+
+.border-primary {
+    border-color: var(--color-primary);
+}
+
+/* Manual Animations (since tailwindcss-animate is missing) */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-enter-app {
+    animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }

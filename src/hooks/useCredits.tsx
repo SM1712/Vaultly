@@ -20,6 +20,11 @@ export const useCredits = () => {
         updateData({ credits: newCredits });
     };
 
+    const updateCredit = (id: string, updates: Partial<Credit>) => {
+        const newCredits = credits.map(c => c.id === id ? { ...c, ...updates } : c);
+        updateData({ credits: newCredits });
+    };
+
     const addPayment = (creditId: string, amount: number, note?: string) => {
         const credit = credits.find(c => c.id === creditId);
         if (!credit) {
@@ -111,6 +116,7 @@ export const useCredits = () => {
     return {
         credits,
         addCredit,
+        updateCredit,
         deleteCredit,
         addPayment,
         getCreditStatus

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Plus, ArrowUpRight, ArrowDownLeft, Check, ChevronDown } from 'lucide-react';
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCategories } from '../../hooks/useCategories';
@@ -7,6 +8,7 @@ import { usePresets } from '../../hooks/usePresets';
 import { clsx } from 'clsx';
 
 const MobileQuickAdd = () => {
+    const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false); // For exit animations
     const [type, setType] = useState<'expense' | 'income'>('expense');
@@ -29,6 +31,9 @@ const MobileQuickAdd = () => {
             setType('expense');
         }
     }, [isOpen]);
+
+    // Don't render on non-dashboard pages
+    if (location.pathname !== '/') return null;
 
     const handleClose = () => {
         setIsClosing(true);
@@ -115,15 +120,21 @@ const MobileQuickAdd = () => {
                                     <button
                                         key={preset.id}
                                         onClick={() => {
-                                            if (preset.amount) setAmount(preset.amount.toString());
-                                            setType(preset.type);
-                                            setCategory(preset.category);
-                                            setDescription(preset.label); // Auto-fill description with label
+                                            if (!preset.amount) return; // Should not happen for quick add presets usually
+
+                                            addTransaction({
+                                                amount: preset.amount,
+                                                type: preset.type,
+                                                category: preset.category,
+                                                date: new Date().toLocaleDateString('en-CA'),
+                                                description: preset.label
+                                            });
+                                            handleClose();
                                         }}
                                         className={clsx(
                                             "flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 rounded-2xl border-2 transition-all snap-start",
-                                            "border-zinc-100 bg-white dark:border-zinc-800 dark:bg-zinc-900 active:scale-95",
-                                            // Highlight if matching current selection
+                                            "border-zinc-100 bg-white dark:border-zinc-800 dark:bg-zinc-900 active:scale-95 active:bg-emerald-50 dark:active:bg-emerald-900/20 active:border-emerald-500",
+                                            // Highlight if matching current selection (though less relevant now with instant click)
                                             (category === preset.category && type === preset.type)
                                                 ? "border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
                                                 : ""

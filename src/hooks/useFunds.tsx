@@ -15,6 +15,11 @@ export const useFunds = () => {
         updateData({ funds: [...funds, newFund] });
     };
 
+    const updateFund = (id: string, updates: Partial<Fund>) => {
+        const newFunds = funds.map(f => f.id === id ? { ...f, ...updates } : f);
+        updateData({ funds: newFunds });
+    };
+
     const deleteFund = (id: string) => {
         const newFunds = funds.filter(f => f.id !== id);
         updateData({ funds: newFunds });
@@ -52,6 +57,7 @@ export const useFunds = () => {
     return {
         funds,
         addFund,
+        updateFund,
         deleteFund,
         addTransaction
     };

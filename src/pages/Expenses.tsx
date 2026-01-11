@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useTransactions } from '../hooks/useTransactions';
+import type { Transaction } from '../types';
 import { useFinance } from '../context/FinanceContext';
 import { useSettings } from '../context/SettingsContext';
 import TransactionForm from '../components/finance/TransactionForm';
@@ -8,8 +10,9 @@ import CategorySummary from '../components/finance/CategorySummary';
 import MonthSelector from '../components/MonthSelector';
 
 const Expenses = () => {
-    const { transactions, addTransaction, deleteTransaction } = useTransactions('expense');
+    const { transactions, addTransaction, deleteTransaction, updateTransaction } = useTransactions('expense');
     const { categories, addCategory } = useCategories('expense');
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const { selectedDate } = useFinance();
     const { currency } = useSettings();
 
@@ -29,6 +32,20 @@ const Expenses = () => {
         }, {} as Record<string, number>);
 
         return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+    };
+
+    const handleFormSubmit = (data: any) => {
+        if (editingTransaction) {
+            updateTransaction(editingTransaction.id, data);
+            setEditingTransaction(null);
+        } else {
+            addTransaction(data);
+        }
+    };
+
+    const handleEdit = (transaction: Transaction) => {
+        setEditingTransaction(transaction);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
@@ -51,13 +68,15 @@ const Expenses = () => {
                 <div className="lg:col-span-2 space-y-6">
                     <TransactionForm
                         type="expense"
-                        onSubmit={addTransaction}
+                        onSubmit={handleFormSubmit}
                         categories={categories}
                         onAddCategory={addCategory}
+                        initialData={editingTransaction || undefined}
                     />
                     <TransactionList
                         transactions={filteredTransactions}
                         onDelete={deleteTransaction}
+                        onEdit={handleEdit}
                     />
                 </div>
                 <div className="lg:col-span-1">

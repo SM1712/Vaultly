@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useCredits } from '../hooks/useCredits';
 import { useSettings } from '../context/SettingsContext';
-import { Plus, Trash2, Calendar, DollarSign, Percent, Landmark, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Calendar, DollarSign, Percent, Landmark, CheckCircle, Pencil } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -12,12 +12,13 @@ import { useTransactions } from '../hooks/useTransactions';
 import { useBalance } from '../hooks/useBalance';
 
 const Credits = () => {
-    const { credits, addCredit, deleteCredit, addPayment, getCreditStatus } = useCredits();
+    const { credits, addCredit, deleteCredit, addPayment, getCreditStatus, updateCredit } = useCredits();
     const { currency } = useSettings();
     const { addTransaction } = useTransactions();
     const { currentBalance } = useBalance();
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [editingCreditId, setEditingCreditId] = useState<string | null>(null);
     const [newCredit, setNewCredit] = useState({
         name: '',
         principal: '',
@@ -29,7 +30,7 @@ const Credits = () => {
     const [paymentModal, setPaymentModal] = useState<{ open: boolean; creditId: string }>({ open: false, creditId: '' });
     const [paymentAmount, setPaymentAmount] = useState('');
 
-    const handleCreate = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const principal = Number(newCredit.principal);
         const rate = Number(newCredit.interestRate);
@@ -37,14 +38,26 @@ const Credits = () => {
 
         if (!newCredit.name || principal <= 0 || term <= 0) return;
 
-        addCredit({
-            name: newCredit.name,
-            principal,
-            interestRate: rate,
-            term,
-            startDate: newCredit.startDate,
-            status: 'active'
-        });
+        if (editingCreditId) {
+            updateCredit(editingCreditId, {
+                name: newCredit.name,
+                principal,
+                interestRate: rate,
+                term,
+                startDate: newCredit.startDate
+            });
+            toast.success('Crédito actualizado');
+        } else {
+            addCredit({
+                name: newCredit.name,
+                principal,
+                interestRate: rate,
+                term,
+                startDate: newCredit.startDate,
+                status: 'active'
+            });
+            toast.success('Crédito creado exitosamente');
+        }
 
         setIsCreateOpen(false);
         setNewCredit({
@@ -54,7 +67,31 @@ const Credits = () => {
             term: '',
             startDate: new Date().toISOString().split('T')[0]
         });
-        toast.success('Crédito creado exitosamente');
+        setEditingCreditId(null);
+    };
+
+    const openCreate = () => {
+        setEditingCreditId(null);
+        setNewCredit({
+            name: '',
+            principal: '',
+            interestRate: '',
+            term: '',
+            startDate: new Date().toISOString().split('T')[0]
+        });
+        setIsCreateOpen(true);
+    };
+
+    const openEdit = (credit: Credit) => {
+        setEditingCreditId(credit.id);
+        setNewCredit({
+            name: credit.name,
+            principal: credit.principal.toString(),
+            interestRate: credit.interestRate.toString(),
+            term: credit.term.toString(),
+            startDate: credit.startDate
+        });
+        setIsCreateOpen(true);
     };
 
     const handlePayment = (e: React.FormEvent) => {
@@ -109,7 +146,7 @@ const Credits = () => {
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Gestiona tus préstamos y planifica tus pagos</p>
                 </div>
                 <button
-                    onClick={() => setIsCreateOpen(true)}
+                    onClick={openCreate}
                     className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
                 >
                     <Plus size={18} />
@@ -144,14 +181,16 @@ const Credits = () => {
                                         <Landmark size={24} />
                                     </div>
                                     <div className="flex gap-2">
-                                        {credit.status === 'paid' && (
-                                            <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full flex items-center gap-1">
-                                                <CheckCircle size={12} /> PAGADO
-                                            </span>
-                                        )}
+                                        <button
+                                            onClick={() => openEdit(credit)}
+                                            className="text-zinc-300 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100 p-1"
+                                            title="Editar"
+                                        >
+                                            <Pencil size={18} />
+                                        </button>
                                         <button
                                             onClick={() => deleteCredit(credit.id)}
-                                            className="text-zinc-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                                            className="text-zinc-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 p-1"
                                         >
                                             <Trash2 size={18} />
                                         </button>
@@ -183,40 +222,42 @@ const Credits = () => {
                                     </div>
                                 </div>
 
-                                {credit.status === 'active' && (
-                                    <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <div>
-                                                <p className="text-xs text-zinc-500 uppercase">Cuota Mensual</p>
-                                                <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{currency}{monthlyQuota.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                                {
+                                    credit.status === 'active' && (
+                                        <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <div>
+                                                    <p className="text-xs text-zinc-500 uppercase">Cuota Mensual</p>
+                                                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{currency}{monthlyQuota.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs text-zinc-500 uppercase">Próx. Pago</p>
+                                                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                                        {format(nextPaymentDate, 'dd MMM yyyy', { locale: es })}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-xs text-zinc-500 uppercase">Próx. Pago</p>
-                                                <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                                                    {format(nextPaymentDate, 'dd MMM yyyy', { locale: es })}
-                                                </p>
-                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setPaymentModal({ open: true, creditId: credit.id });
+                                                    setPaymentAmount(monthlyQuota.toFixed(2));
+                                                }}
+                                                className="w-full bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 py-2 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                                            >
+                                                <CheckCircle size={16} /> Registrar Pago
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                setPaymentModal({ open: true, creditId: credit.id });
-                                                setPaymentAmount(monthlyQuota.toFixed(2));
-                                            }}
-                                            className="w-full bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 py-2 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-                                        >
-                                            <CheckCircle size={16} /> Registrar Pago
-                                        </button>
-                                    </div>
-                                )}
+                                    )
+                                }
                             </div>
                         );
                     })
                 )}
             </div>
 
-            {/* Create Modal */}
-            <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Registrar Nuevo Crédito">
-                <form onSubmit={handleCreate} className="space-y-4">
+            {/* Create/Edit Modal */}
+            <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title={editingCreditId ? "Editar Crédito" : "Registrar Nuevo Crédito"}>
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="text-xs text-zinc-500 uppercase font-bold">Nombre del Crédito</label>
                         <input
@@ -292,7 +333,7 @@ const Credits = () => {
                         type="submit"
                         className="w-full bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-bold transition-colors mt-2"
                     >
-                        Crear Crédito
+                        {editingCreditId ? 'Guardar Cambios' : 'Crear Crédito'}
                     </button>
                 </form>
             </Modal>

@@ -1,0 +1,31 @@
+{
+    "profile": {
+        "name": "Usuario de Prueba",
+        "email": "test@vault.local",
+        "currency": "USD",
+        "theme": "dark"
+    },
+    "accounts": [
+        {
+            "id": "acc_1",
+            "name": "Bóveda Principal",
+            "type": "checking",
+            "balance": 999999,
+            "currency": "USD"
+        }
+    ],
+    "transactions": [
+        {
+            "id": "tx_test_1",
+            "amount": 999999,
+            "type": "income",
+            "category": "Loteria",
+            "description": "Ganancia de Prueba Importada",
+            "date": "2026-01-01T12:00:00.000Z"
+        }
+    ],
+    "settings": {
+        "currency": "USD",
+        "theme": "dark"
+    }
+}
