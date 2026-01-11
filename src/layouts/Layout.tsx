@@ -9,7 +9,7 @@ import { FinanceProvider } from '../context/FinanceContext';
 import { SettingsProvider } from '../context/SettingsContext';
 import { ProjectsProvider } from '../context/ProjectsContext';
 import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Toaster } from 'sonner';
 import OnboardingModal from '../components/onboarding/OnboardingModal';
 

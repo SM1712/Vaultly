@@ -11,7 +11,7 @@ import { useData } from '../../context/DataContext';
 import { toast } from 'sonner';
 import {
     Trash2, Plus, LogOut, User, CalendarClock,
-    PlayCircle, PauseCircle, MousePointerClick, Database,
+    PlayCircle, PauseCircle, Database,
     Download, Upload, Bomb, Radiation, RefreshCw, Siren,
     LayoutGrid, Palette, List, Zap, History, Sparkles
 } from 'lucide-react';
@@ -103,11 +103,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     };
 
     // PWA Update Logic
-    const {
-        offlineReady: [offlineReady, setOfflineReady],
-        needRefresh: [needRefresh, setNeedRefresh],
-        updateServiceWorker,
-    } = useRegisterSW({
+    useRegisterSW({
         onRegistered(r) {
             console.log('SW Registered: ' + r)
         },
