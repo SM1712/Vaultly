@@ -363,31 +363,43 @@ const Goals = () => {
 
                             return (
                                 <div key={goal.id} className={clsx(
-                                    "bg-white dark:bg-zinc-900 border rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group relative",
+                                    "bg-white dark:bg-zinc-900 border rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all group relative overflow-hidden",
                                     editingId === goal.id ? "border-blue-500 ring-2 ring-blue-500/20" : "border-zinc-200 dark:border-zinc-800"
                                 )}>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex gap-4">
-                                            <div className="flex items-center justify-center w-14 h-14 bg-zinc-50 dark:bg-zinc-800 rounded-2xl text-zinc-600 dark:text-zinc-300">
+                                    {/* Mobile-First Header Layout */}
+                                    <div className="flex justify-between items-start gap-3 mb-6">
+                                        <div className="flex gap-3 sm:gap-4 flex-1 min-w-0">
+                                            {/* Icon Box */}
+                                            <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-zinc-50 dark:bg-zinc-800 rounded-2xl text-zinc-600 dark:text-zinc-300 shrink-0">
                                                 {getIcon(goal.icon || 'target')}
                                             </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{goal.name}</h3>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    {health === 'on_track' && <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">En Camino</span>}
-                                                    {health === 'behind' && <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Atrasado</span>}
-                                                    {health === 'ahead' && <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Adelantado</span>}
-                                                    <span className="text-xs text-zinc-400 flex items-center gap-1">
-                                                        • Vence {new Date(goal.deadline).toLocaleDateString()}
-                                                        <span className="bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1 text-zinc-500">
-                                                            Cuota {currentQuotaNum}/{totalQuotas}
-                                                        </span>
+
+                                            {/* Title & Chips */}
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 truncate pr-2">{goal.name}</h3>
+
+                                                {/* Chips Wrapper */}
+                                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                                    {/* Health Chip */}
+                                                    {health === 'on_track' && <span className="inline-flex items-center text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md">En Camino</span>}
+                                                    {health === 'behind' && <span className="inline-flex items-center text-[10px] sm:text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-md">Atrasado</span>}
+                                                    {health === 'ahead' && <span className="inline-flex items-center text-[10px] sm:text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-md">Adelantado</span>}
+
+                                                    {/* Quota Count Chip */}
+                                                    <span className="inline-flex items-center text-[10px] sm:text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-700">
+                                                        #{currentQuotaNum}/{totalQuotas}
+                                                    </span>
+
+                                                    {/* Date Chip - Hidden on very small screens if needed, or wrap */}
+                                                    <span className="inline-flex items-center text-[10px] sm:text-xs text-zinc-500 px-1">
+                                                        Vence: {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
-                                        {/* Action Buttons */}
-                                        <div className="flex gap-1 z-10">
+
+                                        {/* Actions Stack */}
+                                        <div className="flex gap-1 shrink-0">
                                             <button
                                                 onClick={() => {
                                                     const newMethod = goal.calculationMethod === 'dynamic' ? 'static' : 'dynamic';
@@ -395,141 +407,127 @@ const Goals = () => {
                                                     toast.info(`Ahorro Dinámico: ${newMethod === 'dynamic' ? 'Activado' : 'Desactivado'}`);
                                                 }}
                                                 className={clsx(
-                                                    "p-2 rounded-lg transition-colors",
+                                                    "w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl transition-colors",
                                                     goal.calculationMethod === 'dynamic'
-                                                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50"
-                                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                                                        ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-200"
+                                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-200"
                                                 )}
-                                                title={goal.calculationMethod === 'dynamic' ? "Ahorro Dinámico ACTIVO (Click para desactivar)" : "Ahorro Dinámico DESACTIVADO (Click para activar)"}
+                                                title="Alternar Modo Dinámico"
                                             >
-                                                <Zap size={18} className={goal.calculationMethod === 'dynamic' ? "fill-current" : ""} />
+                                                <Zap size={16} className={goal.calculationMethod === 'dynamic' ? "fill-current" : ""} />
                                             </button>
                                             <button
                                                 onClick={() => handleEditClick(goal)}
-                                                className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-500 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                                                title="Editar Meta"
+                                                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-500 hover:text-blue-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                                             >
-                                                <Pencil size={18} />
+                                                <Pencil size={16} />
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteClick(goal.id)}
-                                                className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-500 hover:text-rose-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                                                title="Eliminar Meta"
+                                                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-500 hover:text-rose-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                                             >
-                                                <Trash2 size={18} />
+                                                <Trash2 size={16} />
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
-                                        {/* Progress Bar - TEXTURE REMOVED */}
+                                    <div className="space-y-5">
+                                        {/* Progress Section */}
                                         <div>
-                                            <div className="flex justify-between text-sm mb-1.5 font-medium">
-                                                <span className="text-zinc-500">Progreso</span>
-                                                <span className="text-zinc-900 dark:text-zinc-100">{progress.toFixed(1)}%</span>
+                                            <div className="flex justify-between text-sm mb-2 font-medium">
+                                                <span className="text-zinc-500 dark:text-zinc-400">Progreso Global</span>
+                                                <span className="text-zinc-900 dark:text-zinc-100 font-bold">{progress.toFixed(1)}%</span>
                                             </div>
-                                            <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-100 dark:border-zinc-700/50">
+                                            <div className="h-3 sm:h-4 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                                                 <div
-                                                    className={`h-full rounded-full transition-all duration-1000 ${progress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                                                        }`}
+                                                    className={`h-full rounded-full transition-all duration-1000 ${progress >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-emerald-500 to-teal-400'}`}
                                                     style={{ width: `${Math.min(progress, 100)}%` }}
                                                 />
                                             </div>
-                                            <div className="flex justify-between text-xs mt-2 font-mono text-zinc-400">
+                                            <div className="flex justify-between text-xs mt-1.5 font-mono text-zinc-400">
                                                 <span>{currency}{goal.currentAmount.toLocaleString()}</span>
                                                 <span>{currency}{goal.targetAmount.toLocaleString()}</span>
                                             </div>
-                                            {/* Strategy Indicator */}
+
+                                            {/* Strategy Pill */}
                                             {goal.recoveryStrategy === 'catch_up' && (
-                                                <p className="text-[10px] text-amber-600 mt-1 font-bold flex items-center gap-1">
-                                                    <AlertTriangle size={10} /> Recuperación Rápida Activa
-                                                </p>
+                                                <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 text-[10px] font-bold border border-rose-100 dark:border-rose-900/30">
+                                                    <AlertTriangle size={10} /> RECUPERACIÓN AGRESIVA
+                                                </div>
                                             )}
                                         </div>
 
-                                        {/* Actions Bar */}
-                                        <div className="bg-zinc-50 dark:bg-zinc-950/50 rounded-xl p-4 border border-zinc-100 dark:border-zinc-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                            <div className="text-center sm:text-left">
-                                                <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-1">Cuota {capitalizedMonth}</p>
-                                                <div className="flex flex-col gap-1 items-center sm:items-start">
-                                                    <div className="flex items-center gap-2 justify-center sm:justify-start">
-                                                        <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                                                            {currency}{monthlyQuota.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                                        </p>
-                                                        {/* Trend Indicator */}
-                                                        {trend === 'up' && (
-                                                            <div className={`flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${warningLimit
-                                                                ? "text-amber-600 bg-amber-100 dark:bg-amber-900/30"
-                                                                : "text-rose-500 bg-rose-100 dark:bg-rose-900/30"}`}
-                                                                title={warningLimit ? "La cuota subirá drásticamente el próximo mes. ¡Modera tus gastos!" : "La cuota subirá el próximo mes"}>
-                                                                <TrendingUp size={14} className="mr-0.5" />
-                                                                {warningLimit && <AlertTriangle size={12} className="ml-1" />}
-                                                            </div>
-                                                        )}
-                                                        {trend === 'down' && (
-                                                            <div className="flex items-center text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded text-xs font-bold" title="La cuota bajará el próximo mes">
-                                                                <ChevronDown size={14} className="mr-0.5" />
-                                                            </div>
+                                        {/* Quota Action Box - Redesigned for Mobile */}
+                                        <div className="bg-zinc-50 dark:bg-zinc-950/50 rounded-2xl p-5 border border-zinc-100 dark:border-zinc-800/50">
+                                            <div className="flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-4">
+
+                                                {/* Left: Quota Info */}
+                                                <div className="text-center sm:text-left w-full sm:w-auto">
+                                                    <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-widest mb-1.5">Cuota de {capitalizedMonth}</p>
+                                                    <div className="flex flex-col items-center sm:items-start gap-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-3xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
+                                                                {currency}{monthlyQuota.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                            </span>
+
+                                                            {(trend === 'up' || trend === 'down') && (
+                                                                <div className={clsx("flex items-center px-2 py-1 rounded-lg text-xs font-bold animate-in fade-in zoom-in",
+                                                                    trend === 'up' ? (warningLimit ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700") : "bg-emerald-100 text-emerald-700"
+                                                                )}>
+                                                                    {trend === 'up' ? <TrendingUp size={14} /> : <ChevronDown size={14} />}
+                                                                    <span className="ml-1 hidden sm:inline">{trend === 'up' ? 'Sube' : 'Baja'}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {warningLimit && (
+                                                            <span className="text-[10px] text-rose-500 font-medium bg-rose-50 dark:bg-rose-900/10 px-2 py-0.5 rounded-full border border-rose-100 dark:border-rose-900/20">
+                                                                +20% prox. mes
+                                                            </span>
                                                         )}
                                                     </div>
-                                                    {warningLimit && (
-                                                        <p className="text-[10px] bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-2 py-1 rounded-lg border border-amber-100 dark:border-amber-900/30 text-center sm:text-left max-w-[200px] leading-tight">
-                                                            ¡Ojo! La próxima ola viene grande. Modera gastos.
-                                                        </p>
+                                                </div>
+
+                                                {/* Right: Buttons */}
+                                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                    <button
+                                                        onClick={() => {
+                                                            setTransferModal({ open: true, type: 'withdraw', goalId: goal.id });
+                                                            setWithdrawStrategy(goal.recoveryStrategy || 'spread');
+                                                        }}
+                                                        className="h-12 w-12 sm:h-11 sm:w-11 flex items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-400 hover:text-rose-500 hover:border-rose-200 transition-all shadow-sm active:scale-95"
+                                                        title="Retirar Fondos"
+                                                    >
+                                                        <MinusCircle size={22} />
+                                                    </button>
+
+                                                    {isPaid ? (
+                                                        <button
+                                                            onClick={() => setTransferModal({ open: true, type: 'deposit', goalId: goal.id })}
+                                                            disabled={availableBalance <= 0}
+                                                            className="flex-1 sm:flex-none h-12 sm:h-11 px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            <ChevronsRight size={18} />
+                                                            <span>Adelantar</span>
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => {
+                                                                contributeToGoal(goal.id, monthlyQuota);
+                                                                toast.success(`Cuota pagada: ${currency}${monthlyQuota}`);
+                                                            }}
+                                                            disabled={!canPay}
+                                                            className={clsx(
+                                                                "flex-1 sm:flex-none h-12 sm:h-11 px-5 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 active:scale-95",
+                                                                canPay
+                                                                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20"
+                                                                    : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed shadow-none"
+                                                            )}
+                                                        >
+                                                            {canPay ? <PlusCircle size={18} /> : <Lock size={18} />}
+                                                            <span>{canPay ? 'Pagar' : 'Sin Saldo'}</span>
+                                                        </button>
                                                     )}
                                                 </div>
-                                            </div>
-
-                                            <div className="flex gap-2 w-full sm:w-auto relative z-20">
-                                                <button
-                                                    onClick={() => {
-                                                        console.log("Withdraw clicked", goal.id);
-                                                        setTransferModal({ open: true, type: 'withdraw', goalId: goal.id });
-                                                        setWithdrawStrategy(goal.recoveryStrategy || 'spread');
-                                                    }}
-                                                    className="flex-1 sm:flex-none p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-600 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors pointer-events-auto"
-                                                    title="Retirar Fondos"
-                                                >
-                                                    <MinusCircle size={24} />
-                                                </button>
-
-                                                {isPaid ? (
-                                                    <button
-                                                        onClick={() => {
-                                                            console.log("Advance clicked", goal.id);
-                                                            // For advancing, we use the deposit modal logic or a direct action?
-                                                            // User wants to advance. Let's use the TransferModal with 'deposit' type
-                                                            // but maybe we can trigger it directly or rename it.
-                                                            // Reuse existing flow for manual deposit as it allows custom amount.
-                                                            setTransferModal({ open: true, type: 'deposit', goalId: goal.id });
-                                                        }}
-                                                        disabled={availableBalance <= 0}
-                                                        className="flex-1 sm:flex-none px-6 py-3 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20"
-                                                        title="Adelantar pagos para reducir cuotas futuras"
-                                                    >
-                                                        <ChevronsRight size={20} />
-                                                        Adelantar
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => {
-                                                            console.log("Pay quota clicked", goal.id);
-                                                            contributeToGoal(goal.id, monthlyQuota);
-                                                            toast.success(`Cuota pagada: ${currency}${monthlyQuota}`);
-                                                        }}
-                                                        disabled={!canPay}
-                                                        className={clsx(
-                                                            "flex-1 sm:flex-none px-6 py-3 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 pointer-events-auto",
-                                                            canPay
-                                                                ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 !bg-none"
-                                                                : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed"
-                                                        )}
-                                                        title={!canPay ? `Saldo insuficiente (Te faltan ${currency}${(monthlyQuota - availableBalance).toFixed(2)})` : 'Pagar Cuota Mensual'}
-                                                    >
-                                                        {canPay ? <PlusCircle size={20} /> : <Lock size={20} />}
-                                                        {canPay ? 'Pagar Cuota' : 'Sin Saldo'}
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
