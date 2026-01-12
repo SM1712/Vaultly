@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 
 import { useTheme } from '../context/ThemeContext';
-import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, PiggyBank, Landmark, Calculator, X, Settings } from 'lucide-react';
+import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, PiggyBank, Landmark, Calculator, X, Settings, Calendar } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -19,6 +19,7 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
 
     const navItems = [
         { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+        { to: '/calendar', icon: Calendar, label: 'Calendario' },
         { to: '/expenses', icon: Wallet, label: 'Gastos' },
         { to: '/income', icon: Receipt, label: 'Ingresos' }, // Changed icon from TrendingUp to Receipt
         { to: '/goals', icon: Target, label: 'Metas' },

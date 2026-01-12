@@ -12,6 +12,7 @@ import Funds from './pages/Funds';
 import Credits from './pages/Credits';
 import Projections from './pages/Projections';
 import Login from './pages/Login';
+import Calendar from './pages/Calendar';
 import { useState, useEffect } from 'react';
 import { Toaster } from 'sonner';
 import LoadingScreen from './components/ui/LoadingScreen';
@@ -57,6 +58,7 @@ function App() {
                   <Route path="credits" element={<Credits />} />
                   <Route path="projections" element={<Projections />} />
                   <Route path="projects" element={<Projects />} />
+                  <Route path="calendar" element={<Calendar />} />
                   {/* Redirección por defecto */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>

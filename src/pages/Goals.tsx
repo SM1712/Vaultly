@@ -34,7 +34,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 };
 
 // --- Reusable Form Component ---
-interface GoalFormProps {
+export interface GoalFormProps {
     formData: any;
     setFormData: (data: any) => void;
     onSubmit: (e: React.FormEvent) => void;
@@ -43,7 +43,7 @@ interface GoalFormProps {
     currency: string;
 }
 
-const GoalForm = ({ formData, setFormData, onSubmit, editingId, onCancel, currency }: GoalFormProps) => {
+export const GoalForm = ({ formData, setFormData, onSubmit, editingId, onCancel, currency }: GoalFormProps) => {
     return (
         <form onSubmit={onSubmit} className="space-y-5">
             <div className="flex items-center justify-between mb-2">

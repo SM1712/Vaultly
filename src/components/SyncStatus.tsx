@@ -37,26 +37,26 @@ export const SyncStatus = () => {
 
     if (!isOnline) {
         return (
-            <div className="flex items-center gap-2 text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-yellow-500/20" title="Sin conexión. Los cambios se guardarán en tu dispositivo y se enviarán al volver.">
+            <button onClick={() => window.location.reload()} className="flex items-center gap-2 text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-yellow-500/20 hover:bg-yellow-500/20 transition-all" title="Sin conexión. Click para recargar.">
                 <CloudOff size={14} />
                 <span>Modo Local</span>
-            </div>
+            </button>
         );
     }
 
     if (status === 'syncing') {
         return (
-            <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-blue-500/20">
+            <button disabled className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-blue-500/20 cursor-wait">
                 <RefreshCw size={14} className="animate-spin" />
                 <span>Sincronizando...</span>
-            </div>
+            </button>
         );
     }
 
     return (
-        <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-emerald-500/20" title="Todos los datos están seguros en la nube.">
+        <button onClick={() => window.location.reload()} className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-emerald-500/20 hover:bg-emerald-500/20 transition-all" title="Nube Activa. Click para recargar.">
             <Cloud size={14} />
             <span>Nube Activa</span>
-        </div>
+        </button>
     );
 };

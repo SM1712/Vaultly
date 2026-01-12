@@ -112,36 +112,10 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
         },
     });
 
-    const handleSystemUpdate = async () => {
+    const handleSystemUpdate = () => {
         setIsUpdating(true);
-        // Force full refresh logic
-        setUpdateStatus('LIMPIANDO CACHÉ...');
-
-        try {
-            // 1. Unregister Service Workers
-            if ('serviceWorker' in navigator) {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                for (const registration of registrations) {
-                    await registration.unregister();
-                }
-            }
-
-            // 2. Clear Caches
-            if ('caches' in window) {
-                const keys = await caches.keys();
-                await Promise.all(keys.map(key => caches.delete(key)));
-            }
-
-            setUpdateStatus('DESCARGANDO NUEVA VERSIÓN...');
-            await new Promise(r => setTimeout(r, 1000)); // UX delay
-
-            setUpdateStatus('REINICIANDO...');
-            window.location.reload();
-
-        } catch (error) {
-            console.error("Update failed", error);
-            window.location.reload(); // Force reload anyway
-        }
+        setUpdateStatus('RECARGANDO...');
+        window.location.reload();
     };
 
     const handleExport = () => {
@@ -755,15 +729,33 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                 </div>
 
                                 <div className="relative pl-8 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-10">
-                                    {/* v1.7 Item (Current) */}
+                                    {/* v1.8 Item (Current) */}
                                     <div className="relative">
-                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-emerald-500 border-4 border-white dark:border-zinc-950 shadow-sm" />
+                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-indigo-500 border-4 border-white dark:border-zinc-950 shadow-sm" />
                                         <div className="flex flex-col mb-2">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Versión Actual</span>
-                                                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.7 - Dynamic Goals Rework</p>
+                                                    <span className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Versión Actual</span>
+                                                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.8 - Dates & Forecasts</p>
                                                 </div>
+                                                <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-full font-bold">Major</span>
+                                            </div>
+                                            <span className="text-xs text-zinc-400">Enero 2026</span>
+                                        </div>
+                                        <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
+                                            <li><strong>Calendario Inmersivo:</strong> Nueva vista de detalle a pantalla completa en móviles con navegación fluida.</li>
+                                            <li><strong>Quick Add System:</strong> Botón "+" inteligente y menú contextual (click derecho) en escritorio.</li>
+                                            <li><strong>Control Total:</strong> Nuevos botones de recarga rápida (F5) en estado de sincronización y configuración.</li>
+                                            <li><strong>Visualización Pro:</strong> Barras de eventos de ancho completo y layout optimizado "Zero-Scroll" en escritorio.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* v1.7 Item */}
+                                    <div className="relative opacity-70 hover:opacity-100 transition-opacity">
+                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
+                                        <div className="flex flex-col mb-2">
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.7 - Dynamic Goals Rework</span>
                                                 <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full font-bold">Rework</span>
                                             </div>
                                             <span className="text-xs text-zinc-400">Enero 2026</span>
@@ -773,7 +765,6 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                             <li><strong>Botón Adelantar:</strong> Inyecta capital extra directamente para reducir cuotas futuras.</li>
                                             <li><strong>Ahorro Dinámico Individual:</strong> Switch (⚡) por meta para activar/desactivar la variabilidad.</li>
                                             <li><strong>Créditos y Deudas:</strong> Modo Simple vs Avanzado (Amortización Francesa) y búsqueda inversa de tasas.</li>
-                                            <li><strong>Mobile First:</strong> Diseño 100% adaptativo en Metas y Créditos.</li>
                                         </ul>
                                     </div>
 
