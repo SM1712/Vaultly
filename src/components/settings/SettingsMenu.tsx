@@ -729,6 +729,24 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                 </div>
 
                                 <div className="relative pl-8 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-10">
+                                    {/* v1.8.1 Item (Patch) */}
+                                    <div className="relative">
+                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-emerald-500 border-4 border-white dark:border-zinc-950 shadow-sm" />
+                                        <div className="flex flex-col mb-2">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Parche Actual</span>
+                                                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.8.1 - UX Improvements</p>
+                                                </div>
+                                                <span className="text-xs text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-full font-bold">Patch</span>
+                                            </div>
+                                            <span className="text-xs text-zinc-400">Enero 2026</span>
+                                        </div>
+                                        <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
+                                            <li><strong>Seguridad en Créditos:</strong> Confirmación requerida antes de eliminar una deuda.</li>
+                                            <li><strong>Visibilidad Mejorada:</strong> Los controles de edición y borrado de créditos ahora son siempre visibles.</li>
+                                        </ul>
+                                    </div>
                                     {/* v1.8 Item (Current) */}
                                     <div className="relative">
                                         <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-indigo-500 border-4 border-white dark:border-zinc-950 shadow-sm" />

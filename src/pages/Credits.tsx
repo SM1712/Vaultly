@@ -40,6 +40,8 @@ const Credits = () => {
     const [paymentModal, setPaymentModal] = useState<{ open: boolean; creditId: string }>({ open: false, creditId: '' });
     const [paymentAmount, setPaymentAmount] = useState('');
 
+    const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; creditId: string | null }>({ isOpen: false, creditId: null });
+
     // --- Helpers ---
 
     const calculateQuota = (p: number, r: number, n: number) => {
@@ -273,11 +275,11 @@ const Credits = () => {
                                     <div className="p-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl">
                                         <Landmark size={24} />
                                     </div>
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex gap-1 transition-opacity">
                                         <button onClick={() => openEdit(credit)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-blue-500 transition-colors">
                                             <Pencil size={16} />
                                         </button>
-                                        <button onClick={() => deleteCredit(credit.id)} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-rose-500 transition-colors">
+                                        <button onClick={() => setDeleteConfirmation({ isOpen: true, creditId: credit.id })} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-rose-500 transition-colors">
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
@@ -552,6 +554,43 @@ const Credits = () => {
                         Confirmar Pago
                     </button>
                 </form>
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                isOpen={deleteConfirmation.isOpen}
+                onClose={() => setDeleteConfirmation({ isOpen: false, creditId: null })}
+                title="Eliminar Crédito"
+                maxWidth="max-w-sm"
+            >
+                <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center mb-2">
+                        <Trash2 size={24} />
+                    </div>
+                    <p className="text-zinc-600 dark:text-zinc-400">
+                        ¿Estás seguro de que quieres eliminar este crédito? Esta acción no se puede deshacer.
+                    </p>
+                    <div className="flex gap-3 w-full pt-4">
+                        <button
+                            onClick={() => setDeleteConfirmation({ isOpen: false, creditId: null })}
+                            className="flex-1 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl font-bold transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (deleteConfirmation.creditId) {
+                                    deleteCredit(deleteConfirmation.creditId);
+                                    setDeleteConfirmation({ isOpen: false, creditId: null });
+                                    toast.success('Crédito eliminado');
+                                }
+                            }}
+                            className="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition-colors shadow-lg shadow-rose-600/20"
+                        >
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
             </Modal>
         </div>
     );
