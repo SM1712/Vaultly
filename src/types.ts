@@ -130,3 +130,48 @@ export interface ProjectionsData {
         autoIncludeScheduled: boolean;
     };
 }
+
+// --- Gamification Types ---
+
+export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+export interface Achievement {
+    id: string;
+    title: string;
+    description: string;
+    icon: string; // Lucide icon name or Emoji
+    rarity: AchievementRarity;
+    xpReward: number;
+    condition?: string; // Human readable condition description
+    isHidden?: boolean; // If true, only shows details after unlocking
+}
+
+export interface UserTitle {
+    id: string;
+    label: string;
+    minLevel: number;
+}
+
+export interface UserProfile {
+    level: number;
+    currentXP: number;
+    nextLevelXP: number; // Calculated helper, might not need to be stored if constant
+    currentTitle: string;
+    unlockedAchievements: {
+        achievementId: string;
+        unlockedAt: string; // ISO Date
+    }[];
+    stats: {
+        totalTransactions: number;
+        perfectBudgetMonths: number;
+        savingsStreak: number;
+    };
+    avatar?: string; // Base64 or URL
+}
+
+export interface NotificationSettings {
+    enabled: boolean;
+    soundEnabled: boolean;
+    dailyReminder: boolean;
+    reminderTime?: string; // "HH:MM"
+}

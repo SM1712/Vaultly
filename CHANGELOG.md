@@ -27,7 +27,20 @@ Se ha rediseñado completamente la lógica y la interfaz de las Metas de Ahorro 
   - Indicadores de tendencia (flechas) que muestran si la próxima cuota subirá o bajará.
   - Modal de confirmación de eliminación con diseño personalizado (eliminado `window.confirm`).
 
-#### Mejoras Técnicas
+## [UI Overhaul]
+
+#### Ecosistema de Ayuda & Configuración
+Organización intuitiva y documentación completa al alcance de tu mano.
+- **Enciclopedia Vault**:
+  - Nueva sección "Ayuda" integrada con documentación detallada sobre cada módulo del sistema.
+  - Buscador inteligente en tiempo real para resolver dudas sobre Metas, Créditos o Gamificación.
+- **Menú de Configuración Reestructurado**:
+  - Navegación agrupada por áreas lógicas: *Perfil, General, Finanzas y Sistema*.
+  - Acceso más rápido a las herramientas críticas como "Atajos" o "Zona de Datos".
+- **Feedback Sonoro**:
+  - Activación de efectos de sonido ("Pop") para notificaciones y logros, con opción de silencio.
+
+### Mejoras Técnicas
 - Refactorización profunda de `useGoals` para soportar proyecciones y simulaciones de pagos.
 - Optimización de cálculos de cuotas para soportar estrategias 'Spread' (Redistribución) y 'Catch Up' (Recuperación) de manera más robusta.
 

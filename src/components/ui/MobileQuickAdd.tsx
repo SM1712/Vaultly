@@ -6,6 +6,8 @@ import { useCategories } from '../../hooks/useCategories';
 import { useSettings } from '../../context/SettingsContext';
 import { usePresets } from '../../hooks/usePresets';
 import { clsx } from 'clsx';
+import { toast } from 'sonner';
+import { useLocalNotifications } from '../../hooks/useLocalNotifications';
 
 const MobileQuickAdd = () => {
     const location = useLocation();
@@ -21,6 +23,15 @@ const MobileQuickAdd = () => {
     const { categories: incomeCats } = useCategories('income');
     const { currency } = useSettings();
     const { presets } = usePresets();
+    const { isSoundEnabled } = useLocalNotifications();
+
+    const playSound = () => {
+        if (isSoundEnabled) {
+            const audio = new Audio('https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.error("Error playing sound", e));
+        }
+    };
 
     // Reset state when opening
     useEffect(() => {
@@ -53,6 +64,19 @@ const MobileQuickAdd = () => {
             category: category || 'Otros',
             date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD local
             description: description || (type === 'expense' ? 'Gasto Rápido' : 'Ingreso Rápido')
+        });
+
+        // Feedback
+        playSound();
+        if (navigator.vibrate) navigator.vibrate(50);
+
+        const isExpense = type === 'expense';
+        toast(isExpense ? 'Gasto registrado' : 'Ingreso registrado', {
+            description: `${currency}${val.toLocaleString()} - ${category || 'Otros'}`,
+            className: isExpense
+                ? "!bg-rose-50 dark:!bg-rose-950/30 !text-rose-600 dark:!text-rose-400 !border-rose-200 dark:!border-rose-800"
+                : "!bg-emerald-50 dark:!bg-emerald-950/30 !text-emerald-600 dark:!text-emerald-400 !border-emerald-200 dark:!border-emerald-800",
+            icon: isExpense ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />
         });
 
         handleClose();
@@ -129,6 +153,20 @@ const MobileQuickAdd = () => {
                                                 date: new Date().toLocaleDateString('en-CA'),
                                                 description: preset.label
                                             });
+
+                                            // Feedback
+                                            playSound();
+                                            if (navigator.vibrate) navigator.vibrate(50);
+
+                                            const isPresetExpense = preset.type === 'expense';
+                                            toast("Atajo ejecutado", {
+                                                description: `${preset.label}: ${currency}${preset.amount}`,
+                                                className: isPresetExpense
+                                                    ? "!bg-rose-50 dark:!bg-rose-950/30 !text-rose-600 dark:!text-rose-400 !border-rose-200 dark:!border-rose-800"
+                                                    : "!bg-emerald-50 dark:!bg-emerald-950/30 !text-emerald-600 dark:!text-emerald-400 !border-emerald-200 dark:!border-emerald-800",
+                                                icon: isPresetExpense ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />
+                                            });
+
                                             handleClose();
                                         }}
                                         className={clsx(

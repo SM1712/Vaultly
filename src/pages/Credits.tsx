@@ -360,7 +360,7 @@ const Credits = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Fecha Inicio</label>
+                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Fecha de Pago</label>
                             <input
                                 required
                                 type="date"

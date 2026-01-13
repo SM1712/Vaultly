@@ -12,6 +12,20 @@ import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 import { Menu } from 'lucide-react';
 import { Toaster } from 'sonner';
 import OnboardingModal from '../components/onboarding/OnboardingModal';
+import LevelUpModal from '../components/gamification/LevelUpModal';
+import { useGamification } from '../context/GamificationContext';
+
+const GlobalLevelUpManager = () => {
+    const { levelUpModal } = useGamification();
+    return (
+        <LevelUpModal
+            isOpen={levelUpModal.isOpen}
+            onClose={levelUpModal.close}
+            level={levelUpModal.level}
+            title={levelUpModal.title}
+        />
+    );
+};
 
 const Layout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -66,6 +80,7 @@ const Layout = () => {
 
                         <MobileQuickAdd />
                         <SettingsMenu isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+                        <GlobalLevelUpManager />
                         <OnboardingModal />
                         <Toaster position="top-center" />
                     </div>

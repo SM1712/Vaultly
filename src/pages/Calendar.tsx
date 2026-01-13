@@ -5,7 +5,7 @@ import { useCredits } from '../hooks/useCredits';
 import { useSettings } from '../context/SettingsContext';
 import {
     ChevronLeft, ChevronRight, Calendar as CalendarIcon,
-    CreditCard, Target, RefreshCw, ArrowLeft, Plus
+    CreditCard, Target, Plus, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { toast } from 'sonner';
@@ -146,7 +146,6 @@ const Calendar = () => {
     // --- Handlers ---
     const handleDayClick = (date: Date) => {
         setSelectedDate(date);
-        setShowMobileDetail(true);
     };
 
     const openQuickAdd = (date: Date) => {
@@ -161,14 +160,6 @@ const Calendar = () => {
         });
         setIsQuickAddOpen(true);
     };
-
-    const handleRightClick = (e: React.MouseEvent, date: Date) => {
-        e.preventDefault();
-        openQuickAdd(date);
-    };
-
-    // State for Mobile View Transition
-    const [showMobileDetail, setShowMobileDetail] = useState(false);
 
     const handleQuickAddSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -197,50 +188,48 @@ const Calendar = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-6rem)] md:h-[calc(100vh-5rem)] flex flex-col gap-4 pb-4 animate-in fade-in duration-500 overflow-hidden relative">
-            {/* Header: Month Navigation (Hidden on Mobile Detail View) */}
-            {!showMobileDetail && (
-                <div className="flex-shrink-0 flex justify-between items-center px-1">
-                    <div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
-                            <CalendarIcon className="w-6 h-6 md:w-8 md:h-8 text-indigo-500" />
-                            Calendario
-                        </h2>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                        <button onClick={prevMonth} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-                            <ChevronLeft size={20} className="text-zinc-600 dark:text-zinc-400" />
-                        </button>
-                        <span className="font-bold text-sm md:text-base w-24 md:w-32 text-center text-zinc-900 dark:text-zinc-100 capitalize truncate">
-                            {currentDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
-                        </span>
-                        <button onClick={nextMonth} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-                            <ChevronRight size={20} className="text-zinc-600 dark:text-zinc-400" />
-                        </button>
-                    </div>
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 md:pb-0">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl md:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter flex items-center gap-2">
+                        <CalendarIcon className="w-8 h-8 text-indigo-500" />
+                        Calendario
+                    </h2>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
+                        Tu ventana al futuro financiero
+                    </p>
                 </div>
-            )}
 
-            <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0 relative">
-                {/* Calendar Grid - Fill remaining space */}
-                <div className={clsx(
-                    "bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm flex-col min-h-0",
-                    showMobileDetail ? "hidden lg:flex lg:flex-1" : "flex flex-1"
-                )}>
-                    {/* Week Days Header */}
-                    <div className="grid grid-cols-7 border-b border-zinc-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm self-start md:self-auto">
+                    <button onClick={prevMonth} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+                        <ChevronLeft size={20} className="text-zinc-600 dark:text-zinc-400" />
+                    </button>
+                    <span className="font-bold text-sm md:text-base w-32 text-center text-zinc-900 dark:text-zinc-100 capitalize">
+                        {currentDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+                    </span>
+                    <button onClick={nextMonth} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+                        <ChevronRight size={20} className="text-zinc-600 dark:text-zinc-400" />
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 items-start">
+                {/* CALENDAR GRID (Left Col - Span 2) */}
+                <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden order-1">
+                    {/* Week Days */}
+                    <div className="grid grid-cols-7 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
                         {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
-                            <div key={d} className="text-center text-[10px] md:text-xs font-bold text-zinc-400 uppercase tracking-wider py-2 md:py-3">
+                            <div key={d} className="text-center text-[10px] md:text-xs font-bold text-zinc-400 uppercase tracking-wider py-4">
                                 {d}
                             </div>
                         ))}
                     </div>
 
-                    {/* Days Grid - Flex Grow to fill height */}
-                    <div className="flex-1 grid grid-cols-7 grid-rows-6">
+                    {/* Days */}
+                    <div className="grid grid-cols-7 auto-rows-fr">
                         {Array.from({ length: startDay }).map((_, i) => (
-                            <div key={`empty-${i}`} className="border-b border-r border-zinc-50 dark:border-zinc-800/50" />
+                            <div key={`empty-${i}`} className="min-h-[80px] md:min-h-[120px] border-b border-r border-zinc-50 dark:border-zinc-800/30" />
                         ))}
 
                         {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -253,117 +242,130 @@ const Calendar = () => {
                                 <div
                                     key={i}
                                     onClick={() => handleDayClick(date)}
-                                    onContextMenu={(e) => handleRightClick(e, date)}
                                     className={clsx(
-                                        "relative border-b border-r border-zinc-100 dark:border-zinc-800/50 transition-colors cursor-pointer select-none active:bg-zinc-100 dark:active:bg-zinc-800",
-                                        isSelected
-                                            ? "bg-indigo-50/50 dark:bg-indigo-900/20"
-                                            : "hover:bg-zinc-50 dark:hover:bg-zinc-800/30",
-                                        isToday && "bg-zinc-50/80 dark:bg-zinc-800/40"
+                                        "relative min-h-[80px] md:min-h-[120px] border-b border-r border-zinc-100 dark:border-zinc-800/50 p-2 transition-all cursor-pointer select-none group",
+                                        isSelected ? "bg-indigo-50/30 dark:bg-indigo-900/10" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/20"
                                     )}
                                 >
-                                    <div className="absolute top-1 left-1 md:top-2 md:left-2">
+                                    {/* Date Number */}
+                                    <div className="flex justify-between items-start">
                                         <span className={clsx(
-                                            "flex items-center justify-center w-6 h-6 md:w-7 md:h-7 rounded-full text-xs md:text-sm font-bold transition-all",
+                                            "flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all",
                                             isToday
-                                                ? "bg-indigo-600 text-white shadow-sm"
-                                                : isSelected ? "text-indigo-600" : "text-zinc-700 dark:text-zinc-300"
+                                                ? "bg-indigo-600 text-white shadow-md scale-110"
+                                                : isSelected ? "text-indigo-600 ring-2 ring-indigo-200 dark:ring-indigo-900" : "text-zinc-700 dark:text-zinc-300 group-hover:scale-110"
                                         )}>
                                             {i + 1}
                                         </span>
                                     </div>
 
-                                    {/* Event Dots / Bars (Enhanced lines) */}
-                                    <div className="absolute bottom-1 left-1 right-1 flex flex-col gap-0.5 justify-end max-h-[60%] overflow-hidden">
+                                    {/* Event Dots (Mobile/Desktop distinct) */}
+                                    <div className="mt-2 flex flex-wrap gap-1 content-end">
                                         {dayEvents.map((evt, idx) => (
                                             <div
                                                 key={idx}
                                                 className={clsx(
-                                                    "h-1 md:h-1.5 w-full rounded-sm opacity-90 shadow-sm",
-                                                    evt.type === 'scheduled' && "bg-emerald-500",
+                                                    "h-1.5 w-1.5 md:h-2 md:w-2 rounded-full",
+                                                    evt.type === 'scheduled' && evt.details.type === 'income' && "bg-emerald-500",
+                                                    evt.type === 'scheduled' && evt.details.type === 'expense' && "bg-rose-500",
                                                     evt.type === 'credit' && "bg-rose-500",
-                                                    evt.type === 'goal' && "bg-blue-500",
+                                                    evt.type === 'goal' && "bg-blue-500"
                                                 )}
                                                 title={evt.title}
                                             />
                                         ))}
                                     </div>
+
+                                    {/* Active Selection Indicator Bar (Mobile mainly) */}
+                                    {isSelected && (
+                                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-500/50" />
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
                 </div>
 
-                {/* Details Panel - Mobile Overlay / Desktop Sidebar */}
-                <div className={clsx(
-                    "flex-shrink-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-4 md:p-6 shadow-sm overflow-y-auto z-20 transition-all",
-                    // Desktop styles
-                    "lg:w-80 lg:relative lg:h-auto",
-                    // Mobile styles (Full replacement)
-                    showMobileDetail ? "absolute inset-0 w-full h-full lg:static" : "hidden lg:block lg:static"
-                )}>
-                    <div className="flex items-center justify-between mb-4 sticky top-0 bg-white dark:bg-zinc-900 z-10 pb-2 border-b border-zinc-100 dark:border-zinc-800/50 lg:border-none">
-                        <div className="flex items-center gap-3">
+                {/* AGENDA PANEL (Right Col - Span 1) */}
+                <div className="lg:col-span-1 lg:sticky lg:top-24 order-2 space-y-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-900/50 p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 capitalize">
+                                    {selectedDate.toLocaleDateString('es-ES', { weekday: 'long' })}
+                                </h3>
+                                <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
+                                    {selectedDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                </p>
+                            </div>
                             <button
-                                onClick={() => setShowMobileDetail(false)}
-                                className="lg:hidden p-2 -ml-2 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full"
+                                onClick={() => openQuickAdd(selectedDate)}
+                                className="w-12 h-12 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-zinc-900/20 dark:shadow-white/10"
+                                title="Agregar Evento"
                             >
-                                <ArrowLeft size={20} />
+                                <Plus size={24} strokeWidth={2.5} />
                             </button>
-                            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 capitalize">
-                                {selectedDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'long' })}
-                            </h3>
                         </div>
 
-                        {/* Quick Add Button (Visible here on Mobile/Desktop) */}
-                        <button
-                            onClick={() => openQuickAdd(selectedDate)}
-                            className="p-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl hover:scale-105 transition-transform"
-                            title="Agregar Evento"
-                        >
-                            <Plus size={18} strokeWidth={3} />
-                        </button>
-                    </div>
-
-                    {selectedEvents.length === 0 ? (
-                        <div className="text-center py-8 text-zinc-400 flex flex-col items-center justify-center h-full opacity-60">
-                            <CalendarIcon className="w-12 h-12 mb-3" />
-                            <p className="text-sm font-medium">Sin eventos</p>
-                            <p className="text-xs mt-1">Toca el + para agregar</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3 pb-20">
-                            {selectedEvents.map(evt => (
-                                <div key={evt.id} className="flex items-start gap-3 p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50">
-                                    <div className={clsx(
-                                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                                        evt.type === 'scheduled' && "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
-                                        evt.type === 'credit' && "bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400",
-                                        evt.type === 'goal' && "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
-                                    )}>
-                                        {evt.type === 'scheduled' && <RefreshCw size={18} />}
-                                        {evt.type === 'credit' && <CreditCard size={18} />}
-                                        {evt.type === 'goal' && <Target size={18} />}
+                        {/* Timeline */}
+                        <div className="relative min-h-[300px]">
+                            {selectedEvents.length === 0 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center opacity-50">
+                                    <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800/50 rounded-full flex items-center justify-center text-zinc-400 mb-4">
+                                        <CalendarIcon size={24} />
                                     </div>
-
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-0.5">
-                                            {evt.type === 'scheduled' && 'Recurrente'}
-                                            {evt.type === 'credit' && 'Crédito'}
-                                            {evt.type === 'goal' && 'Meta'}
-                                        </p>
-                                        <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100 truncate leading-tight">{evt.title}</h4>
-                                        {evt.amount > 0 && (
-                                            <p className="text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 mt-0.5">
-                                                {currency}{evt.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                {evt.type === 'goal' && ' (Sugerido)'}
-                                            </p>
-                                        )}
-                                    </div>
+                                    <p className="text-zinc-600 dark:text-zinc-400 font-medium">Nada programado</p>
+                                    <p className="text-xs text-zinc-500 mt-1 max-w-[150px]">Disfruta tu día libre o planifica algo nuevo.</p>
                                 </div>
-                            ))}
+                            ) : (
+                                <div className="space-y-0">
+                                    {/* Timeline Line */}
+                                    <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-zinc-100 dark:bg-zinc-800"></div>
+
+                                    {selectedEvents.map(evt => (
+                                        <div key={evt.id} className="relative flex gap-4 items-start py-3 group">
+                                            {/* Icon Bubble */}
+                                            <div className={clsx(
+                                                "relative z-10 w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center border-2 shadow-sm transition-colors",
+                                                "bg-white dark:bg-zinc-900",
+                                                evt.type === 'scheduled' && evt.details.type === 'income' && "border-emerald-100 text-emerald-600 dark:border-emerald-900/30 dark:text-emerald-400",
+                                                evt.type === 'scheduled' && evt.details.type === 'expense' && "border-rose-100 text-rose-600 dark:border-rose-900/30 dark:text-rose-400",
+                                                evt.type === 'credit' && "border-rose-100 text-rose-600 dark:border-rose-900/30 dark:text-rose-400",
+                                                evt.type === 'goal' && "border-blue-100 text-blue-600 dark:border-blue-900/30 dark:text-blue-400"
+                                            )}>
+                                                {evt.type === 'scheduled' && evt.details.type === 'income' && <TrendingUp size={16} />}
+                                                {evt.type === 'scheduled' && evt.details.type === 'expense' && <TrendingDown size={16} />}
+                                                {evt.type === 'credit' && <CreditCard size={16} />}
+                                                {evt.type === 'goal' && <Target size={16} />}
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="flex-1 pt-1 min-w-0 bg-zinc-50 dark:bg-zinc-800/30 p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className={clsx("text-[10px] font-bold uppercase tracking-wider",
+                                                        evt.type === 'scheduled' && evt.details.type === 'income' ? "text-emerald-500" : "text-zinc-400"
+                                                    )}>
+                                                        {evt.type === 'scheduled'
+                                                            ? (evt.details.type === 'income' ? 'Ingreso Recurrente' : 'Pago Recurrente')
+                                                            : evt.type === 'credit' ? 'Crédito' : 'Meta'}
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{evt.title}</h4>
+                                                {evt.amount > 0 && (
+                                                    <p className={clsx("text-sm font-mono font-bold mt-1",
+                                                        evt.type === 'scheduled' && evt.details.type === 'income' ? "text-emerald-500" : "text-zinc-600 dark:text-zinc-400"
+                                                    )}>
+                                                        {evt.type === 'scheduled' && evt.details.type === 'income' ? '+' : ''}
+                                                        {currency}{evt.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
 

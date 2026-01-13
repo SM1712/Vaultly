@@ -2,6 +2,8 @@ import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider, useData } from './context/DataContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { GamificationProvider } from './context/GamificationContext';
 import Layout from './layouts/Layout';
 import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
@@ -13,9 +15,38 @@ import Credits from './pages/Credits';
 import Projections from './pages/Projections';
 import Login from './pages/Login';
 import Calendar from './pages/Calendar';
-import { useState, useEffect } from 'react';
+import { Component, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import LoadingScreen from './components/ui/LoadingScreen';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 text-rose-500 bg-rose-50 h-screen overflow-auto">
+          <h1 className="text-2xl font-bold mb-4">¡Algo salió mal!</h1>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-rose-200">
+            <p className="font-bold mb-2">{this.state.error?.message}</p>
+            <pre className="text-xs overflow-auto font-mono text-zinc-600">
+              {this.state.error?.stack}
+            </pre>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const ProtectedRoute = () => {
   const { user, loading: authLoading } = useAuth();
@@ -41,35 +72,41 @@ const ProtectedRoute = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <DataProvider>
-        <ThemeProvider>
-          <HashRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <DataProvider>
+          <NotificationProvider>
+            <GamificationProvider>
+              <ThemeProvider>
+                <HashRouter>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
 
-              <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="expenses" element={<Expenses />} />
-                  <Route path="income" element={<Income />} />
-                  <Route path="goals" element={<Goals />} />
-                  <Route path="funds" element={<Funds />} />
-                  <Route path="credits" element={<Credits />} />
-                  <Route path="projections" element={<Projections />} />
-                  <Route path="projects" element={<Projects />} />
-                  <Route path="calendar" element={<Calendar />} />
-                  {/* Redirección por defecto */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Route>
-              </Route>
-            </Routes>
-            <Toaster richColors position="top-center" />
-            {/* <DebugFooter /> Removed per user request */}
-          </HashRouter>
-        </ThemeProvider>
-      </DataProvider>
-    </AuthProvider>
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/" element={<Layout />}>
+                        <Route index element={<Dashboard />} />
+                        <Route path="expenses" element={<Expenses />} />
+                        <Route path="income" element={<Income />} />
+                        <Route path="goals" element={<Goals />} />
+                        <Route path="funds" element={<Funds />} />
+                        <Route path="credits" element={<Credits />} />
+                        <Route path="projections" element={<Projections />} />
+                        <Route path="projects" element={<Projects />} />
+                        <Route path="calendar" element={<Calendar />} />
+                        {/* Redirección por defecto */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Route>
+                    </Route>
+                  </Routes>
+                  <Toaster richColors position="top-center" />
+                  {/* <DebugFooter /> Removed per user request */}
+                </HashRouter>
+              </ThemeProvider>
+            </GamificationProvider>
+          </NotificationProvider>
+        </DataProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

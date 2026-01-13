@@ -4,6 +4,7 @@ import { useTransactions } from '../hooks/useTransactions';
 import type { Transaction } from '../types';
 import { useFinance } from '../context/FinanceContext';
 import { useSettings } from '../context/SettingsContext';
+import { useGamification } from '../context/GamificationContext';
 import TransactionForm from '../components/finance/TransactionForm';
 import TransactionList from '../components/finance/TransactionList';
 import CategorySummary from '../components/finance/CategorySummary';
@@ -34,12 +35,17 @@ const Income = () => {
         return Object.entries(grouped).map(([name, value]) => ({ name, value }));
     };
 
+    const { checkAchievement, addXp } = useGamification();
+
     const handleFormSubmit = (data: any) => {
         if (editingTransaction) {
             updateTransaction(editingTransaction.id, data);
             setEditingTransaction(null);
         } else {
             addTransaction(data);
+            // Gamification Triggers
+            addXp(10); // Base XP for adding income
+            checkAchievement('TRANSACTION_ADDED');
         }
     };
 
