@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
 import { useSettings } from '../context/SettingsContext';
-import { FolderKanban, Plus, Pencil, Trash2 } from 'lucide-react';
+import { FolderKanban, Plus, Pencil, Trash2, Target, Calendar } from 'lucide-react';
+import Modal from '../components/ui/Modal';
 import { clsx } from 'clsx';
 import ProjectDetails from '../components/finance/ProjectDetails';
 import type { Project } from '../types';
@@ -110,73 +111,96 @@ const Projects = () => {
             <InvitationsList />
 
             {/* Create Project Wizard (Simplified) */}
-            {
-                showForm && (
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-xl animate-in fade-in slide-in-from-top-4 shadow-lg">
-                        <h3 className="font-bold text-lg mb-4 text-zinc-900 dark:text-zinc-100">
-                            {editingProjectId ? 'Editar Proyecto' : 'Iniciar Nuevo Proyecto'}
-                        </h3>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Nombre del Proyecto</label>
+            {/* Create Project Modal */}
+            <Modal
+                isOpen={showForm}
+                onClose={() => setShowForm(false)}
+                title={editingProjectId ? 'Editar Proyecto' : 'Iniciar Nuevo Proyecto'}
+            >
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-4">
+                        {/* Name Input */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                                <FolderKanban size={14} /> Nombre del Proyecto
+                            </label>
+                            <input
+                                required
+                                type="text"
+                                placeholder="Ej. Remodelación Cocina, Viaje 2026..."
+                                className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-bold text-lg"
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Budget Input */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Target size={14} /> Presupuesto Objetivo
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">{currency}</span>
                                     <input
                                         required
                                         type="text"
-                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-                                        value={formData.name}
-                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Presupuesto Objetivo</label>
-                                    <input
-                                        required
-                                        type="number"
-                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                                        inputMode="decimal"
+                                        placeholder="0.00"
+                                        className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-8 pr-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono font-bold"
                                         value={formData.targetBudget}
                                         onChange={e => setFormData({ ...formData, targetBudget: e.target.value })}
                                     />
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Fecha Límite (Estimada)</label>
-                                    <input
-                                        type="date"
-                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-                                        value={formData.deadline}
-                                        onChange={e => setFormData({ ...formData, deadline: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Descripción</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Breve descripción de la obra o meta..."
-                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-                                        value={formData.description}
-                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    />
-                                </div>
                             </div>
-                            <div className="flex justify-end gap-2 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForm(false)}
-                                    className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-900/20"
-                                >
-                                    {editingProjectId ? 'Guardar Cambios' : 'Crear Proyecto'}
-                                </button>
+
+                            {/* Deadline Input */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Calendar size={14} /> Fecha Límite
+                                </label>
+                                <input
+                                    type="date"
+                                    className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium"
+                                    value={formData.deadline}
+                                    onChange={e => setFormData({ ...formData, deadline: e.target.value })}
+                                />
                             </div>
-                        </form>
+                        </div>
+
+                        {/* Description Input */}
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                                <Pencil size={14} /> Descripción
+                            </label>
+                            <textarea
+                                rows={3}
+                                placeholder="Breve descripción de la obra, objetivos o notas importantes..."
+                                className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none text-sm"
+                                value={formData.description}
+                                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                            />
+                        </div>
                     </div>
-                )
-            }
+
+                    <div className="flex justify-end gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                        <button
+                            type="button"
+                            onClick={() => setShowForm(false)}
+                            className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+                        >
+                            {editingProjectId ? <Pencil size={18} /> : <Plus size={18} />}
+                            {editingProjectId ? 'Guardar Cambios' : 'Crear Proyecto'}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
 
             {/* Projects Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
