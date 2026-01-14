@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider, useData } from './context/DataContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { GamificationProvider } from './context/GamificationContext';
+import { CollaborationProvider, useCollaboration } from './context/CollaborationContext';
+import NicknameSetupModal from './components/onboarding/NicknameSetupModal';
 import Layout from './layouts/Layout';
 import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
@@ -53,6 +55,8 @@ const ProtectedRoute = () => {
   const { isLoading: dataLoading } = useData();
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
+  const { profile, loadingProfile, profileSkipped } = useCollaboration();
+
   useEffect(() => {
     // Ensure splash screen is visible for at least 2.5s to show full animation
     const timer = setTimeout(() => {
@@ -61,11 +65,13 @@ const ProtectedRoute = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  if (authLoading || dataLoading || !minTimeElapsed) {
-    return <LoadingScreen message={authLoading ? 'AUTENTICANDO...' : 'CARGANDO DATOS...'} />;
+  if (authLoading || dataLoading || !minTimeElapsed || loadingProfile) {
+    return <LoadingScreen message={authLoading ? 'AUTENTICANDO...' : loadingProfile ? 'VERIFICANDO IDENTIDAD...' : 'CARGANDO DATOS...'} />;
   }
 
   if (!user) return <Navigate to="/login" replace />;
+
+  if (!profile && !profileSkipped) return <NicknameSetupModal />;
 
   return <Outlet />;
 };
@@ -77,31 +83,33 @@ function App() {
         <DataProvider>
           <NotificationProvider>
             <GamificationProvider>
-              <ThemeProvider>
-                <HashRouter>
-                  <Routes>
-                    <Route path="/login" element={<Login />} />
+              <CollaborationProvider>
+                <ThemeProvider>
+                  <HashRouter>
+                    <Routes>
+                      <Route path="/login" element={<Login />} />
 
-                    <Route element={<ProtectedRoute />}>
-                      <Route path="/" element={<Layout />}>
-                        <Route index element={<Dashboard />} />
-                        <Route path="expenses" element={<Expenses />} />
-                        <Route path="income" element={<Income />} />
-                        <Route path="goals" element={<Goals />} />
-                        <Route path="funds" element={<Funds />} />
-                        <Route path="credits" element={<Credits />} />
-                        <Route path="projections" element={<Projections />} />
-                        <Route path="projects" element={<Projects />} />
-                        <Route path="calendar" element={<Calendar />} />
-                        {/* Redirección por defecto */}
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                      <Route element={<ProtectedRoute />}>
+                        <Route path="/" element={<Layout />}>
+                          <Route index element={<Dashboard />} />
+                          <Route path="expenses" element={<Expenses />} />
+                          <Route path="income" element={<Income />} />
+                          <Route path="goals" element={<Goals />} />
+                          <Route path="funds" element={<Funds />} />
+                          <Route path="credits" element={<Credits />} />
+                          <Route path="projections" element={<Projections />} />
+                          <Route path="projects" element={<Projects />} />
+                          <Route path="calendar" element={<Calendar />} />
+                          {/* Redirección por defecto */}
+                          <Route path="*" element={<Navigate to="/" replace />} />
+                        </Route>
                       </Route>
-                    </Route>
-                  </Routes>
-                  <Toaster richColors position="top-center" />
-                  {/* <DebugFooter /> Removed per user request */}
-                </HashRouter>
-              </ThemeProvider>
+                    </Routes>
+                    <Toaster richColors position="top-center" />
+                    {/* <DebugFooter /> Removed per user request */}
+                  </HashRouter>
+                </ThemeProvider>
+              </CollaborationProvider>
             </GamificationProvider>
           </NotificationProvider>
         </DataProvider>

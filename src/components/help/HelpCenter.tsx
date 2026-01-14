@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
     BookOpen, Search, ChevronDown, ChevronRight,
     LayoutDashboard, Wallet, Target, CreditCard,
-    Trophy, Sparkles
+    Trophy, Sparkles, Users
 } from 'lucide-react';
 
 type HelpSection = {
@@ -97,6 +97,63 @@ export const HelpCenter = () => {
                     title: 'Estrategias de Recuperación',
                     content: (
                         <p>Si necesitas retirar dinero de una meta por emergencia, el sistema te preguntará cómo quieres reponerlo: redistribuyendo el faltante en los meses restantes (Spread) o pagándolo todo el mes siguiente (Catch Up).</p>
+                    )
+                }
+            ]
+        },
+        {
+            id: 'ayni',
+            title: 'Sistema Ayni (Proyectos)',
+            icon: Target,
+            articles: [
+                {
+                    title: 'Filosofía Ayni',
+                    content: (
+                        <p>Inspirado en el concepto de reciprocidad andina, el <strong>Sistema Ayni</strong> gestiona la distribución de recursos en proyectos. Permite "sembrar" capital en diferentes partidas presupuestarias y cosechar resultados mediante hitos temporales.</p>
+                    )
+                },
+                {
+                    title: 'Partidas y Fuentes',
+                    content: (
+                        <div className="space-y-2">
+                            <p>Cada proyecto tiene su propia "micro-economía":</p>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                                <li><strong>Partidas (Buckets):</strong> Son los sobres virtuales donde asignas dinero para propósitos específicos (ej. "Marketing", "Desarrollo", "Legal").</li>
+                                <li><strong>Fuentes de Fondeo:</strong> Indica de dónde sale el dinero real (ej. "Ahorros Personales", "Inversionista Ángel"). El sistema cruza cada gasto contra una partida y una fuente.</li>
+                            </ul>
+                        </div>
+                    )
+                },
+                {
+                    title: 'Gestión Temporal (Timeline)',
+                    content: (
+                        <p>La pestaña <strong>Hitos</strong> permite visualizar el proyecto en el tiempo. Puedes marcar fechas clave (lanzamientos, entregas) y ver cómo el presupuesto se consume a medida que te acercas a esos eventos.</p>
+                    )
+                }
+            ]
+        },
+        {
+            id: 'axon',
+            title: 'Sistema Axon (Colaboración)',
+            icon: Users,
+            articles: [
+                {
+                    title: 'Identidad Digital',
+                    content: (
+                        <p>Axon te asigna una identidad única (Nickname) dentro del ecosistema Vault. Esta identidad es universal y te permite ser reconocido por otros usuarios sin exponer tu email o datos sensibles.</p>
+                    )
+                },
+                {
+                    title: 'Invitaciones y Permisos',
+                    content: (
+                        <div className="space-y-2">
+                            <p>Ahora puedes invitar colaboradores a tus proyectos:</p>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                                <li>Envía invitaciones usando el nickname exacto o aproximado del usuario.</li>
+                                <li>El receptor verá la invitación en su Dashboard principal.</li>
+                                <li>Al aceptar, obtendrá acceso de lectura/escritura (según el rol) al proyecto compartido.</li>
+                            </ul>
+                        </div>
                     )
                 }
             ]

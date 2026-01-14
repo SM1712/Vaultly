@@ -234,7 +234,6 @@ const MobileQuickAdd = () => {
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                             placeholder="0"
-                            autoFocus
                             className="bg-transparent text-center text-6xl font-black text-zinc-900 dark:text-zinc-100 focus:outline-none placeholder:text-zinc-200 dark:placeholder:text-zinc-800 py-2 caret-emerald-500 w-[180px]"
                         />
                     </div>

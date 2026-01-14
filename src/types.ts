@@ -31,6 +31,21 @@ export interface Goal {
     }[];
 }
 
+export interface BudgetLine {
+    id: string;
+    name: string;
+    allocatedAmount: number;
+    spentAmount: number;
+}
+
+export interface Milestone {
+    id: string;
+    title: string;
+    targetDate?: string;
+    status: 'pending' | 'completed';
+    expectedOutcome?: string;
+}
+
 export interface ProjectTransaction {
     id: string;
     projectId: string;
@@ -39,6 +54,16 @@ export interface ProjectTransaction {
     amount: number;
     type: 'income' | 'expense';
     category?: string;
+    fundingSource?: 'internal' | 'external'; // internal = Wallet/Main Balance, external = Investor/Client
+    budgetLineId?: string; // Optional: Link to a specific BudgetLine (Fund)
+}
+
+export interface ProjectTask {
+    id: string;
+    projectId: string;
+    description: string;
+    completed: boolean;
+    createdAt: string;
 }
 
 export interface Project {
@@ -48,8 +73,11 @@ export interface Project {
     status: 'planning' | 'active' | 'paused' | 'completed' | 'cancelled';
     startDate: string;
     deadline?: string;
-    targetBudget: number; // Presupuesto Objetivo
+    targetBudget: number; // Presupuesto Global o Suma de Partidas
     transactions: ProjectTransaction[];
+    tasks: ProjectTask[];
+    budgetLines: BudgetLine[];
+    milestones: Milestone[];
 }
 
 export interface FundTransaction {
@@ -174,4 +202,32 @@ export interface NotificationSettings {
     soundEnabled: boolean;
     dailyReminder: boolean;
     reminderTime?: string; // "HH:MM"
+}
+
+// Collaboration Types
+export interface PublicProfile {
+    uid: string;
+    nickname: string;
+    displayName?: string;
+    email?: string;
+    photoURL?: string;
+    createdAt: string;
+}
+
+export interface ProjectMember {
+    uid: string;
+    nickname: string;
+    role: 'owner' | 'editor' | 'viewer';
+    joinedAt: string;
+}
+
+export interface ProjectInvitation {
+    id: string;
+    projectId: string;
+    projectName: string;
+    fromUid: string;
+    fromNickname: string;
+    toNickname: string;
+    status: 'pending' | 'accepted' | 'rejected';
+    createdAt: string;
 }

@@ -98,6 +98,7 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialDat
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-mono text-xl font-bold group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-300 transition-colors">{currency}</span>
                     <input
                         type="number"
+                        inputMode="decimal"
                         step="0.01"
                         required
                         placeholder="0.00"
@@ -147,6 +148,7 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialDat
                                     <CalendarClock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-indigo-500" size={16} />
                                     <input
                                         type="number"
+                                        inputMode="numeric"
                                         min="1"
                                         max="31"
                                         value={recurrenceDay}

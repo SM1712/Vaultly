@@ -14,7 +14,8 @@ import {
     Trash2, Plus, LogOut, User, CalendarClock,
     PlayCircle, PauseCircle, Database,
     Download, Upload, Bomb, Radiation, RefreshCw, Siren,
-    LayoutGrid, Palette, List, Zap, History, Sparkles, ChevronRight, SlidersHorizontal, Trophy, Bell
+    LayoutGrid, Palette, List, Zap, History, Sparkles, ChevronRight, SlidersHorizontal, Trophy, Bell,
+    Target, Users
 } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import Logo from '../ui/Logo';
@@ -884,16 +885,52 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                 </div>
 
                                 <div className="relative pl-8 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-10">
-                                    {/* v2.0 Item (Grand Update) */}
+                                    {/* v2.1 Item (Ayni & Axon) */}
                                     <div className="relative">
-                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-indigo-600 border-4 border-white dark:border-zinc-950 shadow-sm ring-4 ring-indigo-500/20" />
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-emerald-500 border-4 border-white dark:border-zinc-950 shadow-sm ring-4 ring-emerald-500/20" />
                                         <div className="flex flex-col mb-2">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <span className="text-xs font-bold text-indigo-500 uppercase tracking-widest">Gran Actualización</span>
+                                                    <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Nueva Era</span>
+                                                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v2.1 - Sistemas Ayni & Axon</p>
+                                                </div>
+                                                <span className="text-xs text-emerald-100 bg-emerald-600 px-2 py-1 rounded-full font-bold">Massive</span>
+                                            </div>
+                                            <span className="text-xs text-zinc-400">Enero 2026</span>
+                                        </div>
+                                        <div className="space-y-4 mb-4">
+                                            <div>
+                                                <h5 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-1 flex items-center gap-2">
+                                                    <Target size={14} className="text-emerald-500" /> Sistema Ayni (Gestión de Proyectos)
+                                                </h5>
+                                                <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
+                                                    <li><strong>Micro-Economías:</strong> Gestión avanzada con Partidas Presupuestarias y Fuentes de Fondeo.</li>
+                                                    <li><strong>Timeline de Hitos:</strong> Visualización temporal del progreso y entregas clave.</li>
+                                                    <li><strong>Partición de Caja:</strong> Control preciso de dónde viene y a dónde va cada centavo del proyecto.</li>
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <h5 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-1 flex items-center gap-2">
+                                                    <Users size={14} className="text-indigo-500" /> Sistema Axon (Colaboración)
+                                                </h5>
+                                                <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
+                                                    <li><strong>Identidad Única:</strong> Registro de Nicknames globales únicos.</li>
+                                                    <li><strong>Trabajo en Equipo:</strong> Busca colaboradores e invítalos a tus proyectos al instante.</li>
+                                                    <li><strong>Buscador Inteligente:</strong> Encuentra usuarios incluso si no recuerdas su nombre exacto.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* v2.0 Item (Grand Update) */}
+                                    <div className="relative opacity-60 hover:opacity-100 transition-opacity">
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
+                                        <div className="flex flex-col mb-2">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Actualización Anterior</span>
                                                     <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v2.0 - The Visual Era</p>
                                                 </div>
-                                                <span className="text-xs text-indigo-100 bg-indigo-600 px-2 py-1 rounded-full font-bold">Major</span>
                                             </div>
                                             <span className="text-xs text-zinc-400">Enero 2026</span>
                                         </div>
@@ -902,16 +939,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                 <h5 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-1">Ecosistema de Ayuda & Configuración</h5>
                                                 <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
                                                     <li><strong>Enciclopedia Vault:</strong> Documentación integrada y buscador inteligente.</li>
-                                                    <li><strong>Menú Reestructurado:</strong> Navegación por grupos lógicos (Finanzas, Sistema, etc.).</li>
-                                                </ul>
-                                            </div>
-                                            <div>
-                                                <h5 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-1">Dashboard & Calendario 2.0</h5>
-                                                <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
-                                                    <li><strong>Analítica Comparativa:</strong> Indicadores de saldo vs. mes anterior.</li>
-                                                    <li><strong>Bento Grid:</strong> Nuevo diseño modular y hero card premium.</li>
-                                                    <li><strong>Calendario Inteligente:</strong> Layout adaptativo real (Split View en Desktop) y línea de tiempo.</li>
-                                                    <li><strong>Feedback Sensorial:</strong> Efectos de audio y vibración en acciones clave.</li>
+                                                    <li><strong>Menú Reestructurado:</strong> Navegación por grupos lógicos.</li>
                                                 </ul>
                                             </div>
                                         </div>
@@ -919,7 +947,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
 
                                     {/* v1.8.1 Item (Patch) */}
                                     <div className="relative">
-                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-emerald-500 border-4 border-white dark:border-zinc-950 shadow-sm" />
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-emerald-500 border-4 border-white dark:border-zinc-950 shadow-sm" />
                                         <div className="flex flex-col mb-2">
                                             <div className="flex justify-between items-start">
                                                 <div>
@@ -937,7 +965,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                     </div>
                                     {/* v1.8 Item (Current) */}
                                     <div className="relative">
-                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-indigo-500 border-4 border-white dark:border-zinc-950 shadow-sm" />
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-indigo-500 border-4 border-white dark:border-zinc-950 shadow-sm" />
                                         <div className="flex flex-col mb-2">
                                             <div className="flex justify-between items-start">
                                                 <div>
@@ -958,7 +986,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
 
                                     {/* v1.7 Item */}
                                     <div className="relative opacity-70 hover:opacity-100 transition-opacity">
-                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
                                         <div className="flex flex-col mb-2">
                                             <div className="flex justify-between items-start">
                                                 <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.7 - Dynamic Goals Rework</span>
@@ -976,7 +1004,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
 
                                     {/* v1.6 Item */}
                                     <div className="relative opacity-70 hover:opacity-100 transition-opacity">
-                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
                                         <div className="flex flex-col mb-2">
                                             <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.6 - Smart Goals</span>
                                             <span className="text-xs text-zinc-400">Enero 2026</span>
@@ -990,7 +1018,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
 
                                     {/* v1.5.1 Item */}
                                     <div className="relative opacity-70 hover:opacity-100 transition-opacity">
-                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-primary border-4 border-white dark:border-zinc-950 shadow-sm" />
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-primary border-4 border-white dark:border-zinc-950 shadow-sm" />
                                         <div className="flex flex-col mb-2">
                                             <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.5.1 - Mobile Polish</span>
                                             <span className="text-xs text-zinc-400">Enero 2026</span>
@@ -1004,7 +1032,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
 
                                     {/* v1.5 Item */}
                                     <div className="relative opacity-70 hover:opacity-100 transition-opacity">
-                                        <div className="absolute -left-[39px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-zinc-300 dark:bg-zinc-700 border-4 border-white dark:border-zinc-950" />
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v1.5 - Offline Unleashed</span>
                                             <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-full font-bold">Major</span>

@@ -5,6 +5,7 @@ import { FolderKanban, Plus, Pencil, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import ProjectDetails from '../components/finance/ProjectDetails';
 import type { Project } from '../types';
+import InvitationsList from '../components/collaboration/InvitationsList';
 
 const Projects = () => {
     const { projects, addProject, updateProject, deleteProject, getProjectStats } = useProjects();
@@ -28,7 +29,10 @@ const Projects = () => {
             name: formData.name,
             targetBudget: Number(formData.targetBudget),
             deadline: formData.deadline,
-            description: formData.description
+            description: formData.description,
+            tasks: [],
+            budgetLines: [],
+            milestones: []
         };
 
         if (editingProjectId) {
@@ -101,72 +105,78 @@ const Projects = () => {
                 </button>
             </div>
 
+
+
+            <InvitationsList />
+
             {/* Create Project Wizard (Simplified) */}
-            {showForm && (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-xl animate-in fade-in slide-in-from-top-4 shadow-lg">
-                    <h3 className="font-bold text-lg mb-4 text-zinc-900 dark:text-zinc-100">
-                        {editingProjectId ? 'Editar Proyecto' : 'Iniciar Nuevo Proyecto'}
-                    </h3>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-xs text-zinc-500 uppercase tracking-wider">Nombre del Proyecto</label>
-                                <input
-                                    required
-                                    type="text"
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                />
+            {
+                showForm && (
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-xl animate-in fade-in slide-in-from-top-4 shadow-lg">
+                        <h3 className="font-bold text-lg mb-4 text-zinc-900 dark:text-zinc-100">
+                            {editingProjectId ? 'Editar Proyecto' : 'Iniciar Nuevo Proyecto'}
+                        </h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Nombre del Proyecto</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                                        value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Presupuesto Objetivo</label>
+                                    <input
+                                        required
+                                        type="number"
+                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                                        value={formData.targetBudget}
+                                        onChange={e => setFormData({ ...formData, targetBudget: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Fecha Límite (Estimada)</label>
+                                    <input
+                                        type="date"
+                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                                        value={formData.deadline}
+                                        onChange={e => setFormData({ ...formData, deadline: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs text-zinc-500 uppercase tracking-wider">Descripción</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Breve descripción de la obra o meta..."
+                                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
+                                        value={formData.description}
+                                        onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-xs text-zinc-500 uppercase tracking-wider">Presupuesto Objetivo</label>
-                                <input
-                                    required
-                                    type="number"
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-                                    value={formData.targetBudget}
-                                    onChange={e => setFormData({ ...formData, targetBudget: e.target.value })}
-                                />
+                            <div className="flex justify-end gap-2 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForm(false)}
+                                    className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-900/20"
+                                >
+                                    {editingProjectId ? 'Guardar Cambios' : 'Crear Proyecto'}
+                                </button>
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-xs text-zinc-500 uppercase tracking-wider">Fecha Límite (Estimada)</label>
-                                <input
-                                    type="date"
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-                                    value={formData.deadline}
-                                    onChange={e => setFormData({ ...formData, deadline: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs text-zinc-500 uppercase tracking-wider">Descripción</label>
-                                <input
-                                    type="text"
-                                    placeholder="Breve descripción de la obra o meta..."
-                                    className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
-                                    value={formData.description}
-                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-2 pt-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowForm(false)}
-                                className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-900/20"
-                            >
-                                {editingProjectId ? 'Guardar Cambios' : 'Crear Proyecto'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
+                        </form>
+                    </div>
+                )
+            }
 
             {/* Projects Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -315,7 +315,7 @@ const Dashboard = () => {
                         {upcoming.length > 0 ? (
                             <div className="space-y-0 relative">
                                 {/* Timeline Line */}
-                                <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-zinc-100 dark:bg-zinc-800"></div>
+                                <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-zinc-100 dark:bg-zinc-800"></div>
 
                                 {upcoming.map((item) => (
                                     <div key={item.id} className="relative flex gap-4 items-start py-3 group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors px-2">
