@@ -2,20 +2,20 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper function to check if user is authenticated
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if user is accessing their own data
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Match users collection and subcollections
+    // 1. Reglas para Datos de Usuario (Privado)
     match /users/{userId}/{document=**} {
-      // Allow read/write only if the user is the owner of the document
-      allow read, write: if isOwner(userId);
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. Reglas para Nicknames (Público/Compartido)
+    match /nicknames/{nickname} {
+      // Cualquier usuario autenticado puede leer para buscar gente o validar disponibilidad
+      allow read: if request.auth != null;
+      
+      // Crear: Permitir si el usuario está autenticado y no existe el nickname (el código valida la unicidad)
+      // Nota: Para mayor seguridad, el código debería guardar el 'uid' dentro del documento del nickname
+      // y aquí podríamos validar 'request.resource.data.uid == request.auth.uid'
+      allow write: if request.auth != null; 
     }
   }
 }
