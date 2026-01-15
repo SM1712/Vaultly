@@ -10,6 +10,7 @@ import type { Credit } from '../types';
 import { toast } from 'sonner';
 import { useTransactions } from '../hooks/useTransactions';
 import { useBalance } from '../hooks/useBalance';
+import { DatePicker } from '../components/ui/DatePicker';
 
 const Credits = () => {
     const { credits, addCredit, deleteCredit, addPayment, getCreditStatus, updateCredit } = useCredits();
@@ -360,13 +361,10 @@ const Credits = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-zinc-500 uppercase mb-1">Fecha de Pago</label>
-                            <input
-                                required
-                                type="date"
-                                className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all dark:text-white"
+                            <DatePicker
+                                label="Fecha de Pago"
                                 value={startDate}
-                                onChange={e => setStartDate(e.target.value)}
+                                onChange={setStartDate}
                             />
                         </div>
                     </div>

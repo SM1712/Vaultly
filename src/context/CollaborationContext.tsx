@@ -2,11 +2,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import {
     collection, doc, getDoc, setDoc, query, where, onSnapshot,
-    runTransaction, getDocs, limit
+    runTransaction, getDocs, limit, updateDoc, arrayUnion
 } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
-import type { PublicProfile, ProjectInvitation } from '../types';
+import type { PublicProfile, ProjectInvitation, ProjectMember } from '../types';
+
+// ... (Context definition)
+
+
 
 interface CollaborationContextType {
     profile: PublicProfile | null;
@@ -17,7 +21,7 @@ interface CollaborationContextType {
     registerNickname: (nickname: string) => Promise<void>;
     skipProfileSetup: () => void;
     searchUserByNickname: (nickname: string) => Promise<PublicProfile | null>;
-    sendProjectInvitation: (projectId: string, projectName: string, toNickname: string) => Promise<void>;
+    sendProjectInvitation: (projectId: string, projectName: string, toNickname: string, toUid?: string) => Promise<void>;
     respondToInvitation: (invitationId: string, accept: boolean) => Promise<void>;
 }
 
@@ -40,6 +44,9 @@ export const CollaborationProvider = ({ children }: { children: React.ReactNode 
         setProfileSkipped(true);
     };
 
+    const [invitesByUid, setInvitesByUid] = useState<ProjectInvitation[]>([]);
+    const [invitesByNick, setInvitesByNick] = useState<ProjectInvitation[]>([]);
+
     // 1. Fetch Public Profile
     useEffect(() => {
         if (!user) {
@@ -60,10 +67,34 @@ export const CollaborationProvider = ({ children }: { children: React.ReactNode 
         return () => unsub();
     }, [user]);
 
-    // 2. Fetch Invitations (Listen) - Only if we have a nickname
+    // 2. Fetch Invitations (UID)
+    useEffect(() => {
+        if (!user) {
+            setInvitesByUid([]);
+            return;
+        }
+
+        const q = query(
+            collection(db, 'invitations'),
+            where('toUid', '==', user.uid),
+            where('status', '==', 'pending')
+        );
+
+        const unsub = onSnapshot(q, (snapshot) => {
+            const invites: ProjectInvitation[] = [];
+            snapshot.forEach(doc => {
+                invites.push({ id: doc.id, ...doc.data() } as ProjectInvitation);
+            });
+            setInvitesByUid(invites);
+        });
+
+        return () => unsub();
+    }, [user]);
+
+    // 2b. Fetch Invitations (Nickname - Legacy/Fallback)
     useEffect(() => {
         if (!user || !profile?.nickname) {
-            setInvitations([]);
+            setInvitesByNick([]);
             return;
         }
 
@@ -78,11 +109,19 @@ export const CollaborationProvider = ({ children }: { children: React.ReactNode 
             snapshot.forEach(doc => {
                 invites.push({ id: doc.id, ...doc.data() } as ProjectInvitation);
             });
-            setInvitations(invites);
+            setInvitesByNick(invites);
         });
 
         return () => unsub();
     }, [user, profile?.nickname]);
+
+    // 2c. Merge Invitations
+    useEffect(() => {
+        const unique = new Map<string, ProjectInvitation>();
+        invitesByUid.forEach(inv => unique.set(inv.id, inv));
+        invitesByNick.forEach(inv => unique.set(inv.id, inv));
+        setInvitations(Array.from(unique.values()));
+    }, [invitesByUid, invitesByNick]);
 
     const normalizeId = (text: string) => {
         return text
@@ -145,8 +184,23 @@ export const CollaborationProvider = ({ children }: { children: React.ReactNode 
         const exactSnap = await getDoc(doc(db, 'nicknames', cleanId));
         if (exactSnap.exists()) {
             const uid = exactSnap.data().uid;
-            const userSnap = await getDoc(doc(db, 'users', uid));
-            return userSnap.exists() ? userSnap.data() as PublicProfile : null;
+            try {
+                const userSnap = await getDoc(doc(db, 'users', uid));
+                return userSnap.exists() ? userSnap.data() as PublicProfile : {
+                    uid,
+                    nickname: nickname.trim(), // Fallback to searched nickname
+                    email: 'Protegido',
+                    createdAt: new Date().toISOString()
+                } as PublicProfile;
+            } catch (error) {
+                console.warn("Could not fetch full user profile (likely permissions), using fallback.", error);
+                return {
+                    uid,
+                    nickname: nickname.trim(),
+                    email: 'Protegido',
+                    createdAt: new Date().toISOString()
+                } as PublicProfile;
+            }
         }
 
         // 2. Try Prefix Match (Fuzzy-ish)
@@ -163,8 +217,22 @@ export const CollaborationProvider = ({ children }: { children: React.ReactNode 
             if (!querySnap.empty) {
                 const matchDoc = querySnap.docs[0];
                 const uid = matchDoc.data().uid;
-                const userSnap = await getDoc(doc(db, 'users', uid));
-                return userSnap.exists() ? userSnap.data() as PublicProfile : null;
+                try {
+                    const userSnap = await getDoc(doc(db, 'users', uid));
+                    return userSnap.exists() ? userSnap.data() as PublicProfile : {
+                        uid,
+                        nickname: matchDoc.id, // Use normalized ID as best guess
+                        email: 'Protegido',
+                        createdAt: new Date().toISOString()
+                    } as PublicProfile;
+                } catch (error) {
+                    return {
+                        uid,
+                        nickname: matchDoc.id,
+                        email: 'Protegido',
+                        createdAt: new Date().toISOString()
+                    } as PublicProfile;
+                }
             }
         } catch (e) {
             console.error("Prefix search failed", e);
@@ -173,7 +241,7 @@ export const CollaborationProvider = ({ children }: { children: React.ReactNode 
         return null;
     };
 
-    const sendProjectInvitation = async (projectId: string, projectName: string, toNickname: string) => {
+    const sendProjectInvitation = async (projectId: string, projectName: string, toNickname: string, toUid?: string) => {
         if (!user || !profile) return;
 
         // Validation logic
@@ -189,6 +257,7 @@ export const CollaborationProvider = ({ children }: { children: React.ReactNode 
                 fromUid: user.uid,
                 fromNickname: profile.nickname,
                 toNickname: toNickname.trim(),
+                toUid: toUid || null,
                 status: 'pending',
                 createdAt: new Date().toISOString()
             });
@@ -200,22 +269,41 @@ export const CollaborationProvider = ({ children }: { children: React.ReactNode 
     };
 
     const respondToInvitation = async (invitationId: string, accept: boolean) => {
-        if (!user) return;
+        if (!user || !profile) return;
         try {
             const invRef = doc(db, 'invitations', invitationId);
             const invSnap = await getDoc(invRef);
 
             if (!invSnap.exists()) return;
-            // logic to add to project comes later (needs shared project structure)
-            // for now just update status
+            const invData = invSnap.data() as ProjectInvitation;
 
+            if (accept) {
+                // Add to project
+                const projectRef = doc(db, 'projects', invData.projectId);
+
+                // Construct new member object
+                const newMember: ProjectMember = {
+                    uid: user.uid,
+                    nickname: profile.nickname,
+                    role: 'editor', // Default role
+                    joinedAt: new Date().toISOString()
+                };
+
+                // Atomically add to members array and membersIds helper
+                await updateDoc(projectRef, {
+                    members: arrayUnion(newMember),
+                    membersIds: arrayUnion(user.uid)
+                });
+            }
+
+            // Update invitation status
             await setDoc(invRef, { status: accept ? 'accepted' : 'rejected' }, { merge: true });
-            toast.success(accept ? "Invitación aceptada" : "Invitación rechazada");
 
-            // TODO: Step 2 triggers here -> Add user to project 'members' array in Firestore
+            toast.success(accept ? "¡Te has unido al proyecto!" : "Invitación rechazada");
+
         } catch (error) {
             console.error(error);
-            toast.error("Error al responder");
+            toast.error("Error al responder invitación");
         }
     };
 

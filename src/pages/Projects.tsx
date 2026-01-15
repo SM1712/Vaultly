@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
 import { useSettings } from '../context/SettingsContext';
-import { FolderKanban, Plus, Pencil, Trash2, Target, Calendar } from 'lucide-react';
+import { FolderKanban, Plus, Pencil, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import { clsx } from 'clsx';
 import ProjectDetails from '../components/finance/ProjectDetails';
@@ -14,45 +14,48 @@ const Projects = () => {
     const [showForm, setShowForm] = useState(false);
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
         name: '',
-        targetBudget: '',
-        deadline: '',
         description: ''
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
+        // ... (unchanged)
         e.preventDefault();
+        setIsSubmitting(true);
 
         const projectData = {
             name: formData.name,
-            targetBudget: Number(formData.targetBudget),
-            deadline: formData.deadline,
-            description: formData.description,
-            tasks: [],
-            budgetLines: [],
-            milestones: []
+            targetBudget: 0,
+            description: formData.description
         };
 
+        let success = false;
         if (editingProjectId) {
-            updateProject(editingProjectId, projectData);
+            success = await updateProject(editingProjectId, projectData);
         } else {
-            addProject(projectData);
+            success = await addProject(projectData);
         }
 
-        setFormData({ name: '', targetBudget: '', deadline: '', description: '' });
-        setShowForm(false);
-        setEditingProjectId(null);
+        setIsSubmitting(false);
+
+        if (success) {
+            setFormData({ name: '', description: '' });
+            setShowForm(false);
+            setEditingProjectId(null);
+        }
     };
 
     const handleEdit = (e: React.MouseEvent, project: Project) => {
+        // ... (unchanged)
         e.stopPropagation();
         setFormData({
             name: project.name,
-            targetBudget: project.targetBudget.toString(),
-            deadline: project.deadline || '',
             description: project.description || ''
         });
         setEditingProjectId(project.id);
@@ -62,10 +65,58 @@ const Projects = () => {
 
     const handleDelete = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (confirm('¿Estás seguro de eliminar este proyecto? Se eliminarán también sus transacciones.')) {
-            deleteProject(id);
+        setProjectToDelete(id);
+    };
+
+    const confirmDelete = async () => {
+        if (projectToDelete) {
+            setIsDeleting(true);
+            await deleteProject(projectToDelete);
+            setIsDeleting(false);
+            setProjectToDelete(null);
         }
     };
+
+    // ... (rest of file until modal)
+
+    {/* Delete Confirmation Modal */ }
+    <Modal
+        isOpen={!!projectToDelete}
+        onClose={() => !isDeleting && setProjectToDelete(null)}
+        title="Eliminar Proyecto"
+        maxWidth="max-w-sm"
+    >
+        <div className="flex flex-col items-center text-center space-y-4">
+            <div className="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full">
+                <AlertTriangle size={32} />
+            </div>
+            <div>
+                <p className="text-zinc-600 dark:text-zinc-300">
+                    ¿Estás seguro de que quieres eliminar este proyecto?
+                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+                    Esta acción no se puede deshacer y borrará todas las transacciones asociadas.
+                </p>
+            </div>
+            <div className="flex gap-3 w-full pt-2">
+                <button
+                    onClick={() => setProjectToDelete(null)}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                    Cancelar
+                </button>
+                <button
+                    onClick={confirmDelete}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-bold transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-70 flex items-center justify-center gap-2"
+                >
+                    {isDeleting ? <Loader2 size={16} className="animate-spin" /> : null}
+                    {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                </button>
+            </div>
+        </div>
+    </Modal>
 
     const getStatusColor = (status: Project['status']) => {
         switch (status) {
@@ -106,11 +157,8 @@ const Projects = () => {
                 </button>
             </div>
 
-
-
             <InvitationsList />
 
-            {/* Create Project Wizard (Simplified) */}
             {/* Create Project Modal */}
             <Modal
                 isOpen={showForm}
@@ -134,40 +182,6 @@ const Projects = () => {
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Budget Input */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                                    <Target size={14} /> Presupuesto Objetivo
-                                </label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">{currency}</span>
-                                    <input
-                                        required
-                                        type="text"
-                                        inputMode="decimal"
-                                        placeholder="0.00"
-                                        className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-8 pr-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono font-bold"
-                                        value={formData.targetBudget}
-                                        onChange={e => setFormData({ ...formData, targetBudget: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Deadline Input */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                                    <Calendar size={14} /> Fecha Límite
-                                </label>
-                                <input
-                                    type="date"
-                                    className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium"
-                                    value={formData.deadline}
-                                    onChange={e => setFormData({ ...formData, deadline: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
                         {/* Description Input */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
@@ -187,16 +201,18 @@ const Projects = () => {
                         <button
                             type="button"
                             onClick={() => setShowForm(false)}
-                            className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium transition-colors"
+                            disabled={isSubmitting}
+                            className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium transition-colors disabled:opacity-50"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
+                            disabled={isSubmitting}
+                            className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-zinc-900/20 dark:shadow-zinc-100/20 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {editingProjectId ? <Pencil size={18} /> : <Plus size={18} />}
-                            {editingProjectId ? 'Guardar Cambios' : 'Crear Proyecto'}
+                            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : (editingProjectId ? <Pencil size={18} /> : <Plus size={18} />)}
+                            {isSubmitting ? 'Guardando...' : (editingProjectId ? 'Guardar Cambios' : 'Crear Proyecto')}
                         </button>
                     </div>
                 </form>
@@ -234,7 +250,7 @@ const Projects = () => {
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex gap-1">
                                         <button
                                             onClick={(e) => handleEdit(e, project)}
                                             className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -315,6 +331,42 @@ const Projects = () => {
                     />
                 )
             }
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                isOpen={!!projectToDelete}
+                onClose={() => setProjectToDelete(null)}
+                title="Eliminar Proyecto"
+                maxWidth="max-w-sm"
+            >
+                <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full">
+                        <AlertTriangle size={32} />
+                    </div>
+                    <div>
+                        <p className="text-zinc-600 dark:text-zinc-300">
+                            ¿Estás seguro de que quieres eliminar este proyecto?
+                        </p>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+                            Esta acción no se puede deshacer y borrará todas las transacciones asociadas.
+                        </p>
+                    </div>
+                    <div className="flex gap-3 w-full pt-2">
+                        <button
+                            onClick={() => setProjectToDelete(null)}
+                            className="flex-1 px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={confirmDelete}
+                            className="flex-1 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-bold transition-colors shadow-lg shadow-rose-500/20"
+                        >
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div >
     );
 };

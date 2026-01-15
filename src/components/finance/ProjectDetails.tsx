@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useCollaboration } from '../../context/CollaborationContext';
 import { clsx } from 'clsx';
+import { DatePicker } from '../ui/DatePicker';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, YAxis } from 'recharts';
 
 interface ProjectDetailsProps {
@@ -91,8 +92,9 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
             const user = await searchUserByNickname(inviteNick);
             setFoundUser(user);
             if (!user) toast.error("Usuario no encontrado");
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            toast.error("Error al buscar usuario: " + (error.message || "Intentelo más tarde"));
         } finally {
             setSearchingUser(false);
         }
@@ -100,7 +102,7 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
 
     const handleInvite = async () => {
         if (!foundUser) return;
-        await sendProjectInvitation(project.id, project.name, foundUser.nickname);
+        await sendProjectInvitation(project.id, project.name, foundUser.nickname, foundUser.uid);
         setInviteNick('');
         setFoundUser(null);
     };
@@ -513,12 +515,14 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
                                     onChange={e => setNewMilestone({ ...newMilestone, title: e.target.value })}
                                 />
                                 <div className="flex gap-2">
-                                    <input
-                                        type="date"
-                                        className="flex-1 md:w-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 ring-emerald-500/50 text-zinc-500"
-                                        value={newMilestone.targetDate}
-                                        onChange={e => setNewMilestone({ ...newMilestone, targetDate: e.target.value })}
-                                    />
+                                    <div className="flex-1 md:w-auto">
+                                        <DatePicker
+                                            value={newMilestone.targetDate}
+                                            onChange={(date) => setNewMilestone({ ...newMilestone, targetDate: date })}
+                                            className="w-full"
+                                            label="Fecha Objetivo"
+                                        />
+                                    </div>
                                     <button
                                         type="submit"
                                         disabled={!newMilestone.title.trim()}
@@ -899,27 +903,37 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
                             {/* Current Members List (Placeholder for now) */}
                             <div className="space-y-3">
                                 <h3 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                                    Equipo del Proyecto <span className="text-xs bg-zinc-200 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-400">1</span>
+                                    Equipo del Proyecto <span className="text-xs bg-zinc-200 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-400">{project.members?.length || 0}</span>
                                 </h3>
 
-                                {/* Owner Card */}
-                                <div className="flex items-center justify-between bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-500">
-                                            <User size={20} />
+                                {project.members?.map(member => (
+                                    <div key={member.uid} className="flex items-center justify-between bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-500">
+                                                <User size={20} />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-zinc-900 dark:text-zinc-100">
+                                                    {member.nickname} {member.role === 'owner' ? '(Propietario)' : ''}
+                                                </p>
+                                                <p className="text-xs text-zinc-500">
+                                                    {member.role === 'owner' ? 'Acceso total' : 'Editor'}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-zinc-900 dark:text-zinc-100">Tú (Propietario)</p>
-                                            <p className="text-xs text-zinc-500">Acceso total</p>
-                                        </div>
+                                        <span className={clsx("text-xs font-bold px-3 py-1 rounded-full",
+                                            member.role === 'owner' ? "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/10" : "text-blue-500 bg-blue-50 dark:bg-blue-900/10"
+                                        )}>
+                                            {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                                        </span>
                                     </div>
-                                    <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-900/10 px-3 py-1 rounded-full">Owner</span>
-                                </div>
+                                ))}
 
-                                {/* Pending implementation of real members list */}
-                                <div className="text-center py-8 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
-                                    <p className="text-sm text-zinc-400">Cuando acepten tus invitaciones, aparecerán aquí.</p>
-                                </div>
+                                {(!project.members || project.members.length === 0) && (
+                                    <div className="text-center py-8 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+                                        <p className="text-sm text-zinc-400">No hay miembros en este proyecto (¿Error de datos?)</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

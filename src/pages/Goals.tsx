@@ -3,7 +3,7 @@ import { useGoals } from '../hooks/useGoals';
 import { useTransactions } from '../hooks/useTransactions';
 import { useSettings } from '../context/SettingsContext';
 import {
-    Target, Calculator, Trash2, Edit2, TrendingUp, AlertTriangle,
+    Target, Trash2, Edit2, TrendingUp, AlertTriangle,
     MinusCircle, PlusCircle, Pencil, ChevronsRight, Zap,
     Gift, DollarSign, Heart, Flame, PiggyBank, Wallet, Star, Smile,
     Briefcase, Car, Plane, Home, Coffee, Gamepad2, Smartphone, Lock, Plus, ChevronDown
@@ -12,6 +12,7 @@ import Modal from '../components/ui/Modal';
 import type { Goal } from '../types';
 import { clsx } from 'clsx';
 import { toast } from 'sonner';
+import { DatePicker } from '../components/ui/DatePicker';
 
 // Updated Icon Map
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -45,89 +46,118 @@ export interface GoalFormProps {
 
 export const GoalForm = ({ formData, setFormData, onSubmit, editingId, onCancel, currency }: GoalFormProps) => {
     return (
-        <form onSubmit={onSubmit} className="space-y-5">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                    <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                        {editingId ? <Edit2 size={20} className="text-blue-500" /> : <Calculator size={20} className="text-zinc-600 dark:text-zinc-300" />}
-                    </div>
-                    <h3 className="font-bold text-zinc-900 dark:text-zinc-100">{editingId ? 'Editar Meta' : 'Nueva Meta'}</h3>
+        <form onSubmit={onSubmit} className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
+                        {editingId ? 'Editar Meta' : 'Nueva Meta'}
+                    </h3>
+                    <p className="text-sm text-zinc-500 font-medium">Define tu próximo objetivo</p>
                 </div>
                 {editingId && (
-                    <button type="button" onClick={onCancel} className="text-xs text-zinc-400 hover:text-zinc-600 underline">Cancelar</button>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-rose-500"
+                    >
+                        <Trash2 size={18} />
+                    </button>
                 )}
             </div>
 
-            <div className="space-y-4">
-                <div>
-                    <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Nombre</label>
-                    <input
-                        type="text"
-                        required
-                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500 transition-colors"
-                        placeholder="Ej. Viaje Japón"
-                        value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    />
-                </div>
-
-                <div>
-                    <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Icono</label>
-                    <div className="grid grid-cols-6 gap-2 bg-zinc-50 dark:bg-zinc-950 p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 max-h-32 overflow-y-auto custom-scrollbar">
-                        {Object.keys(ICON_MAP).map(key => {
-                            const Icon = ICON_MAP[key];
-                            return (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, icon: key })}
-                                    className={clsx("p-2 rounded-lg flex items-center justify-center transition-all aspect-square",
-                                        formData.icon === key
-                                            ? "bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-200 dark:ring-emerald-900"
-                                            : "text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-                                    )}
-                                >
-                                    <Icon size={18} />
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <div>
-                    <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Monto Objetivo ({currency})</label>
+            {/* Hero Amount Input */}
+            <div className="relative group">
+                <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2 block text-center">Monto Objetivo</label>
+                <div className="relative flex items-center justify-center">
+                    <span className="text-3xl font-black text-zinc-400 absolute left-4 sm:left-12 pointer-events-none transition-colors group-focus-within:text-emerald-500">{currency}</span>
                     <input
                         type="number"
                         required
-                        className="w-full text-lg font-bold bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500 transition-colors"
-                        placeholder="5000"
+                        className="w-full bg-transparent text-center text-4xl sm:text-5xl font-black text-zinc-900 dark:text-zinc-100 placeholder-zinc-200 dark:placeholder-zinc-800 focus:outline-none py-4 border-b-2 border-zinc-100 dark:border-zinc-800 focus:border-emerald-500 transition-all"
+                        placeholder="0"
                         value={formData.targetAmount}
                         onChange={e => setFormData({ ...formData, targetAmount: e.target.value })}
                     />
                 </div>
+            </div>
 
-                <div>
-                    <label className="text-xs font-bold text-zinc-500 uppercase mb-1 block">Fecha Límite</label>
-                    <input
-                        type="date"
-                        required
-                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500 transition-colors"
-                        value={formData.deadline}
-                        onChange={e => setFormData({ ...formData, deadline: e.target.value })}
-                    />
+            {/* Name Input */}
+            <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1.5 ml-1 block">Nombre de la Meta</label>
+                <input
+                    type="text"
+                    required
+                    className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-zinc-900 dark:text-zinc-100 font-bold focus:outline-none focus:ring-2 ring-emerald-500/20 focus:border-emerald-500 transition-all placeholder:font-normal"
+                    placeholder="Ej. Viaje a Japón, Auto Nuevo..."
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                />
+            </div>
+
+            {/* Icon Selector */}
+            <div>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2 ml-1 block">Icono</label>
+                <div className="grid grid-cols-7 gap-2">
+                    {Object.keys(ICON_MAP).map(key => {
+                        const Icon = ICON_MAP[key];
+                        const isSelected = formData.icon === key;
+                        return (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() => setFormData({ ...formData, icon: key })}
+                                className={clsx("aspect-square rounded-xl flex items-center justify-center transition-all duration-300",
+                                    isSelected
+                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-110"
+                                        : "bg-zinc-50 dark:bg-zinc-900 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105"
+                                )}
+                            >
+                                <Icon size={18} strokeWidth={isSelected ? 2.5 : 2} />
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            <button
-                type="submit"
-                className={clsx("w-full py-3 rounded-xl font-bold transition-all shadow-lg active:scale-[0.98]",
-                    editingId
-                        ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/20"
-                        : "bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 hover:scale-[1.02] shadow-zinc-900/10 dark:shadow-none"
+            {/* Date Picker */}
+            <div>
+                <DatePicker
+                    label="Fecha Límite"
+                    value={formData.deadline}
+                    onChange={(date) => setFormData({ ...formData, deadline: date })}
+                    className="w-full"
+                />
+                {formData.deadline && (
+                    <p className="text-xs text-right text-zinc-400 mt-1.5 font-medium">
+                        {/* Simple calc for months remaining could go here visually if needed */}
+                    </p>
                 )}
-            >
-                {editingId ? 'Guardar Cambios' : 'Crear Meta'}
-            </button>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-2 flex gap-3">
+                {editingId && (
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="flex-1 py-4 rounded-xl font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                    >
+                        Cancelar
+                    </button>
+                )}
+                <button
+                    type="submit"
+                    className={clsx("flex-[2] py-4 rounded-xl font-black text-lg shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2",
+                        editingId
+                            ? "bg-emerald-500 text-white shadow-emerald-500/20"
+                            : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-zinc-900/20"
+                    )}
+                >
+                    {editingId ? <Edit2 size={20} /> : <PlusCircle size={20} />}
+                    {editingId ? 'Guardar Cambios' : 'Crear Meta'}
+                </button>
+            </div>
         </form>
     );
 };

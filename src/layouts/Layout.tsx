@@ -15,6 +15,22 @@ import OnboardingModal from '../components/onboarding/OnboardingModal';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import { useGamification } from '../context/GamificationContext';
 
+import { useFunds } from '../hooks/useFunds';
+import { useBalance } from '../hooks/useBalance';
+
+const AutoDepositManager = () => {
+    const { checkAutoDeposits } = useFunds();
+    const { currentBalance } = useBalance();
+
+    useEffect(() => {
+        if (typeof checkAutoDeposits === 'function') {
+            checkAutoDeposits(currentBalance);
+        }
+    }, [checkAutoDeposits, currentBalance]);
+
+    return null;
+};
+
 const GlobalLevelUpManager = () => {
     const { levelUpModal } = useGamification();
     return (
@@ -31,17 +47,15 @@ const Layout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const { processScheduledTransactions } = useScheduledTransactions();
-
-    useEffect(() => {
-        // Run checks on mount
-        processScheduledTransactions();
-    }, [processScheduledTransactions]);
-
+    // We need to access funds and balance here, but `useFunds` and `useBalance` 
+    // must be used inside the providers. We will create a new component `AutoDepositManager`
+    // inside the providers to handle this.
 
     return (
         <FinanceProvider>
             <SettingsProvider>
                 <ProjectsProvider>
+                    <AutoDepositManager />
                     <div className="flex flex-col lg:flex-row h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300 animate-enter-app">
                         {/* Mobile Header - Push content down */}
                         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 shrink-0 z-30">
@@ -72,9 +86,7 @@ const Layout = () => {
                         </div>
 
                         <main className="flex-1 overflow-auto p-4 lg:p-8 w-full max-w-[1600px] mx-auto relative">
-                            <div className="fixed bottom-2 right-2 text-[10px] text-zinc-500 font-mono opacity-50 pointer-events-none">
-                                v1.6 - Smart Goals
-                            </div>
+
                             <Outlet />
                         </main>
 

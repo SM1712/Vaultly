@@ -55,39 +55,62 @@ const Income = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-8 pb-20 md:pb-0">
+            {/* Header Section */}
+            <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                 <div>
-                    <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Gestión de Ingresos</h2>
-                    <p className="text-zinc-500 dark:text-zinc-500 text-sm">Registra cada flujo entrante de dinero</p>
+                    <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">Gestión de Ingresos</h2>
+                    <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-lg">Registra y analiza tus flujos de dinero.</p>
                 </div>
-                <div className="flex flex-col md:flex-row gap-4 items-end md:items-center">
-                    <MonthSelector />
-                    <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 px-6 py-3 rounded-xl">
-                        <p className="text-emerald-600 dark:text-emerald-200 text-xs uppercase tracking-wider font-semibold">Total Ingresado</p>
-                        <p className="text-2xl font-mono font-bold text-emerald-600 dark:text-emerald-400">{currency}{filteredTotal.toFixed(2)}</p>
+
+                {/* Controls & Summary Card */}
+                <div className="flex flex-col sm:flex-row gap-4 sm:items-center bg-white dark:bg-zinc-900/50 p-2 pr-6 rounded-2xl shadow-sm border border-zinc-100 dark:border-zinc-800/50">
+                    <div className="w-full sm:w-auto">
+                        <MonthSelector />
+                    </div>
+                    <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block"></div>
+                    <div className="flex flex-col px-4 sm:px-0 pb-2 sm:pb-0">
+                        <span className="text-xs uppercase tracking-wider font-bold text-zinc-400 dark:text-zinc-500">Total Ingresado</span>
+                        <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">{currency}{filteredTotal.toFixed(2)}</span>
                     </div>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    <TransactionForm
-                        type="income"
-                        onSubmit={handleFormSubmit}
-                        categories={categories}
-                        onAddCategory={addCategory}
-                        initialData={editingTransaction || undefined}
-                    />
-                    <TransactionList
-                        transactions={filteredTransactions}
-                        onDelete={deleteTransaction}
-                        onEdit={handleEdit}
-                    />
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+
+                {/* Main Column: Form & History */}
+                <div className="xl:col-span-2 space-y-8 order-2 xl:order-1">
+                    <section id="new-transaction" className="scroll-mt-24">
+                        <TransactionForm
+                            type="income"
+                            onSubmit={handleFormSubmit}
+                            categories={categories}
+                            onAddCategory={addCategory}
+                            initialData={editingTransaction || undefined}
+                        />
+                    </section>
+
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between px-2">
+                            <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-200">Historial Reciente</h3>
+                            <span className="text-xs font-medium text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-full">{filteredTransactions.length} registros</span>
+                        </div>
+                        <TransactionList
+                            transactions={filteredTransactions}
+                            onDelete={deleteTransaction}
+                            onEdit={handleEdit}
+                        />
+                    </section>
                 </div>
-                <div className="lg:col-span-1">
-                    <div className="sticky top-6">
-                        <CategorySummary data={getByCategory()} total={filteredTotal} />
+
+                {/* Sidebar Column: Stats */}
+                <div className="xl:col-span-1 order-1 xl:order-2 space-y-6">
+                    <div className="sticky top-6 space-y-6">
+                        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-3xl p-6">
+                            <h4 className="text-emerald-900 dark:text-emerald-100 font-bold text-lg mb-1">Fuentes de Ingreso</h4>
+                            <p className="text-emerald-700 dark:text-emerald-300 text-sm opacity-80 mb-6">Distribución por categoría.</p>
+                            <CategorySummary data={getByCategory()} total={filteredTotal} />
+                        </div>
                     </div>
                 </div>
             </div>

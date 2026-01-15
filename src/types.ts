@@ -78,6 +78,7 @@ export interface Project {
     tasks: ProjectTask[];
     budgetLines: BudgetLine[];
     milestones: Milestone[];
+    members?: ProjectMember[]; // Optional for backward compatibility, but should be populated
 }
 
 export interface FundTransaction {
@@ -97,6 +98,13 @@ export interface Fund {
     description?: string;
     color?: string; // Optional: custom color for the card/icon
     history: FundTransaction[];
+    autoSaveConfig?: {
+        enabled: boolean;
+        type: 'fixed' | 'percentage';
+        amount: number; // For percentage, 0-100. For fixed, currency amount.
+        dayOfMonth: number; // 1-31
+        lastProcessedDate?: string; // YYYY-MM-DD
+    };
 }
 
 export interface Payment {

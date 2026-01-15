@@ -1,11 +1,17 @@
-import { createContext, useContext, type ReactNode } from 'react';
-import { useData } from './DataContext';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { useData } from './DataContext'; // Kept for legacy if needed, or remove if unused. Warning said unused.
 import type { Project, ProjectTransaction, ProjectTask, BudgetLine, Milestone } from '../types';
+import { db } from '../lib/firebase';
+import {
+    collection, doc, setDoc, deleteDoc, onSnapshot, query, where
+} from 'firebase/firestore';
+import { useAuth } from './AuthContext';
+import { toast } from 'sonner';
 
 interface ProjectsContextType {
     projects: Project[];
-    addProject: (projectData: Omit<Project, 'id' | 'transactions' | 'status' | 'startDate'>) => void;
-    updateProject: (id: string, updates: Partial<Project>) => void;
+    addProject: (projectData: Omit<Project, 'id' | 'transactions' | 'status' | 'startDate' | 'tasks' | 'budgetLines' | 'milestones' | 'members'>) => Promise<boolean>;
+    updateProject: (id: string, updates: Partial<Project>) => Promise<boolean>;
     deleteProject: (id: string) => void;
     addProjectTransaction: (projectId: string, transaction: Omit<ProjectTransaction, 'id' | 'projectId'>) => void;
     updateProjectTransaction: (projectId: string, txId: string, updates: Partial<ProjectTransaction>) => void;
@@ -32,35 +38,107 @@ interface ProjectsContextType {
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
 
 export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
-    const { data, updateData } = useData();
-    const projects = data.projects || [];
+    const { user } = useAuth();
+    // We no longer use useData for projects, but we might want to keep it if we need other data
+    // const { data, updateData } = useData(); 
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const addProject = (projectData: Omit<Project, 'id' | 'transactions' | 'status' | 'startDate' | 'tasks' | 'budgetLines' | 'milestones'>) => {
+    useEffect(() => {
+        if (!user) {
+            setProjects([]);
+            setLoading(false);
+            return;
+        }
+
+        const q = query(
+            collection(db, 'projects'),
+            where('membersIds', 'array-contains', user.uid)
+        );
+
+        const unsub = onSnapshot(q, (snapshot) => {
+            const loadedProjects: Project[] = [];
+            snapshot.forEach(doc => {
+                loadedProjects.push({ id: doc.id, ...doc.data() } as Project);
+            });
+            // Sort by createdAt or name? Let's just keep them as is or sort by name
+            loadedProjects.sort((a, b) => a.name.localeCompare(b.name));
+            setProjects(loadedProjects);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching projects:", error);
+            // toast.error("Error cargando proyectos colaborativos");
+            setLoading(false);
+        });
+
+        return () => unsub();
+    }, [user]);
+
+    const addProject = async (projectData: Omit<Project, 'id' | 'transactions' | 'status' | 'startDate' | 'tasks' | 'budgetLines' | 'milestones' | 'members'>): Promise<boolean> => {
+        if (!user) return false;
+        const newRef = doc(collection(db, 'projects'));
         const newProject: Project = {
-            id: crypto.randomUUID(),
+            id: newRef.id,
             ...projectData,
             status: 'planning',
-            startDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
+            startDate: new Date().toISOString().split('T')[0],
             transactions: [],
             targetBudget: projectData.targetBudget || 0,
             tasks: [],
             budgetLines: [],
-            milestones: []
+            milestones: [],
+            members: [{
+                uid: user.uid,
+                nickname: user.displayName || 'Usuario', // Fallback, implies we should really fetch the profile
+                role: 'owner',
+                joinedAt: new Date().toISOString()
+            }],
+            // Helper for querying
+            // @ts-ignore
+            membersIds: [user.uid]
         };
-        updateData({ projects: [newProject, ...projects] });
+
+        try {
+            await setDoc(newRef, newProject);
+            toast.success("Proyecto colaborativo creado");
+            return true;
+        } catch (e: any) {
+            console.error(e);
+            toast.error("Error creando proyecto: " + (e.message || String(e)));
+            return false;
+        }
     };
 
-    const updateProject = (id: string, updates: Partial<Project>) => {
-        const newProjects = projects.map(p => p.id === id ? { ...p, ...updates } : p);
-        updateData({ projects: newProjects });
+    const updateProject = async (id: string, updates: Partial<Project>): Promise<boolean> => {
+        if (!user) return false;
+        try {
+            await setDoc(doc(db, 'projects', id), updates, { merge: true });
+            return true;
+        } catch (e) {
+            console.error(e);
+            toast.error("Error actualizando proyecto");
+            return false;
+        }
     };
 
-    const deleteProject = (id: string) => {
-        const newProjects = projects.filter(p => p.id !== id);
-        updateData({ projects: newProjects });
+    const deleteProject = async (id: string) => {
+        if (!user) return;
+
+        try {
+            await deleteDoc(doc(db, 'projects', id));
+            toast.success("Proyecto eliminado");
+        } catch (e) {
+            console.error(e);
+            toast.error("Error eliminando proyecto");
+        }
     };
 
-    const addProjectTransaction = (projectId: string, transaction: Omit<ProjectTransaction, 'id' | 'projectId'>) => {
+    // --- Sub-collections vs Arrays ---
+    // For simplicity in this "Lite" version, we are keeping transactions inside the project document arrays.
+    // In a massive app, these should be subcollections 'projects/{id}/transactions'.
+    // Given the prompt "que se agregue al proyecto", we assume the existing structure (Arrays) is preferred to avoid massive refactor of UI.
+
+    const addProjectTransaction = async (projectId: string, transaction: Omit<ProjectTransaction, 'id' | 'projectId'>) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
@@ -71,7 +149,6 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
         };
 
         let updatedBudgetLines = project.budgetLines;
-        // If expense is linked to a BudgetLine (Fund), update spentAmount
         if (transaction.type === 'expense' && transaction.budgetLineId) {
             updatedBudgetLines = (project.budgetLines || []).map(line =>
                 line.id === transaction.budgetLineId
@@ -80,34 +157,28 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
             );
         }
 
-        const updatedProject = {
-            ...project,
+        // Firestore update
+        await updateProject(projectId, {
             budgetLines: updatedBudgetLines,
             transactions: [newTx, ...(project.transactions || [])]
-        };
-
-        updateProject(projectId, updatedProject);
+        });
     };
 
-    const updateProjectTransaction = (projectId: string, txId: string, updates: Partial<ProjectTransaction>) => {
+    const updateProjectTransaction = async (projectId: string, txId: string, updates: Partial<ProjectTransaction>) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
-        const updatedProject = {
-            ...project,
-            transactions: (project.transactions || []).map(t => t.id === txId ? { ...t, ...updates } : t)
-        };
-
-        updateProject(projectId, updatedProject);
+        const updatedTxs = (project.transactions || []).map(t => t.id === txId ? { ...t, ...updates } : t);
+        await updateProject(projectId, { transactions: updatedTxs });
     };
 
-    const deleteProjectTransaction = (projectId: string, txId: string) => {
+    const deleteProjectTransaction = async (projectId: string, txId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
         const txToDelete = project.transactions.find(t => t.id === txId);
-
         let updatedBudgetLines = project.budgetLines;
+
         if (txToDelete && txToDelete.type === 'expense' && txToDelete.budgetLineId) {
             updatedBudgetLines = (project.budgetLines || []).map(line =>
                 line.id === txToDelete.budgetLineId
@@ -116,38 +187,28 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
             );
         }
 
-        const updatedProject = {
-            ...project,
-            budgetLines: updatedBudgetLines,
-            transactions: (project.transactions || []).filter(t => t.id !== txId)
-        };
-
-        updateProject(projectId, updatedProject);
+        const updatedTxs = (project.transactions || []).filter(t => t.id !== txId);
+        await updateProject(projectId, {
+            transactions: updatedTxs,
+            budgetLines: updatedBudgetLines
+        });
     };
 
     const getProjectStats = (project: Project) => {
         const txs = project.transactions || [];
-        const totalIncome = txs
-            .filter(t => t.type === 'income')
-            .reduce((acc, t) => acc + t.amount, 0);
-
-        const totalExpenses = txs
-            .filter(t => t.type === 'expense')
-            .reduce((acc, t) => acc + t.amount, 0);
-
+        const totalIncome = txs.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+        const totalExpenses = txs.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
         const currentBalance = totalIncome - totalExpenses;
-        const budget = project.targetBudget || (project as any).budget || 0;
+        const budget = project.targetBudget || 0;
         const budgetRemaining = budget - totalExpenses;
         const percentConsumed = budget > 0 ? (totalExpenses / budget) * 100 : 0;
         const percentFunded = budget > 0 ? (currentBalance / budget) * 100 : 0;
-
         return { totalIncome, totalExpenses, currentBalance, budgetRemaining, percentConsumed, percentFunded };
     };
 
-    const addProjectTask = (projectId: string, description: string) => {
+    const addProjectTask = async (projectId: string, description: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-
         const newTask: ProjectTask = {
             id: crypto.randomUUID(),
             projectId,
@@ -155,92 +216,61 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
             completed: false,
             createdAt: new Date().toISOString()
         };
-
-        updateProject(projectId, { tasks: [...(project.tasks || []), newTask] });
+        await updateProject(projectId, { tasks: [...(project.tasks || []), newTask] });
     };
 
-    const toggleProjectTask = (projectId: string, taskId: string) => {
+    const toggleProjectTask = async (projectId: string, taskId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-
-        const updatedTasks = (project.tasks || []).map(t =>
-            t.id === taskId ? { ...t, completed: !t.completed } : t
-        );
-        updateProject(projectId, { tasks: updatedTasks });
+        const updatedTasks = (project.tasks || []).map(t => t.id === taskId ? { ...t, completed: !t.completed } : t);
+        await updateProject(projectId, { tasks: updatedTasks });
     };
 
-    const deleteProjectTask = (projectId: string, taskId: string) => {
+    const deleteProjectTask = async (projectId: string, taskId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-
         const updatedTasks = (project.tasks || []).filter(t => t.id !== taskId);
-        updateProject(projectId, { tasks: updatedTasks });
+        await updateProject(projectId, { tasks: updatedTasks });
     };
 
-    // --- Implementation of New Methods ---
-
-    const addBudgetLine = (projectId: string, line: Omit<BudgetLine, 'id'>) => {
+    const addBudgetLine = async (projectId: string, line: Omit<BudgetLine, 'id'>) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-
-        const newLine: BudgetLine = {
-            id: crypto.randomUUID(),
-            ...line
-        };
+        const newLine = { id: crypto.randomUUID(), ...line };
         const updatedLines = [...(project.budgetLines || []), newLine];
-        // Optional: Update targetBudget automatically if it matches sum? keeping it manual for now or updating it.
-        // User asked for flexible budgets. Let's update targetBudget to match sum of lines if lines exist.
         const newTargetBudget = updatedLines.reduce((acc, l) => acc + l.allocatedAmount, 0);
-
-        updateProject(projectId, {
-            budgetLines: updatedLines,
-            targetBudget: newTargetBudget
-        });
+        await updateProject(projectId, { budgetLines: updatedLines, targetBudget: newTargetBudget });
     };
 
-    const deleteBudgetLine = (projectId: string, lineId: string) => {
+    const deleteBudgetLine = async (projectId: string, lineId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-
         const updatedLines = (project.budgetLines || []).filter(l => l.id !== lineId);
         const newTargetBudget = updatedLines.reduce((acc, l) => acc + l.allocatedAmount, 0);
-
-        updateProject(projectId, {
-            budgetLines: updatedLines,
-            targetBudget: newTargetBudget
-        });
+        await updateProject(projectId, { budgetLines: updatedLines, targetBudget: newTargetBudget });
     };
 
-    const addMilestone = (projectId: string, milestone: Omit<Milestone, 'id' | 'status'>) => {
+    const addMilestone = async (projectId: string, milestone: Omit<Milestone, 'id' | 'status'>) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-
-        const newMilestone: Milestone = {
-            id: crypto.randomUUID(),
-            status: 'pending',
-            ...milestone
-        };
-
-        updateProject(projectId, { milestones: [...(project.milestones || []), newMilestone] });
+        const newMilestone = { id: crypto.randomUUID(), status: 'pending' as const, ...milestone };
+        await updateProject(projectId, { milestones: [...(project.milestones || []), newMilestone] });
     };
 
-    const toggleMilestone = (projectId: string, milestoneId: string) => {
+    const toggleMilestone = async (projectId: string, milestoneId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-
         const updatedMilestones = (project.milestones || []).map(m =>
             m.id === milestoneId ? { ...m, status: m.status === 'completed' ? 'pending' : 'completed' } : m
-        ) as Milestone[]; // cast to avoiding type inference issues with string literal
-
-        updateProject(projectId, { milestones: updatedMilestones });
+        );
+        await updateProject(projectId, { milestones: updatedMilestones as Milestone[] });
     };
 
-    const deleteMilestone = (projectId: string, milestoneId: string) => {
+    const deleteMilestone = async (projectId: string, milestoneId: string) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-
         const updatedMilestones = (project.milestones || []).filter(m => m.id !== milestoneId);
-        updateProject(projectId, { milestones: updatedMilestones });
+        await updateProject(projectId, { milestones: updatedMilestones });
     };
 
     return (

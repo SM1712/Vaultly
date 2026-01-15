@@ -13,9 +13,11 @@ import MonthSelector from '../components/MonthSelector';
 import SavingsListModal from '../components/finance/SavingsListModal';
 import LedgerModal from '../components/finance/LedgerModal';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 // import { Transaction } from '../types';
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const { selectedDate } = useFinance();
     const { transactions } = useTransactions();
     const { goals, getTotalSavingsAtDate, isGoalPaidThisMonth, getMonthlyQuota, getMonthsRemaining } = useGoals();
@@ -265,38 +267,40 @@ const Dashboard = () => {
                 </div>
 
                 {/* 2. INCOME CARD */}
-                <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/20 rounded-3xl p-6 flex flex-col justify-between hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors">
+                <div
+                    onClick={() => navigate('/income')}
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:shadow-lg hover:border-emerald-200 dark:hover:border-emerald-900/50 hover:-translate-y-1 transition-all cursor-pointer group"
+                >
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                        <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800 text-zinc-400 group-hover:text-emerald-500 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20 rounded-xl transition-colors">
                             <TrendingUp size={20} />
                         </div>
-                        <span className="text-xs font-bold text-emerald-600/50 dark:text-emerald-400/50 uppercase">Ingresos</span>
+                        <span className="text-xs font-bold text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 uppercase tracking-wider transition-colors">Ingresos</span>
                     </div>
                     <div>
-                        <p className="text-3xl font-black text-emerald-700 dark:text-emerald-400 tracking-tight">
+                        <p className="text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                             {currency}{totalIncome.toLocaleString()}
                         </p>
-                        <p className="text-xs text-emerald-600/70 dark:text-emerald-500 mt-1 font-medium">
-                            Este mes
-                        </p>
+                        <p className="text-xs text-zinc-500 mt-1 font-medium">Este mes</p>
                     </div>
                 </div>
 
                 {/* 3. EXPENSE CARD */}
-                <div className="bg-rose-50/50 dark:bg-rose-950/10 border border-rose-100 dark:border-rose-900/20 rounded-3xl p-6 flex flex-col justify-between hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors">
+                <div
+                    onClick={() => navigate('/expenses')}
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:shadow-lg hover:border-rose-200 dark:hover:border-rose-900/50 hover:-translate-y-1 transition-all cursor-pointer group"
+                >
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl">
+                        <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800 text-zinc-400 group-hover:text-rose-500 group-hover:bg-rose-50 dark:group-hover:bg-rose-900/20 rounded-xl transition-colors">
                             <TrendingDown size={20} />
                         </div>
-                        <span className="text-xs font-bold text-rose-600/50 dark:text-rose-400/50 uppercase">Gastos</span>
+                        <span className="text-xs font-bold text-zinc-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 uppercase tracking-wider transition-colors">Gastos</span>
                     </div>
                     <div>
-                        <p className="text-3xl font-black text-rose-700 dark:text-rose-400 tracking-tight">
+                        <p className="text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                             {currency}{totalExpenses.toLocaleString()}
                         </p>
-                        <p className="text-xs text-rose-600/70 dark:text-rose-500 mt-1 font-medium">
-                            Este mes
-                        </p>
+                        <p className="text-xs text-zinc-500 mt-1 font-medium">Este mes</p>
                     </div>
                 </div>
             </div>
@@ -318,13 +322,21 @@ const Dashboard = () => {
                                 <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-zinc-100 dark:bg-zinc-800"></div>
 
                                 {upcoming.map((item) => (
-                                    <div key={item.id} className="relative flex gap-4 items-start py-3 group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors px-2">
+                                    <div
+                                        key={item.id}
+                                        onClick={() => {
+                                            if (item.source === 'credit') navigate('/credits');
+                                            else if (item.source === 'goal') navigate('/goals');
+                                            else if (item.source === 'scheduled') navigate('/expenses');
+                                        }}
+                                        className="relative flex gap-4 items-start py-3 group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-xl transition-colors px-2 cursor-pointer"
+                                    >
                                         {/* Date Bubble */}
                                         <div className={clsx(
-                                            "relative z-10 w-10 h-10 shrink-0 rounded-full flex flex-col items-center justify-center border-2 shadow-sm font-bold text-[10px] uppercase leading-none bg-white dark:bg-zinc-900",
-                                            item.status === 'overdue' ? "border-rose-100 text-rose-600 dark:border-rose-900/30 dark:text-rose-400" :
-                                                item.status === 'urgent' ? "border-amber-100 text-amber-600 dark:border-amber-900/30 dark:text-amber-400" :
-                                                    "border-zinc-100 text-zinc-400 dark:border-zinc-800 dark:text-zinc-500"
+                                            "relative z-10 w-10 h-10 shrink-0 rounded-full flex flex-col items-center justify-center border-2 shadow-sm font-bold text-[10px] uppercase leading-none bg-white dark:bg-zinc-900 transition-colors",
+                                            item.status === 'overdue' ? "border-rose-100 text-rose-600 dark:border-rose-900/30 dark:text-rose-400 group-hover:border-rose-200" :
+                                                item.status === 'urgent' ? "border-amber-100 text-amber-600 dark:border-amber-900/30 dark:text-amber-400 group-hover:border-amber-200" :
+                                                    "border-zinc-100 text-zinc-400 dark:border-zinc-800 dark:text-zinc-500 group-hover:border-zinc-300 dark:group-hover:border-zinc-700"
                                         )}>
                                             <span className="text-base">{item.dayOfMonth}</span>
                                         </div>
@@ -332,7 +344,7 @@ const Dashboard = () => {
                                         {/* Content */}
                                         <div className="flex-1 pt-1 min-w-0">
                                             <div className="flex justify-between items-start">
-                                                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate pr-2">{item.description}</h4>
+                                                <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{item.description}</h4>
                                                 <span className={clsx("font-mono font-bold text-xs whitespace-nowrap",
                                                     item.type === 'income' ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                                                 )}>
@@ -340,7 +352,7 @@ const Dashboard = () => {
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
-                                                <span className="text-[10px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wider font-bold">
+                                                <span className="text-[10px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-md uppercase tracking-wider font-bold group-hover:bg-white dark:group-hover:bg-zinc-950 transition-colors shadow-sm">
                                                     {item.category}
                                                 </span>
                                                 {item.status === 'overdue' && <span className="text-[10px] text-rose-500 font-bold flex items-center gap-0.5"><AlertTriangle size={10} /> Vencido</span>}
@@ -383,7 +395,11 @@ const Dashboard = () => {
                             {goals.slice(0, 4).map(goal => { // Show max 4
                                 const isPaid = isGoalPaidThisMonth(goal);
                                 return (
-                                    <div key={goal.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
+                                    <div
+                                        key={goal.id}
+                                        onClick={() => navigate('/goals')}
+                                        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                                    >
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex items-center gap-3">
                                                 <div className={clsx("w-10 h-10 rounded-full flex items-center justify-center transition-colors",

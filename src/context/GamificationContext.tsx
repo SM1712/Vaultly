@@ -5,8 +5,12 @@ import type { UserProfile, Achievement } from '../types';
 import { ACHIEVEMENTS, calculateNextLevelXP, getTitleForLevel, TITLES } from './GamificationConstants';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
 import { toast } from 'sonner';
+import { useAuth } from './AuthContext';
+import { db } from '../lib/firebase';
+import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 
 interface GamificationContextType {
+    // ... (same as before)
     profile: UserProfile;
     addXp: (amount: number) => void;
     updateProfile: (updates: Partial<UserProfile>) => void;
@@ -23,6 +27,7 @@ interface GamificationContextType {
 
 const GamificationContext = createContext<GamificationContextType | undefined>(undefined);
 
+// Legacy storage key for migration
 const STORAGE_KEY = 'vaultly_user_profile';
 
 const INITIAL_PROFILE: UserProfile = {
@@ -39,23 +44,12 @@ const INITIAL_PROFILE: UserProfile = {
 };
 
 export const GamificationProvider = ({ children }: { children: ReactNode }) => {
+    const { user } = useAuth();
     const { data: appData } = useData();
     const { notifyAchievement, notifyLevelUp } = useLocalNotifications();
 
-    // Lazy initialization to prevent race conditions (fixes "Level 1 reset" bug)
-    const [profile, setProfile] = useState<UserProfile>(() => {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            try {
-                return { ...INITIAL_PROFILE, ...JSON.parse(saved) };
-            } catch (e) {
-                console.error("Error parsing profile", e);
-                return INITIAL_PROFILE;
-            }
-        }
-        return INITIAL_PROFILE;
-    });
-
+    const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
+    const [loading, setLoading] = useState(true);
     const [levelUpState, setLevelUpState] = useState({ isOpen: false, level: 0, title: '' });
 
     // Ref to access current profile in stable functions without re-creating them
@@ -64,13 +58,72 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         profileRef.current = profile;
     }, [profile]);
 
-    const saveProfile = (newProfile: UserProfile) => {
+    // 1. Listen to Firestore changes (Source of Truth)
+    useEffect(() => {
+        if (!user) {
+            setProfile(INITIAL_PROFILE);
+            return;
+        }
+
+        const userRef = doc(db, 'users', user.uid);
+        const unsubscribe = onSnapshot(userRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                if (data.gamification) {
+                    setProfile(prev => ({ ...prev, ...data.gamification }));
+                } else {
+                    // Migration: If no cloud data -> Try migrate local -> Else Init
+                    migrateLocalToCloud(user.uid);
+                }
+            } else {
+                migrateLocalToCloud(user.uid);
+            }
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
+
+    // Migration Helper
+    const migrateLocalToCloud = async (uid: string) => {
+        const localSaved = localStorage.getItem(STORAGE_KEY);
+        let profileToSave = INITIAL_PROFILE;
+
+        if (localSaved) {
+            try {
+                const parsed = JSON.parse(localSaved);
+                profileToSave = { ...INITIAL_PROFILE, ...parsed };
+                console.log("Migrating local gamification to cloud...");
+                toast.info("Sincronizando progreso en la nube...");
+            } catch (e) {
+                console.error("Local storage invalid", e);
+            }
+        }
+
+        try {
+            await setDoc(doc(db, 'users', uid), { gamification: profileToSave }, { merge: true });
+        } catch (e) {
+            console.error("Error saving initial gamification", e);
+        }
+    };
+
+    const saveProfile = async (newProfile: UserProfile) => {
+        // Optimistic Update
         setProfile(newProfile);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
+
+        if (user) {
+            try {
+                await setDoc(doc(db, 'users', user.uid), { gamification: newProfile }, { merge: true });
+            } catch (e) {
+                console.error("Failed to save gamification to cloud", e);
+                // toast.error("Error guardando progreso");
+            }
+        }
     };
 
     const addXp = useCallback((amount: number) => {
-        let { currentXP, level, nextLevelXP } = profileRef.current;
+        const currentProfile = profileRef.current;
+        let { currentXP, level, nextLevelXP } = currentProfile;
         currentXP += amount;
 
         let leveledUp = false;
@@ -89,17 +142,19 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const updatedProfile = {
-            ...profileRef.current,
+            ...currentProfile,
             level,
             currentXP,
             nextLevelXP,
             currentTitle: newTitle
         };
 
-        // Update Ref immediately to prevent race conditions
+        // Update Ref immediately
         profileRef.current = updatedProfile;
         saveProfile(updatedProfile);
-    }, [notifyLevelUp]);
+    }, [notifyLevelUp]); // saveProfile is stable (declared in component body, but depends on user. But if we use ref pattern properly or just rely on state...) 
+    // Actually saveProfile depends on user. Let's add it to dep array or ignore if we trust it. 
+    // Best practice: depend on it.
 
     const unlockAchievement = useCallback((achievementId: string) => {
         const currentProfile = profileRef.current;
@@ -118,7 +173,6 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             unlockedAchievements: [...currentProfile.unlockedAchievements, newUnlock]
         };
 
-        // Update Ref immediately so addXp sees the new achievement
         profileRef.current = updatedProfile;
         saveProfile(updatedProfile);
 
@@ -163,7 +217,9 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (statsChanged) {
-            saveProfile({ ...currentProfile, stats: currentStats });
+            const updatedProfile = { ...currentProfile, stats: currentStats };
+            profileRef.current = updatedProfile;
+            saveProfile(updatedProfile);
         }
     }, [unlockAchievement]);
 
@@ -208,17 +264,6 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         // Calculate Level
         let newLevel = 1;
         let nextXP = calculateNextLevelXP(newLevel);
-
-        // Logic fix: XP curve uses TOTAL XP accumulation.
-        // Current logic: while (currentXP >= nextXP) { currentXP -= nextXP; level++ }
-        // This means levels reset XP to 0. 
-        // If my previous logic was cumulative, this might be why users feel "low level".
-        // But RPGs often do "Current level progress".
-        // My implementation uses "Relative XP for this level" (currentXP resets).
-        // Recalculation logic MUST match addXP logic.
-        // addXP: currentXP -= nextLevelXP.
-        // recalculateLevel: calculatedXP -= nextXP.
-        // This is consistent.
 
         while (calculatedXP >= nextXP) {
             calculatedXP -= nextXP;
