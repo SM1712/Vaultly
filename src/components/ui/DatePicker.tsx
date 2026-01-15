@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, startOfWeek, endOfWeek, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -15,11 +15,12 @@ interface DatePickerProps {
 
 export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, label, className }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [currentMonth, setCurrentMonth] = useState(new Date(value || new Date()));
-    const containerRef = useRef<HTMLDivElement>(null);
 
-    // Parse value to Date object safely
-    const selectedDate = value ? new Date(value) : undefined;
+    // Parse value to Date object safely using date-fns parse to ensure local time
+    const selectedDate = value ? (typeof value === 'string' ? parse(value, 'yyyy-MM-dd', new Date()) : new Date(value)) : undefined;
+
+    const [currentMonth, setCurrentMonth] = useState(selectedDate || new Date());
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Handle click outside to close
     useEffect(() => {
@@ -129,7 +130,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, label, 
                                     className={clsx(
                                         "h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold transition-all relative",
                                         !isCurrentMonth && "text-zinc-300 dark:text-zinc-700",
-                                        isCurrentMonth && !isSelected && "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                                        isCurrentMonth && !isSelected && "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700",
                                         isSelected && "bg-indigo-600 text-white shadow-md shadow-indigo-500/20 scale-105 z-10",
                                         isTodayDate && !isSelected && "ring-1 ring-indigo-500 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10"
                                     )}
