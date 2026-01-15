@@ -19,8 +19,15 @@ service cloud.firestore {
       // (Idealmente validar que request.resource.data.membersIds contenga request.auth.uid)
       allow create: if request.auth != null;
       
-      // Leer/Escribir: Solo si eres miembro del proyecto
-      allow read, update, delete: if request.auth != null && request.auth.uid in resource.data.membersIds;
+      // Leer: Solo si eres miembro actual
+      allow read: if request.auth != null && request.auth.uid in resource.data.membersIds;
+      
+      // Actualizar: Permitir si eres miembro (actual o nuevo)
+      // Esto permite que un usuario acepte invitación y se agregue a la lista
+      allow update: if request.auth != null && request.auth.uid in request.resource.data.membersIds;
+      
+      // Borrar: Solo si eres miembro actual
+      allow delete: if request.auth != null && request.auth.uid in resource.data.membersIds;
     }
 
     // 4. Reglas para Invitaciones

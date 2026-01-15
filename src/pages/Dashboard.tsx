@@ -269,38 +269,38 @@ const Dashboard = () => {
                 {/* 2. INCOME CARD */}
                 <div
                     onClick={() => navigate('/income')}
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:shadow-lg hover:border-emerald-200 dark:hover:border-emerald-900/50 hover:-translate-y-1 transition-all cursor-pointer group"
+                    className="bg-emerald-50/60 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/30 rounded-3xl p-6 flex flex-col justify-between hover:shadow-lg hover:border-emerald-200 dark:hover:border-emerald-700/50 hover:-translate-y-1 transition-all cursor-pointer group"
                 >
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800 text-zinc-400 group-hover:text-emerald-500 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20 rounded-xl transition-colors">
+                        <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl transition-colors">
                             <TrendingUp size={20} />
                         </div>
-                        <span className="text-xs font-bold text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 uppercase tracking-wider transition-colors">Ingresos</span>
+                        <span className="text-xs font-bold text-emerald-600/70 dark:text-emerald-400/70 uppercase tracking-wider transition-colors">Ingresos</span>
                     </div>
                     <div>
-                        <p className="text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <p className="text-3xl font-black text-emerald-900 dark:text-emerald-100 tracking-tight">
                             {currency}{totalIncome.toLocaleString()}
                         </p>
-                        <p className="text-xs text-zinc-500 mt-1 font-medium">Este mes</p>
+                        <p className="text-xs text-emerald-600/60 dark:text-emerald-400/60 mt-1 font-medium">Este mes</p>
                     </div>
                 </div>
 
                 {/* 3. EXPENSE CARD */}
                 <div
                     onClick={() => navigate('/expenses')}
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 flex flex-col justify-between hover:shadow-lg hover:border-rose-200 dark:hover:border-rose-900/50 hover:-translate-y-1 transition-all cursor-pointer group"
+                    className="bg-rose-50/60 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/30 rounded-3xl p-6 flex flex-col justify-between hover:shadow-lg hover:border-rose-200 dark:hover:border-rose-700/50 hover:-translate-y-1 transition-all cursor-pointer group"
                 >
                     <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-zinc-50 dark:bg-zinc-800 text-zinc-400 group-hover:text-rose-500 group-hover:bg-rose-50 dark:group-hover:bg-rose-900/20 rounded-xl transition-colors">
+                        <div className="p-2.5 bg-rose-100 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl transition-colors">
                             <TrendingDown size={20} />
                         </div>
-                        <span className="text-xs font-bold text-zinc-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 uppercase tracking-wider transition-colors">Gastos</span>
+                        <span className="text-xs font-bold text-rose-600/70 dark:text-rose-400/70 uppercase tracking-wider transition-colors">Gastos</span>
                     </div>
                     <div>
-                        <p className="text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                        <p className="text-3xl font-black text-rose-900 dark:text-rose-100 tracking-tight">
                             {currency}{totalExpenses.toLocaleString()}
                         </p>
-                        <p className="text-xs text-zinc-500 mt-1 font-medium">Este mes</p>
+                        <p className="text-xs text-rose-600/60 dark:text-rose-400/60 mt-1 font-medium">Este mes</p>
                     </div>
                 </div>
             </div>
