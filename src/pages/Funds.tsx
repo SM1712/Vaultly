@@ -42,7 +42,7 @@ const Funds = () => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingFundId, setEditingFundId] = useState<string | null>(null);
     const [newFund, setNewFund] = useState<Partial<Fund> & { name: string, icon: string, color: string }>({ name: '', icon: 'piggy', description: '', color: 'emerald' });
-    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
 
     // Transaction Modal State
     const [txModal, setTxModal] = useState<{ open: boolean; type: 'deposit' | 'withdraw'; fundId: string }>({

@@ -7,7 +7,7 @@ import { useLocalNotifications } from '../hooks/useLocalNotifications';
 import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 import { db } from '../lib/firebase';
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 interface GamificationContextType {
     // ... (same as before)
@@ -49,7 +49,6 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     const { notifyAchievement, notifyLevelUp } = useLocalNotifications();
 
     const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
-    const [loading, setLoading] = useState(true);
     const [levelUpState, setLevelUpState] = useState({ isOpen: false, level: 0, title: '' });
 
     // Ref to access current profile in stable functions without re-creating them
@@ -78,7 +77,6 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             } else {
                 migrateLocalToCloud(user.uid);
             }
-            setLoading(false);
         });
 
         return () => unsubscribe();

@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { useData } from './DataContext'; // Kept for legacy if needed, or remove if unused. Warning said unused.
 import type { Project, ProjectTransaction, ProjectTask, BudgetLine, Milestone } from '../types';
 import { db } from '../lib/firebase';
 import {
@@ -42,12 +41,10 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
     // We no longer use useData for projects, but we might want to keep it if we need other data
     // const { data, updateData } = useData(); 
     const [projects, setProjects] = useState<Project[]>([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!user) {
             setProjects([]);
-            setLoading(false);
             return;
         }
 
@@ -64,11 +61,10 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
             // Sort by createdAt or name? Let's just keep them as is or sort by name
             loadedProjects.sort((a, b) => a.name.localeCompare(b.name));
             setProjects(loadedProjects);
-            setLoading(false);
         }, (error) => {
             console.error("Error fetching projects:", error);
             // toast.error("Error cargando proyectos colaborativos");
-            setLoading(false);
+
         });
 
         return () => unsub();

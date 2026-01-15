@@ -8,7 +8,6 @@ import { LogoCombined } from '../components/ui/Logo';
 import { FinanceProvider } from '../context/FinanceContext';
 import { SettingsProvider } from '../context/SettingsContext';
 import { ProjectsProvider } from '../context/ProjectsContext';
-import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 import { Menu } from 'lucide-react';
 import { Toaster } from 'sonner';
 import OnboardingModal from '../components/onboarding/OnboardingModal';
@@ -46,7 +45,6 @@ const GlobalLevelUpManager = () => {
 const Layout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const { processScheduledTransactions } = useScheduledTransactions();
     // We need to access funds and balance here, but `useFunds` and `useBalance` 
     // must be used inside the providers. We will create a new component `AutoDepositManager`
     // inside the providers to handle this.
