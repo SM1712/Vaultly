@@ -1,6 +1,7 @@
 import { useData } from '../context/DataContext';
 import type { Transaction, TransactionType } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { toCents, fromCents } from '../utils/financialUtils';
 
 export const useTransactions = (type?: TransactionType) => {
     const { data, updateData } = useData();
@@ -35,16 +36,21 @@ export const useTransactions = (type?: TransactionType) => {
         ? transactions.filter((t) => t.type === type)
         : transactions;
 
-    const total = filteredTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+    // Use cents for precise total calculation
+    const totalCents = filteredTransactions.reduce((acc, curr) => acc + toCents(curr.amount), 0);
+    const total = fromCents(totalCents);
 
     const getByCategory = () => {
-        const grouped = filteredTransactions.reduce((acc, curr) => {
+        const groupedCents = filteredTransactions.reduce((acc, curr) => {
             const categoryName = curr.category || 'Sin Categoría';
-            acc[categoryName] = (acc[categoryName] || 0) + curr.amount;
+            acc[categoryName] = (acc[categoryName] || 0) + toCents(curr.amount);
             return acc;
         }, {} as Record<string, number>);
 
-        return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+        return Object.entries(groupedCents).map(([name, valueCents]) => ({
+            name,
+            value: fromCents(valueCents)
+        }));
     };
 
     return {

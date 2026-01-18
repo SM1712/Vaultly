@@ -50,6 +50,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
 
     const [profile, setProfile] = useState<UserProfile>(INITIAL_PROFILE);
     const [levelUpState, setLevelUpState] = useState({ isOpen: false, level: 0, title: '' });
+    const [isLoading, setIsLoading] = useState(true);
 
     // Ref to access current profile in stable functions without re-creating them
     const profileRef = useRef(profile);
@@ -61,6 +62,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         if (!user) {
             setProfile(INITIAL_PROFILE);
+            setIsLoading(false);
             return;
         }
 
@@ -77,6 +79,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             } else {
                 migrateLocalToCloud(user.uid);
             }
+            setIsLoading(false);
         });
 
         return () => unsubscribe();
@@ -120,6 +123,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const addXp = useCallback((amount: number) => {
+        if (isLoading) return;
         const currentProfile = profileRef.current;
         let { currentXP, level, nextLevelXP } = currentProfile;
         currentXP += amount;
@@ -150,11 +154,12 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         // Update Ref immediately
         profileRef.current = updatedProfile;
         saveProfile(updatedProfile);
-    }, [notifyLevelUp]); // saveProfile is stable (declared in component body, but depends on user. But if we use ref pattern properly or just rely on state...) 
+    }, [notifyLevelUp, isLoading]);
     // Actually saveProfile depends on user. Let's add it to dep array or ignore if we trust it. 
     // Best practice: depend on it.
 
     const unlockAchievement = useCallback((achievementId: string) => {
+        if (isLoading) return;
         const currentProfile = profileRef.current;
         if (currentProfile.unlockedAchievements.some(a => a.achievementId === achievementId)) return;
 
@@ -176,9 +181,10 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
 
         notifyAchievement(achievement.title, achievement.xpReward);
         addXp(achievement.xpReward);
-    }, [notifyAchievement, addXp]);
+    }, [notifyAchievement, addXp, isLoading]);
 
     const checkAchievement = useCallback((trigger: string, data?: any) => {
+        if (isLoading) return;
         const currentProfile = profileRef.current;
         const currentStats = { ...currentProfile.stats };
         let statsChanged = false;
@@ -219,7 +225,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             profileRef.current = updatedProfile;
             saveProfile(updatedProfile);
         }
-    }, [unlockAchievement]);
+    }, [unlockAchievement, isLoading]);
 
     const recalculateLevel = useCallback(() => {
         if (!appData) {

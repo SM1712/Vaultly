@@ -38,6 +38,14 @@ export const useProjections = () => {
         });
     };
 
+    const updateSimulatedTransaction = (id: string, updates: Partial<SimulatedTransaction>) => {
+        updateProjections({
+            simulatedTransactions: projections.simulatedTransactions.map(t =>
+                t.id === id ? { ...t, ...updates } : t
+            )
+        });
+    };
+
     const clearSimulation = () => {
         updateProjections({
             simulatedTransactions: [],
@@ -73,6 +81,20 @@ export const useProjections = () => {
         });
     };
 
+    const toggleExclusion = (id: string) => {
+        const currentExcluded = new Set(projections.excludedIds || []);
+        if (currentExcluded.has(id)) {
+            currentExcluded.delete(id);
+        } else {
+            currentExcluded.add(id);
+        }
+        updateProjections({ excludedIds: Array.from(currentExcluded) });
+    };
+
+    const setActiveView = (view: 'structure' | 'scenarios') => {
+        updateProjections({ activeView: view });
+    };
+
     return {
         projections,
         addSimulatedTransaction,
@@ -82,6 +104,9 @@ export const useProjections = () => {
         setSimulatedCreditPayments,
         setSimulatedGoalContributions,
         setSimulatedFundTransfers,
-        setToggle
+        setToggle,
+        toggleExclusion,
+        setActiveView,
+        updateSimulatedTransaction
     };
 };

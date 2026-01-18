@@ -11,6 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
+      workbox: {
+        maximumFileSizeToCacheInBytes: 4000000
+      },
       manifest: {
         name: 'Vaultly',
         short_name: 'Vaultly',

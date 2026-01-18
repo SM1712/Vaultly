@@ -69,13 +69,14 @@ export const GoalForm = ({ formData, setFormData, onSubmit, editingId, onCancel,
             {/* Hero Amount Input */}
             <div className="relative group">
                 <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2 block text-center">Monto Objetivo</label>
-                <div className="relative flex items-center justify-center">
-                    <span className="text-3xl font-black text-zinc-400 absolute left-4 sm:left-12 pointer-events-none transition-colors group-focus-within:text-emerald-500">{currency}</span>
+                <div className="relative flex items-center justify-center border-b-2 border-zinc-100 dark:border-zinc-800 focus-within:border-emerald-500 transition-all py-4">
+                    <span className="text-3xl font-black text-zinc-400 mr-2 transition-colors group-focus-within:text-emerald-500">{currency}</span>
                     <input
                         type="number"
                         required
-                        className="w-full bg-transparent text-center text-4xl sm:text-5xl font-black text-zinc-900 dark:text-zinc-100 placeholder-zinc-200 dark:placeholder-zinc-800 focus:outline-none py-4 border-b-2 border-zinc-100 dark:border-zinc-800 focus:border-emerald-500 transition-all"
+                        className="bg-transparent text-4xl sm:text-5xl font-black text-zinc-900 dark:text-zinc-100 placeholder-zinc-200 dark:placeholder-zinc-800 focus:outline-none p-0 border-none w-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0"
+                        style={{ width: `${Math.max(1, (formData.targetAmount.length || 0) + 1)}ch` }}
                         value={formData.targetAmount}
                         onChange={e => setFormData({ ...formData, targetAmount: e.target.value })}
                     />
@@ -148,7 +149,7 @@ export const GoalForm = ({ formData, setFormData, onSubmit, editingId, onCancel,
                 )}
                 <button
                     type="submit"
-                    className={clsx("flex-[2] py-4 rounded-xl font-black text-lg shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2",
+                    className={clsx("flex-[2] py-4 rounded-xl font-bold px-4 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 whitespace-nowrap",
                         editingId
                             ? "bg-emerald-500 text-white shadow-emerald-500/20"
                             : "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-zinc-900/20"
@@ -422,7 +423,7 @@ const Goals = () => {
 
                                                     {/* Date Chip - Hidden on very small screens if needed, or wrap */}
                                                     <span className="inline-flex items-center text-[10px] sm:text-xs text-zinc-500 px-1">
-                                                        Vence: {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
+                                                        Vence: {new Date(goal.deadline + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
                                                     </span>
                                                 </div>
                                             </div>

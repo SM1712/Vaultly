@@ -885,6 +885,42 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                 </div>
 
                                 <div className="relative pl-8 border-l-2 border-zinc-100 dark:border-zinc-800 space-y-10">
+                                    {/* v2.2 Item (Financial Clarity) */}
+                                    <div className="relative">
+                                        <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-amber-500 border-4 border-white dark:border-zinc-950 shadow-sm ring-4 ring-amber-500/20" />
+                                        <div className="flex flex-col mb-2">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">Actualización Masiva</span>
+                                                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">v2.2 - Financial Clarity Refined</p>
+                                                </div>
+                                                <span className="text-xs text-amber-100 bg-amber-600 px-2 py-1 rounded-full font-bold">New</span>
+                                            </div>
+                                            <span className="text-xs text-zinc-400">Enero 2026</span>
+                                        </div>
+                                        <div className="space-y-4 mb-4">
+                                            <div>
+                                                <h5 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-1 flex items-center gap-2">
+                                                    <BookOpen size={14} className="text-amber-500" /> Libro Contable 2.0
+                                                </h5>
+                                                <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
+                                                    <li><strong>Diseño Reimaginado:</strong> Agrupación inteligente por días y gráfico de tendencia de flujo de caja.</li>
+                                                    <li><strong>Exportación PDF:</strong> Genera reportes financieros detallados con tablas a color y resúmenes profesionales.</li>
+                                                    <li><strong>Filtros Avanzados:</strong> Búsqueda en tiempo real por descripción, fondo o categoría.</li>
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <h5 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-1 flex items-center gap-2">
+                                                    <Zap size={14} className="text-indigo-500" /> Motor Económico Blindado
+                                                </h5>
+                                                <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-4">
+                                                    <li><strong>Precisión Bancaria:</strong> Nuevo núcleo matemático que elimina errores de redondeo (cálculos en centavos).</li>
+                                                    <li><strong>Consistencia Total:</strong> El símbolo de tu moneda se respeta estrictamente en cada rincón de la app.</li>
+                                                    <li><strong>Estabilidad Temporal:</strong> Lógica de fechas reforzada para asegurar que cada transacción caiga en su mes exacto.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
                                     {/* v2.1 Item (Ayni & Axon) */}
                                     <div className="relative">
                                         <div className="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-emerald-500 border-4 border-white dark:border-zinc-950 shadow-sm ring-4 ring-emerald-500/20" />

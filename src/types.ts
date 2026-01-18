@@ -160,6 +160,8 @@ export interface ProjectionsData {
     simulatedCreditPayments: string[]; // IDs
     simulatedGoalContributions: string[]; // IDs
     simulatedFundTransfers: Record<string, string>;
+    excludedIds: string[];
+    activeView: 'structure' | 'scenarios';
     toggles: {
         includeGlobalBalance: boolean;
         includeFundsInBalance: boolean;

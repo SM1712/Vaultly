@@ -1,591 +1,583 @@
 import { useState, useMemo } from 'react';
+import { useSettings } from '../context/SettingsContext';
+import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 import { useProjections } from '../hooks/useProjections';
-import { useTransactions } from '../hooks/useTransactions';
-import { useBalance } from '../hooks/useBalance';
+import { useGoals } from '../hooks/useGoals';
 import { useCredits } from '../hooks/useCredits';
 import { useFunds } from '../hooks/useFunds';
-import { useGoals } from '../hooks/useGoals';
-import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
-import { useSettings } from '../context/SettingsContext';
+import { useBalance } from '../hooks/useBalance';
 import {
-    Calculator, RefreshCw, TrendingUp, TrendingDown, PiggyBank,
-    Target, ToggleLeft, ToggleRight, Landmark, Plus, Trash2,
-    ShoppingBag
+    Calendar, CheckCircle2, Circle, TrendingUp,
+    Target, CreditCard, PiggyBank, Sparkles, AlertTriangle,
+    ChevronLeft, ChevronRight, Plus, Calculator, X, LayoutList, Layers, Wallet,
+    Gift, DollarSign, Heart, Flame, Star, Smile, Briefcase, Car, Plane, Home, Coffee, Gamepad2, Smartphone, MoreHorizontal,
+    Pencil, Trash2
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import {
+    format, addMonths, endOfMonth, parseISO, startOfMonth, isBefore, isAfter, differenceInCalendarMonths
+} from 'date-fns';
+import { es } from 'date-fns/locale';
+import {
+    AreaChart, Area, ResponsiveContainer, Tooltip as RechartsTooltip, ReferenceLine
+} from 'recharts';
 import { toast } from 'sonner';
 
+// --- Types ---
+type ProjectionItem = {
+    id: string;
+    source: 'scheduled' | 'simulated' | 'goal' | 'credit' | 'fund';
+    date: string;
+    name: string;
+    amount: number;
+    type: 'income' | 'expense';
+    originalObject: any;
+    balanceAfter: number;
+    isExcluded: boolean;
+};
 
+// Icon Map for dynamic rendering (Matches Funds.tsx)
+const ICON_MAP: Record<string, React.ElementType> = {
+    'gift': Gift,
+    'money': DollarSign,
+    'heart': Heart,
+    'phoenix': Flame, // "Fenix"
+    'piggy': PiggyBank,
+    'wallet': Wallet,
+    'star': Star,
+    'smile': Smile,
+    'briefcase': Briefcase,
+    'car': Car,
+    'plane': Plane,
+    'home': Home,
+    'coffee': Coffee,
+    'game': Gamepad2,
+    'phone': Smartphone,
+    'other': MoreHorizontal
+};
 
-const Projections = () => {
-    const { transactions } = useTransactions();
-    const { credits } = useCredits();
-    const { funds } = useFunds();
-    const { goals, getMonthlyQuota } = useGoals();
-    const { scheduled } = useScheduledTransactions();
+export default function Projections() {
     const { currency } = useSettings();
-
-    // 1. Current State (Real Data)
-    const currentMonth = new Date();
-
-    // Global Data for "Start Balance"
     const { availableBalance } = useBalance();
-    const totalFundsReal = funds.reduce((sum, f) => sum + f.currentAmount, 0);
 
-    // Month Data
-    const currentMonthTransactions = transactions.filter(t => {
-        const d = new Date(t.date + 'T12:00:00');
-        return d.getMonth() === currentMonth.getMonth() && d.getFullYear() === currentMonth.getFullYear();
-    });
-
-    const incomeMonthReal = currentMonthTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const expenseMonthReal = currentMonthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-
-    // Group expenses by category for budgeting
-    const expensesByCategory = useMemo(() => {
-        const grouped: Record<string, number> = {};
-        currentMonthTransactions.filter(t => t.type === 'expense').forEach(t => {
-            grouped[t.category] = (grouped[t.category] || 0) + t.amount;
-        });
-        return grouped;
-    }, [currentMonthTransactions]);
-
-    // 2. Simulation State (Global Persistence)
+    // Hooks
+    const { scheduled } = useScheduledTransactions();
     const {
-        projections,
-        addSimulatedTransaction,
-        removeSimulatedTransaction,
-        clearSimulation,
-        setCategoryBudgets,
-        setSimulatedCreditPayments,
-        setSimulatedGoalContributions,
-        setSimulatedFundTransfers,
-        setToggle
+        projections, addSimulatedTransaction, removeSimulatedTransaction, updateSimulatedTransaction, clearSimulation,
+        toggleExclusion, setActiveView: setStoreActiveView, setToggle
     } = useProjections();
 
-    const {
-        simulatedTransactions,
-        categoryBudgets,
-        simulatedCreditPayments: simCreditIds, // array of IDs
-        simulatedGoalContributions: simGoalIds, // array of IDs
-        simulatedFundTransfers,
-        toggles
-    } = projections;
+    const simTxs = projections.simulatedTransactions || [];
+    const excludedIds = new Set(projections.excludedIds || []);
+    const activeTab = projections.activeView || 'structure';
+    const includeBalance = projections.toggles?.includeGlobalBalance ?? true;
 
-    // Local Helper State (Forms)
-    const [simDescription, setSimDescription] = useState('');
-    const [simAmount, setSimAmount] = useState('');
-    const [simType, setSimType] = useState<'income' | 'expense'>('expense');
+    const { goals, getMonthlyQuota } = useGoals();
+    const { credits, getCreditStatus } = useCredits();
+    const { funds } = useFunds();
 
-    // Sets for easy lookup
-    const simulatedCreditPayments = useMemo(() => new Set(simCreditIds), [simCreditIds]);
-    const simulatedGoalContributions = useMemo(() => new Set(simGoalIds), [simGoalIds]);
+    const [selectedMonth, setSelectedMonth] = useState(new Date());
 
-    const { includeGlobalBalance, includeFundsInBalance, autoIncludeScheduled } = toggles;
+    // Simulation Form State
+    const [isSimOpen, setIsSimOpen] = useState(false);
+    const [formName, setFormName] = useState('');
+    const [formAmount, setFormAmount] = useState('');
+    const [formType, setFormType] = useState<'income' | 'expense'>('expense');
+    const [selectedFundId, setSelectedFundId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
-    // Add Simulated Transaction Handler
-    const handleAddSimulation = () => {
-        if (!simDescription || !simAmount) return;
-        const amount = Number(simAmount);
-        if (isNaN(amount) || amount <= 0) return;
+    // --- ENGINE ---
+    const { timelineData, finalBalance, totalIncome, totalExpense, lowestPoint } = useMemo(() => {
+        const start = startOfMonth(selectedMonth);
+        const end = endOfMonth(selectedMonth);
+        let items: Omit<ProjectionItem, 'balanceAfter' | 'isExcluded'>[] = [];
 
-        addSimulatedTransaction({
-            id: Math.random().toString(36).substr(2, 9),
-            description: simDescription,
-            amount,
-            type: simType
+        // 1. Scheduled
+        scheduled.forEach(sch => {
+            if (!sch.active) return;
+            // Check Start Date
+            if (sch.createdAt && isBefore(end, parseISO(sch.createdAt))) return;
+
+            try {
+                let day = sch.dayOfMonth;
+                if (!day) {
+                    // @ts-ignore
+                    if (sch.nextPaymentDate) day = new Date(sch.nextPaymentDate).getDate();
+                    // @ts-ignore
+                    else if (sch.startDate) day = new Date(sch.startDate).getDate();
+                    else day = new Date(sch.createdAt).getDate();
+                }
+                const targetDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), Math.min(day, end.getDate()));
+                items.push({
+                    id: sch.id,
+                    source: 'scheduled',
+                    date: format(targetDate, 'yyyy-MM-dd'),
+                    name: sch.description,
+                    amount: sch.amount,
+                    type: sch.type,
+                    originalObject: sch
+                });
+            } catch (e) { }
         });
 
-        setSimDescription('');
-        setSimAmount('');
-        // Keep type same for rapid entry
-    };
+        // 2. Goals
+        goals.forEach(goal => {
+            // Date Logic
+            const goalStart = parseISO(goal.startDate);
+            if (isBefore(end, goalStart)) return; // Not started yet
+            if (goal.deadline && isAfter(start, parseISO(goal.deadline))) return; // Already finished
 
-    // 3. Calculation Logic
-    const calculateProjection = () => {
-        // A. Starting Balance
-        let baseBalance = 0;
-        if (includeGlobalBalance) {
-            // availableBalance IS the real liquid money (excluding funds/goals)
-            baseBalance = availableBalance;
+            let quota = getMonthlyQuota(goal);
+            if (quota <= 0 && goal.currentAmount < goal.targetAmount) quota = (goal.targetAmount - goal.currentAmount) / 12;
+            if (quota < 0) quota = 0;
+            let day = 1;
+            try { day = new Date(goal.startDate).getDate(); } catch { }
+            const targetDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), Math.min(day, end.getDate()));
+            items.push({ id: goal.id, source: 'goal', date: format(targetDate, 'yyyy-MM-dd'), name: `Meta: ${goal.name}`, amount: quota, type: 'expense', originalObject: goal });
+        });
 
-            if (includeFundsInBalance) {
-                baseBalance += totalFundsReal;
+        // 3. Credits
+        credits.forEach(credit => {
+            // Date Logic (Strict Month Count)
+            const creditStart = parseISO(credit.startDate);
+            const monthsElapsed = differenceInCalendarMonths(selectedMonth, creditStart);
+
+            // If monthsElapsed is negative (before start) or greater/equal to term (finished), exclude.
+            // Example: Term 6. Months 0,1,2,3,4,5 are strictly valid. 6 is finished.
+            if (monthsElapsed < 0 || monthsElapsed >= credit.term) return;
+
+            const { quota } = getCreditStatus(credit);
+            let displayAmount = quota > 0 ? quota : credit.principal / credit.term;
+            if (displayAmount < 0) displayAmount = 0;
+            let day = 5;
+            try { day = new Date(credit.startDate).getDate(); } catch { }
+            const targetDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), Math.min(day, end.getDate()));
+            items.push({ id: credit.id, source: 'credit', date: format(targetDate, 'yyyy-MM-dd'), name: `Crédito: ${credit.name}`, amount: displayAmount, type: 'expense', originalObject: credit });
+        });
+
+        // 4. Funds (AutoSave)
+        funds.forEach(fund => {
+            if (!fund.autoSaveConfig?.enabled) return;
+            const day = fund.autoSaveConfig.dayOfMonth || 1;
+            const targetDate = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), Math.min(day, end.getDate()));
+            let amount = fund.autoSaveConfig.type === 'fixed' ? fund.autoSaveConfig.amount : (availableBalance * fund.autoSaveConfig.amount) / 100;
+            items.push({ id: fund.id, source: 'fund', date: format(targetDate, 'yyyy-MM-dd'), name: `Fondo: ${fund.name}`, amount: amount, type: 'expense', originalObject: fund });
+        });
+
+        // 5. Simulated
+        const today = new Date();
+        simTxs.forEach(sim => {
+            const date = (sim as any).date || format(today, 'yyyy-MM-dd');
+            items.push({ id: sim.id, source: 'simulated', date: date, name: sim.description, amount: sim.amount, type: sim.type, originalObject: sim });
+        });
+
+        items.sort((a, b) => a.date.localeCompare(b.date));
+
+        let runningBalance = includeBalance ? availableBalance : 0;
+        let inc = 0;
+        let exp = 0;
+        let low = runningBalance;
+
+        const timeline: ProjectionItem[] = items.map(item => {
+            const isExcluded = excludedIds.has(item.id);
+            if (!isExcluded) {
+                if (item.type === 'income') { runningBalance += item.amount; inc += item.amount; }
+                else { runningBalance -= item.amount; exp += item.amount; }
             }
+            if (runningBalance < low) low = runningBalance;
+            return { ...item, balanceAfter: runningBalance, isExcluded };
+        });
+
+        return { timelineData: timeline, finalBalance: runningBalance, totalIncome: inc, totalExpense: exp, lowestPoint: low };
+    }, [selectedMonth, scheduled, simTxs, availableBalance, excludedIds, goals, credits, funds, includeBalance]);
+
+    // --- ACTIONS ---
+    const handleAddSim = () => {
+        if (!formName || !formAmount) return;
+
+        if (editingId) {
+            updateSimulatedTransaction(editingId, {
+                description: formName,
+                amount: Number(formAmount),
+                type: formType,
+                // @ts-ignore
+                date: format(selectedMonth, 'yyyy-MM-dd')
+            });
+            toast.success("Escenario actualizado");
         } else {
-            // If month only, we start with 0 and calculate Month Flow
-            baseBalance = 0; // Net Flow mode
+            addSimulatedTransaction({
+                id: crypto.randomUUID(),
+                description: formName,
+                amount: Number(formAmount),
+                type: formType,
+                // @ts-ignore
+                date: format(selectedMonth, 'yyyy-MM-dd')
+            });
+            toast.success("Escenario añadido");
         }
 
-        // B. Income (Real Month + Simulated Income + Scheduled Income)
-        const simulatedIncomeTotal = simulatedTransactions
-            .filter(t => t.type === 'income')
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        let scheduledIncome = 0;
-
-        if (autoIncludeScheduled) {
-            scheduled.filter(s => s.type === 'income' && s.active).forEach(s => {
-                const lastProcessed = s.lastProcessedDate ? new Date(s.lastProcessedDate + 'T12:00:00') : null;
-                const processedThisMonth = lastProcessed && lastProcessed.getMonth() === currentMonth.getMonth() && lastProcessed.getFullYear() === currentMonth.getFullYear();
-
-                if (!processedThisMonth) {
-                    scheduledIncome += s.amount;
-                }
-            });
-        }
-
-        // C. Expenses (Real Month vs Projected + Scheduled + Simulated Expenses)
-        let totalProjectedExpenses = 0;
-        let scheduledExpenses = 0;
-
-        if (autoIncludeScheduled) {
-            scheduled.filter(s => s.type === 'expense' && s.active).forEach(s => {
-                const lastProcessed = s.lastProcessedDate ? new Date(s.lastProcessedDate + 'T12:00:00') : null;
-                const processedThisMonth = lastProcessed && lastProcessed.getMonth() === currentMonth.getMonth() && lastProcessed.getFullYear() === currentMonth.getFullYear();
-
-                if (!processedThisMonth) {
-                    scheduledExpenses += s.amount;
-                }
-            });
-        }
-
-        // Category budgets logic
-        const categoryComparisons: { category: string; real: number; projected: number; diff: number }[] = [];
-        Object.keys(expensesByCategory).forEach(cat => {
-            const real = expensesByCategory[cat];
-            const userProjection = categoryBudgets[cat] ? Number(categoryBudgets[cat]) : real;
-            const finalProjected = Math.max(real, userProjection);
-            totalProjectedExpenses += finalProjected;
-
-            categoryComparisons.push({
-                category: cat,
-                real,
-                projected: userProjection,
-                diff: finalProjected - real
-            });
-        });
-
-        // Granular Simulated Expenses
-        const simulatedExpenseTotal = simulatedTransactions
-            .filter(t => t.type === 'expense')
-            .reduce((sum, t) => sum + t.amount, 0);
-
-
-        // D. Credit Payments (Simulated)
-        let totalCreditSimulated = 0;
-        credits.filter(c => c.status === 'active' && simulatedCreditPayments.has(c.id)).forEach(c => {
-            const roughPayment = (c.principal * (1 + (c.interestRate / 100))) / c.term;
-            totalCreditSimulated += roughPayment;
-        });
-
-        // E. Goal Contributions (Simulated)
-        let totalGoalSimulated = 0;
-        goals.filter(g => simulatedGoalContributions.has(g.id)).forEach(g => {
-            const quota = getMonthlyQuota(g);
-            totalGoalSimulated += quota;
-        });
-
-        // F. Fund Transfers (Simulated)
-        let totalFundSimulated = 0;
-        Object.values(simulatedFundTransfers).forEach(val => {
-            totalFundSimulated += Number(val) || 0;
-        });
-
-        // G. Final Balance
-        // If Base Balance (Global) is used, it already factors in Real Income and Real Expenses (Current).
-        // So we only add/subtract FUTURE/SIMULATED deltas.
-
-        // Income Delta = Simulated Income + Scheduled Income
-        // Expense Delta = (Projected Category Expense - Real Category Expense) + Scheduled Expenses + Simulated Expenses + Goals + Funds + Credits
-
-        const additionalCategoryExpense = totalProjectedExpenses - expenseMonthReal;
-
-        const finalBalance = includeGlobalBalance
-            ? (baseBalance
-                + simulatedIncomeTotal
-                + scheduledIncome
-                - additionalCategoryExpense
-                - scheduledExpenses
-                - simulatedExpenseTotal
-                - totalCreditSimulated
-                - totalGoalSimulated
-                - totalFundSimulated)
-            : ((incomeMonthReal + simulatedIncomeTotal + scheduledIncome)
-                - (expenseMonthReal + additionalCategoryExpense + scheduledExpenses + simulatedExpenseTotal + totalCreditSimulated + totalGoalSimulated + totalFundSimulated));
-
-        return {
-            baseBalance,
-            incomeMonthReal,
-            simulatedIncomeTotal,
-            scheduledIncome,
-            expenseMonthReal,
-            totalProjectedExpenses,
-            simulatedExpenseTotal,
-            scheduledExpenses,
-            totalCreditSimulated,
-            totalGoalSimulated,
-            totalFundSimulated,
-            finalBalance,
-            categoryComparisons
-        };
+        setFormName('');
+        setFormAmount('');
+        setSelectedFundId(null);
+        setEditingId(null);
+        setIsSimOpen(false);
     };
 
-    const projection = calculateProjection();
+    const handleEditSim = (item: ProjectionItem) => {
+        setFormName(item.name);
+        setFormAmount(item.amount.toString());
+        setFormType(item.type);
+        setEditingId(item.id);
+        setIsSimOpen(true);
+    };
 
-    const toggleCreditSimulation = (id: string) => {
-        const current = [...simCreditIds];
-        if (current.includes(id)) {
-            setSimulatedCreditPayments(current.filter(i => i !== id));
+    const applyFundShortcut = (fundId: string, fundName: string, type: 'withdraw' | 'deposit') => {
+        if (type === 'withdraw') {
+            setFormName(`Retiro de ${fundName}`);
+            setFormType('income');
         } else {
-            setSimulatedCreditPayments([...current, id]);
+            setFormName(`Aporte a ${fundName}`);
+            setFormType('expense');
+        }
+        setSelectedFundId(fundId);
+    };
+
+    const getSourceIcon = (source: string, type: string) => {
+        switch (source) {
+            case 'goal': return { icon: Target, color: 'text-purple-500 bg-purple-500/10' };
+            case 'credit': return { icon: CreditCard, color: 'text-orange-500 bg-orange-500/10' };
+            case 'fund': return { icon: PiggyBank, color: 'text-blue-500 bg-blue-500/10' };
+            case 'simulated': return { icon: Sparkles, color: 'text-indigo-500 bg-indigo-500/10' };
+            default: return type === 'income' ? { icon: TrendingUp, color: 'text-emerald-500 bg-emerald-500/10' } : { icon: Calendar, color: 'text-zinc-500 bg-zinc-500/10' };
         }
     };
 
-    const toggleGoalSimulation = (id: string) => {
-        const current = [...simGoalIds];
-        if (current.includes(id)) {
-            setSimulatedGoalContributions(current.filter(i => i !== id));
-        } else {
-            setSimulatedGoalContributions([...current, id]);
-        }
+    const getActionIcon = (fundIconName: string) => {
+        return ICON_MAP[fundIconName] || PiggyBank;
     };
+
+    const systemItems = timelineData.filter(i => i.source !== 'simulated');
+    const simulatedItems = timelineData.filter(i => i.source === 'simulated');
 
     return (
-        <div className="p-6 space-y-8 pb-32">
-            <div>
-                <h1 className="text-3xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                    <Calculator size={32} className="text-emerald-500" />
-                    Sala de Proyecciones
-                </h1>
-                <p className="text-zinc-500 mt-2">Simula ingresos y gastos del futuro. Agrega el pan de mañana o la combi de pasado.</p>
-            </div>
+        <div className="h-full w-full flex flex-col md:flex-row bg-white dark:bg-zinc-950 overflow-hidden font-sans">
 
-            {/* 0. CONTROLS */}
-            <div className="flex flex-wrap gap-4 bg-zinc-100 dark:bg-zinc-900/50 p-4 rounded-2xl md:items-center">
-                <button
-                    onClick={() => setToggle('includeGlobalBalance', !includeGlobalBalance)}
-                    className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all", includeGlobalBalance ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-white text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600")}
-                >
-                    {includeGlobalBalance ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                    {includeGlobalBalance ? "Incluyendo Saldo Actual" : "Solo Flujo del Mes"}
-                </button>
+            {/* --- LEFT: LEDGER (Fluid) --- */}
+            <div className="flex-1 flex flex-col border-r border-zinc-200 dark:border-zinc-800 min-w-0">
 
-                <button
-                    onClick={() => {
-                        if (!includeGlobalBalance) setToggle('includeGlobalBalance', true);
-                        setToggle('includeFundsInBalance', !includeFundsInBalance);
-                    }}
-                    className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all", includeFundsInBalance ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-white text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600")}
-                >
-                    {includeFundsInBalance ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                    Incluir Ahorros (Fondos)
-                </button>
-
-                <button
-                    onClick={() => setToggle('autoIncludeScheduled', !autoIncludeScheduled)}
-                    className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all", autoIncludeScheduled ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-white text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600")}
-                >
-                    {autoIncludeScheduled ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                    Auto-sumar Programados
-                </button>
-            </div>
-
-            {/* 1. TOP CARDS: REAL VS PROJECTED */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-6 rounded-3xl bg-white dark:bg-zinc-900 shadow-xl border border-zinc-100 dark:border-zinc-800">
-                    <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-2">
-                        {includeGlobalBalance ? "Saldo Disponible Real (Hoy)" : "Flujo Real del Mes (Hoy)"}
-                    </h2>
-                    <div className="flex items-end gap-2">
-                        <p className={clsx("text-4xl font-black", projection.baseBalance >= 0 ? "text-zinc-900 dark:text-white" : "text-rose-500")}>
-                            {currency}{projection.baseBalance.toFixed(2)}
-                        </p>
+                {/* Header */}
+                <div className="flex-none bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 z-10">
+                    <div className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full p-1 shadow-sm">
+                                <button onClick={() => setSelectedMonth(m => addMonths(m, -1))} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all text-zinc-500 hover:text-indigo-600"><ChevronLeft size={18} /></button>
+                                <button onClick={() => setSelectedMonth(m => addMonths(m, 1))} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-all text-zinc-500 hover:text-indigo-600"><ChevronRight size={18} /></button>
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 uppercase">
+                                    {format(selectedMonth, 'MMMM yyyy', { locale: es })}
+                                </h2>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                                        Proyección Mensual
+                                    </span>
+                                    <span className="text-xs font-medium text-zinc-400">
+                                        • {timelineData.length} movimientos
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div className={clsx(
-                    "p-6 rounded-3xl shadow-xl border transition-colors",
-                    projection.finalBalance >= 0
-                        ? "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800"
-                        : "bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-800"
-                )}>
-                    <h2 className={clsx("text-sm font-bold uppercase tracking-wider mb-2", projection.finalBalance >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400")}>
-                        Saldo Final Proyectado
-                    </h2>
-                    <p className={clsx("text-4xl font-black", projection.finalBalance >= 0 ? "text-emerald-900 dark:text-emerald-100" : "text-rose-900 dark:text-rose-100")}>
-                        {currency}{projection.finalBalance.toFixed(2)}
-                    </p>
-                    <p className="text-xs mt-2 opacity-80">
-                        {projection.finalBalance >= 0 ? "¡Superávit estimado al fin de mes!" : "¡Déficit estimado! Revisa tus gastos."}
-                    </p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* 2. GRANULAR SIMULATIONS (NEW) */}
-                <div className="lg:col-span-1 space-y-6">
-                    <h3 className="font-bold text-lg flex items-center gap-2"><ShoppingBag size={20} className="text-purple-500" /> Simulador de Diario</h3>
-
-                    {/* Add Simulation Form */}
-                    <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-zinc-400 uppercase">¿Qué quieres simular?</label>
-                            <input
-                                type="text"
-                                placeholder="Ej. Pan, Combi, Cachuelo..."
-                                className="w-full bg-zinc-50 dark:bg-zinc-950 px-4 py-2 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500/20"
-                                value={simDescription}
-                                onChange={e => setSimDescription(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleAddSimulation()}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="text-xs font-bold text-zinc-400 uppercase">Monto</label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">{currency}</span>
-                                    <input
-                                        type="number"
-                                        placeholder="0.00"
-                                        className="w-full bg-zinc-50 dark:bg-zinc-950 pl-8 pr-4 py-2 rounded-xl border-none outline-none focus:ring-2 focus:ring-purple-500/20"
-                                        value={simAmount}
-                                        onChange={e => setSimAmount(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && handleAddSimulation()}
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-zinc-400 uppercase">Tipo</label>
-                                <div className="flex bg-zinc-50 dark:bg-zinc-950 rounded-xl p-1">
-                                    <button
-                                        onClick={() => setSimType('expense')}
-                                        className={clsx("flex-1 rounded-lg text-xs font-bold py-1.5 transition-all text-center", simType === 'expense' ? "bg-rose-500 text-white shadow-md" : "text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
-                                    >
-                                        Gasto
-                                    </button>
-                                    <button
-                                        onClick={() => setSimType('income')}
-                                        className={clsx("flex-1 rounded-lg text-xs font-bold py-1.5 transition-all text-center", simType === 'income' ? "bg-emerald-500 text-white shadow-md" : "text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800")}
-                                    >
-                                        Ingreso
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <button
-                            onClick={handleAddSimulation}
-                            className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold py-2 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                        >
-                            <Plus size={18} /> Agregar
+                    <div className="flex px-4 gap-6">
+                        <button onClick={() => setStoreActiveView('structure')} className={clsx("pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2", activeTab === 'structure' ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300")}>
+                            <LayoutList size={16} /> Estructura Mensual
+                        </button>
+                        <button onClick={() => setStoreActiveView('scenarios')} className={clsx("pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2", activeTab === 'scenarios' ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300")}>
+                            <Layers size={16} /> Escenarios & Extras
                         </button>
                     </div>
-
-                    {/* Simulation List */}
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                        {simulatedTransactions.length === 0 ? (
-                            <div className="p-8 text-center text-zinc-400 text-sm italic">
-                                No has agregado simulaciones aún.
-                            </div>
-                        ) : (
-                            <div className="divide-y divide-zinc-100 dark:divide-zinc-800 max-h-60 overflow-y-auto">
-                                {simulatedTransactions.map(item => (
-                                    <div key={item.id} className="p-3 flex items-center justify-between group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className={clsx("w-8 h-8 rounded-full flex items-center justify-center", item.type === 'income' ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/20" : "bg-rose-100 text-rose-600 dark:bg-rose-900/20")}>
-                                                {item.type === 'income' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-sm text-zinc-700 dark:text-zinc-300">{item.description}</p>
-                                                <p className="text-xs text-zinc-400 capitalize">{item.type === 'income' ? 'Ingreso' : 'Gasto'}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className={clsx("font-mono font-bold text-sm", item.type === 'income' ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
-                                                {item.type === 'income' ? '+' : '-'}{currency}{item.amount.toLocaleString()}
-                                            </span>
-                                            <button
-                                                onClick={() => removeSimulatedTransaction(item.id)}
-                                                className="text-zinc-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        {simulatedTransactions.length > 0 && (
-                            <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center text-xs font-bold uppercase text-zinc-500">
-                                <span>Total Simulado</span>
-                                <span className={clsx(
-                                    (projection.simulatedIncomeTotal - projection.simulatedExpenseTotal) >= 0 ? "text-emerald-500" : "text-rose-500"
-                                )}>
-                                    {currency}{(projection.simulatedIncomeTotal - projection.simulatedExpenseTotal).toFixed(2)}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    <h3 className="font-bold text-lg flex items-center gap-2 mt-8"><PiggyBank size={20} className="text-amber-500" /> Fondos (Simulados)</h3>
-                    <div className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
-                        {funds.map(fund => (
-                            <div key={fund.id} className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 text-xs">
-                                    {fund.icon}
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-bold">{fund.name}</p>
-                                    <p className="text-xs text-zinc-500">Actual: {currency}{fund.currentAmount}</p>
-                                </div>
-                                <div className="w-24 relative">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-zinc-400">{currency}</span>
-                                    <input
-                                        type="number"
-                                        className="w-full bg-zinc-50 dark:bg-zinc-950 rounded-lg pl-5 pr-2 py-1 text-sm text-right outline-none border border-transparent focus:border-emerald-500"
-                                        placeholder="0"
-                                        value={simulatedFundTransfers[fund.id] || ''}
-                                        onChange={e => setSimulatedFundTransfers({ ...simulatedFundTransfers, [fund.id]: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                        {funds.length === 0 && <p className="text-sm text-zinc-400 italic">No tienes fondos creados.</p>}
-                    </div>
-
                 </div>
 
-                {/* 3. EXPENSE BUDGETING column */}
-                <div className="lg:col-span-2 space-y-6">
-                    <h3 className="font-bold text-lg flex items-center gap-2"><TrendingDown size={20} className="text-rose-500" /> Presupuesto y Categorías</h3>
+                {/* Content */}
+                <div className="flex-1 p-4 bg-zinc-50/50 dark:bg-zinc-950/50 overflow-hidden flex flex-col">
 
-                    {autoIncludeScheduled && projection.scheduledExpenses > 0 && (
-                        <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 p-3 rounded-xl flex justify-between items-center px-4">
-                            <span className="text-sm font-bold text-blue-700 dark:text-blue-300">Gastos Programados Pendientes (Auto)</span>
-                            <span className="font-black text-blue-700 dark:text-blue-300">{currency}{projection.scheduledExpenses}</span>
+                    {activeTab === 'structure' && (
+                        <div className="flex-1 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200/50 dark:border-zinc-800 overflow-hidden animate-in fade-in duration-300 flex flex-col">
+                            {systemItems.length === 0 ? (
+                                <div className="p-12 text-center opacity-40">
+                                    <Calendar className="mx-auto mb-4 text-zinc-300" size={48} />
+                                    <p className="text-sm font-medium">No hay estructura base para este mes</p>
+                                </div>
+                            ) : (
+                                <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800">
+                                    {systemItems.map((item, idx) => {
+                                        const { icon: Icon, color } = getSourceIcon(item.source, item.type);
+                                        const isExcluded = item.isExcluded;
+                                        return (
+                                            <div key={item.id + idx + 'sys'} onClick={() => toggleExclusion(item.id)} className={clsx("flex items-center gap-4 p-3 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors group select-none last:border-0", isExcluded && "opacity-50 grayscale")}>
+                                                <div className={clsx("transition-colors flex-none", isExcluded ? "text-zinc-300" : "text-zinc-900 dark:text-zinc-100")}>
+                                                    {!isExcluded ? <CheckCircle2 size={18} className="fill-zinc-900 text-white dark:fill-zinc-100 dark:text-zinc-900" /> : <Circle size={18} />}
+                                                </div>
+                                                <div className="w-8 text-center flex-none">
+                                                    <span className="block text-base font-bold leading-none text-zinc-700 dark:text-zinc-300">{format(parseISO(item.date), 'dd')}</span>
+                                                </div>
+                                                <div className={clsx("w-8 h-8 rounded-lg flex items-center justify-center flex-none", color)}>
+                                                    <Icon size={14} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className={clsx("font-bold text-sm truncate", isExcluded && "line-through")}>{item.name}</h4>
+                                                    <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">
+                                                        {item.source === 'scheduled' ? 'Recurrente' : item.source === 'goal' ? 'Meta' : item.source === 'credit' ? 'Crédito' : 'Fondo'}
+                                                    </span>
+                                                </div>
+                                                <div className="text-right flex-none">
+                                                    <span className={clsx("block font-bold text-sm", item.type === 'income' ? "text-emerald-500" : "text-zinc-900 dark:text-zinc-100", isExcluded && "text-zinc-400 line-through")}>
+                                                        {item.type === 'income' ? '+' : '-'}{currency}{item.amount.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                        <div className="grid grid-cols-12 gap-2 p-4 bg-zinc-50 dark:bg-zinc-950/50 text-xs font-bold text-zinc-400 uppercase">
-                            <div className="col-span-4">Categoría</div>
-                            <div className="col-span-3 text-right">Gastado Real</div>
-                            <div className="col-span-3 text-right">Proyección Total</div>
-                            <div className="col-span-2 text-right">Disp.</div>
-                        </div>
-                        <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                            {projection.categoryComparisons.map((item) => (
-                                <div key={item.category} className="grid grid-cols-12 gap-2 p-4 items-center hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <div className="col-span-4 font-bold text-sm truncate" title={item.category}>{item.category}</div>
-                                    <div className="col-span-3 text-right text-sm text-zinc-500">{currency}{item.real}</div>
-                                    <div className="col-span-3 relative">
-                                        <input
-                                            type="number"
-                                            className={clsx(
-                                                "w-full text-right bg-transparent border-b border-zinc-200 dark:border-zinc-700 py-1 text-sm font-bold focus:border-emerald-500 outline-none transition-colors",
-                                                (Number(categoryBudgets[item.category]) || 0) < item.real && categoryBudgets[item.category] ? "text-rose-500 border-rose-200" : "text-zinc-900 dark:text-white"
-                                            )}
-                                            placeholder={item.real.toString()}
-                                            value={categoryBudgets[item.category] || ''}
-                                            onChange={e => setCategoryBudgets({ ...categoryBudgets, [item.category]: e.target.value })}
-                                        />
+                    {activeTab === 'scenarios' && (
+                        <div className="animate-in fade-in duration-300 space-y-4 flex-1 flex flex-col min-h-0">
+                            <div className="flex-1 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200/50 dark:border-zinc-800 overflow-hidden flex flex-col">
+                                {simulatedItems.length === 0 ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                                        <Sparkles className="mx-auto mb-2 text-indigo-200" size={32} />
+                                        <p className="text-sm font-medium text-zinc-400">Sin escenarios creados</p>
                                     </div>
-                                    <div className={clsx("col-span-2 text-right text-xs font-bold", item.diff > 0 ? "text-emerald-500" : "text-zinc-300")}>
-                                        {currency}{Math.max(0, item.diff)}
+                                ) : (
+                                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800">
+                                        {simulatedItems.map((item, idx) => {
+                                            const { icon: Icon, color } = getSourceIcon(item.source, item.type);
+                                            const isExcluded = item.isExcluded;
+                                            return (
+                                                <div key={item.id + idx + 'sim'} className={clsx("flex items-center gap-4 p-3 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group select-none last:border-0", isExcluded && "opacity-50 grayscale")}>
+                                                    <div onClick={() => toggleExclusion(item.id)} className={clsx("transition-colors cursor-pointer flex-none", isExcluded ? "text-zinc-300" : "text-zinc-900 dark:text-zinc-100")}>
+                                                        {!isExcluded ? <CheckCircle2 size={18} className="fill-zinc-900 text-white dark:fill-zinc-100 dark:text-zinc-900" /> : <Circle size={18} />}
+                                                    </div>
+                                                    <div className={clsx("w-8 h-8 rounded-lg flex items-center justify-center flex-none", color)}>
+                                                        <Icon size={14} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-bold text-sm truncate">{item.name}</h4>
+                                                        <div className="flex gap-2 mt-0.5">
+                                                            <button onClick={() => handleEditSim(item)} className="text-[10px] font-bold text-zinc-400 hover:text-indigo-500 flex items-center gap-1 transition-colors">
+                                                                <Pencil size={10} /> EDITAR
+                                                            </button>
+                                                            <button onClick={() => removeSimulatedTransaction(item.id)} className="text-[10px] font-bold text-zinc-400 hover:text-rose-500 flex items-center gap-1 transition-colors">
+                                                                <Trash2 size={10} /> ELIMINAR
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right flex-none">
+                                                        <span className={clsx("block font-bold text-sm", item.type === 'income' ? "text-emerald-500" : "text-zinc-900 dark:text-zinc-100")}>
+                                                            {item.type === 'income' ? '+' : '-'}{currency}{item.amount.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
+                                )}
+                            </div>
+
+                            {!isSimOpen ? (
+                                <button onClick={() => setIsSimOpen(true)} className="w-full p-3 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-800 flex items-center justify-center gap-2 text-zinc-400 hover:text-indigo-500 hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all font-bold text-sm">
+                                    <Plus size={18} /> Añadir Escenario
+                                </button>
+                            ) : (
+                                <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-in slide-in-from-bottom-2">
+                                    <div className="p-5">
+                                        <div className="flex gap-3 mb-4">
+                                            <input autoFocus placeholder="Concepto" className="flex-1 bg-zinc-50 dark:bg-zinc-800 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 font-bold outline-none focus:ring-2 ring-indigo-500/20 text-sm" value={formName} onChange={e => { setFormName(e.target.value); setSelectedFundId(null); }} />
+                                            <input type="number" placeholder="Monto" className="w-28 bg-zinc-50 dark:bg-zinc-800 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 font-bold outline-none focus:ring-2 ring-indigo-500/20 text-sm text-right" value={formAmount} onChange={e => setFormAmount(e.target.value)} />
+                                        </div>
+
+                                        {funds.length > 0 && (
+                                            <div className="mb-4">
+                                                <p className="text-[10px] uppercase font-bold text-zinc-400 mb-2 pl-1">Acciones Rápidas de Fondos</p>
+                                                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                                                    {funds.map(f => {
+                                                        const Icon = getActionIcon(f.icon);
+                                                        const isSelected = selectedFundId === f.id;
+                                                        const simAmount = Number(formAmount) || 0;
+                                                        let projectedBalance = f.currentAmount;
+                                                        // Withdraw (Income to wallet) => Remove from fund
+                                                        if (formType === 'income') projectedBalance -= simAmount;
+                                                        // Deposit (Expense from wallet) => Add to fund
+                                                        else projectedBalance += simAmount;
+
+                                                        return (
+                                                            <div key={f.id} className={clsx("flex-none min-w-[140px] p-3 rounded-xl border transition-all", isSelected ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/20 ring-1 ring-indigo-500" : "border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-white dark:hover:bg-zinc-800")}>
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <div className={clsx("w-6 h-6 rounded-full flex items-center justify-center transition-colors", isSelected ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-400/20 dark:text-indigo-400" : "bg-white dark:bg-zinc-800 text-zinc-500")}>
+                                                                        <Icon size={12} />
+                                                                    </div>
+                                                                    <span className={clsx("text-[10px] font-bold truncate flex-1", isSelected ? "text-indigo-700 dark:text-indigo-300" : "text-zinc-600 dark:text-zinc-400")}>{f.name}</span>
+                                                                </div>
+
+                                                                <div className="mb-2">
+                                                                    <div className="text-[9px] text-zinc-400 uppercase font-bold">Saldo</div>
+                                                                    <div className="flex items-baseline gap-1">
+                                                                        <span className="font-bold text-xs text-zinc-900 dark:text-zinc-100">{currency}{f.currentAmount.toLocaleString()}</span>
+                                                                        {isSelected && simAmount > 0 && (
+                                                                            <>
+                                                                                <span className="text-[9px] text-zinc-300">→</span>
+                                                                                <span className={clsx("font-bold text-xs", projectedBalance >= f.currentAmount ? "text-emerald-500" : "text-rose-500")}>{currency}{projectedBalance.toLocaleString()}</span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex gap-1">
+                                                                    <button onClick={() => applyFundShortcut(f.id, f.name, 'withdraw')} className={clsx("flex-1 py-1 rounded-lg border text-[9px] font-bold transition-colors flex justify-center items-center gap-1", isSelected && formType === 'income' ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-600 hover:text-indigo-600 hover:border-indigo-200")}>
+                                                                        Retirar
+                                                                    </button>
+                                                                    <button onClick={() => applyFundShortcut(f.id, f.name, 'deposit')} className={clsx("flex-1 py-1 rounded-lg border text-[9px] font-bold transition-colors flex justify-center items-center gap-1", isSelected && formType === 'expense' ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-600 hover:text-indigo-600 hover:border-indigo-200")}>
+                                                                        Ahorrar
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="flex gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+                                            <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg">
+                                                <button onClick={() => setFormType('expense')} className={clsx("px-3 py-1.5 rounded-md text-xs font-bold transition-all", formType === 'expense' ? "bg-white dark:bg-zinc-950 text-rose-500 shadow-sm" : "text-zinc-400 hover:text-zinc-500")}>Gasto</button>
+                                                <button onClick={() => setFormType('income')} className={clsx("px-3 py-1.5 rounded-md text-xs font-bold transition-all", formType === 'income' ? "bg-white dark:bg-zinc-950 text-emerald-500 shadow-sm" : "text-zinc-400 hover:text-zinc-500")}>Ingreso</button>
+                                            </div>
+                                            <div className="flex-1 flex items-center justify-end px-2">
+                                                {selectedFundId && formType === 'income' && (
+                                                    funds.find(f => f.id === selectedFundId)?.currentAmount! < (Number(formAmount) || 0) && (
+                                                        <span className="text-[10px] font-bold text-rose-500 animate-pulse">Fondos insuficientes</span>
+                                                    )
+                                                )}
+                                            </div>
+                                            <button onClick={() => setIsSimOpen(false)} className="px-3 py-1.5 text-zinc-400 text-xs font-bold hover:text-zinc-600">Cancelar</button>
+                                            <button
+                                                onClick={handleAddSim}
+                                                disabled={!!selectedFundId && formType === 'income' && (funds.find(f => f.id === selectedFundId)?.currentAmount || 0) < (Number(formAmount) || 0)}
+                                                className="px-5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow-lg shadow-indigo-500/20 transition-all"
+                                            >
+                                                Guardar
+                                            </button>
+                                        </div>
+                                    </div>
+
                                 </div>
-                            ))}
+                            )}
                         </div>
-                    </div>
-
-                    {/* VIRTUAL CREDIT & GOALS PAYMENTS */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-zinc-100 dark:bg-zinc-900/50 p-5 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700">
-                            <h4 className="font-bold text-sm mb-4 text-zinc-500 uppercase tracking-wider flex items-center gap-2"><Landmark size={14} /> Simular Créditos</h4>
-                            <div className="flex flex-wrap gap-3">
-                                {credits.filter(c => c.status === 'active').map(c => {
-                                    const roughPayment = (c.principal * (1 + (c.interestRate / 100))) / c.term;
-                                    const isSelected = simulatedCreditPayments.has(c.id);
-                                    return (
-                                        <button
-                                            key={c.id}
-                                            onClick={() => toggleCreditSimulation(c.id)}
-                                            className={clsx(
-                                                "px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all flex items-center gap-2",
-                                                isSelected
-                                                    ? "bg-rose-100 border-rose-500 text-rose-700 dark:bg-rose-900/30 dark:border-rose-500 dark:text-rose-200"
-                                                    : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700"
-                                            )}
-                                        >
-                                            <div className={clsx("w-4 h-4 rounded-full border flex items-center justify-center", isSelected ? "border-rose-600 bg-rose-600" : "border-zinc-400")}>
-                                                {isSelected && <CheckIcon size={10} className="text-white" />}
-                                            </div>
-                                            {c.name} ({currency}{roughPayment.toFixed(0)})
-                                        </button>
-                                    );
-                                })}
-                                {credits.filter(c => c.status === 'active').length === 0 && (
-                                    <p className="text-sm text-zinc-400">No tienes créditos activos.</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="bg-zinc-100 dark:bg-zinc-900/50 p-5 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700">
-                            <h4 className="font-bold text-sm mb-4 text-zinc-500 uppercase tracking-wider flex items-center gap-2"><Target size={14} /> Simular Metas</h4>
-                            <div className="flex flex-wrap gap-3">
-                                {goals.map(g => {
-                                    // if isGoalPaidThisMonth(g) ... maybe hide? No, let them simulate anyway.
-                                    const monthlyQuota = getMonthlyQuota(g);
-                                    const isSelected = simulatedGoalContributions.has(g.id);
-
-                                    return (
-                                        <button
-                                            key={g.id}
-                                            onClick={() => toggleGoalSimulation(g.id)}
-                                            className={clsx(
-                                                "px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all flex items-center gap-2",
-                                                isSelected
-                                                    ? "bg-purple-100 border-purple-500 text-purple-700 dark:bg-purple-900/30 dark:border-purple-500 dark:text-purple-200"
-                                                    : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 dark:bg-zinc-900 dark:border-zinc-700"
-                                            )}
-                                        >
-                                            <div className={clsx("w-4 h-4 rounded-full border flex items-center justify-center", isSelected ? "border-purple-600 bg-purple-600" : "border-zinc-400")}>
-                                                {isSelected && <CheckIcon size={10} className="text-white" />}
-                                            </div>
-                                            {g.name} ({currency}{monthlyQuota.toFixed(0)})
-                                        </button>
-                                    );
-                                })}
-                                {goals.length === 0 && (
-                                    <p className="text-sm text-zinc-400">No tienes metas activas.</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
-            <div className="flex justify-end pt-8">
-                <button
-                    onClick={() => {
-                        clearSimulation();
-                        toast.success('Simulación reiniciada');
-                    }}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold hover:opacity-90 active:scale-95 transition-all shadow-xl"
-                >
-                    <RefreshCw size={20} />
-                    Reiniciar Simulación
-                </button>
+            {/* --- RIGHT: SUMMARY & IMPACT (Compact Mode) --- */}
+            <div className="md:w-[320px] lg:w-[360px] flex-none bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-xl border-l border-zinc-200/50 dark:border-zinc-800/50 flex flex-col z-20 shadow-xl">
+                <div className="p-5 flex-1 flex flex-col justify-between overflow-hidden">
+
+                    {/* Top Section */}
+                    <div>
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                                <Calculator size={12} /> Impact Hub
+                            </h3>
+                            {/* Balance Toggle - Compact */}
+                            <div className="flex items-center gap-2">
+                                <span className={clsx("text-[9px] font-bold uppercase tracking-wide", includeBalance ? "text-indigo-600" : "text-zinc-400")}>
+                                    {includeBalance ? "Saldo Real" : "Solo Flujo"}
+                                </span>
+                                <button
+                                    onClick={() => setToggle('includeGlobalBalance', !includeBalance)}
+                                    className={clsx("w-8 h-4 rounded-full relative transition-colors", includeBalance ? "bg-indigo-500" : "bg-zinc-300 dark:bg-zinc-700")}
+                                >
+                                    <div className={clsx("absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-transform", includeBalance && "translate-x-4")} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Balance */}
+                        <div className="mb-6 text-center">
+                            <span className="text-zinc-400 text-xs font-bold uppercase tracking-wide opacity-70">Saldo Final Proyectado</span>
+                            <div className={clsx("text-5xl font-black tracking-tighter transition-all duration-300 mt-1", finalBalance < 0 ? "text-rose-500" : "text-zinc-900 dark:text-zinc-100")}>
+                                <span className="text-2xl tracking-normal text-zinc-300 dark:text-zinc-700 mr-1">{currency}</span>
+                                {finalBalance.toLocaleString()}
+                            </div>
+                            {lowestPoint < 0 && (
+                                <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-md text-[10px] font-bold animate-pulse">
+                                    <AlertTriangle size={10} /> Riesgo Negativo
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Mini Stats */}
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800 shadow-sm text-center">
+                                <span className="text-[9px] font-bold uppercase text-zinc-400">Ingresos</span>
+                                <div className="text-lg font-black text-emerald-500 mt-0.5">+{currency}{totalIncome.toLocaleString()}</div>
+                            </div>
+                            <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800 shadow-sm text-center">
+                                <span className="text-[9px] font-bold uppercase text-zinc-400">Gastos</span>
+                                <div className="text-lg font-black text-rose-500 mt-0.5">-{currency}{totalExpense.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Chart - Flex Growth */}
+                    <div className="flex-1 w-full bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800 p-3 shadow-sm relative overflow-hidden flex flex-col min-h-[150px]">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-50/50 dark:to-zinc-950/50 pointer-events-none" />
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={timelineData}>
+                                <defs>
+                                    <linearGradient id="chartGradient2" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={finalBalance >= 0 ? "#10b981" : "#f43f5e"} stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor={finalBalance >= 0 ? "#10b981" : "#f43f5e"} stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <RechartsTooltip
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    labelStyle={{ fontWeight: 'bold', color: '#71717a' }}
+                                    itemStyle={{ fontWeight: 'bold' }}
+                                    formatter={(value: any) => [`${currency}${Number(value).toLocaleString()}`, 'Saldo']}
+                                    labelFormatter={(label) => {
+                                        if (typeof label === 'number' && timelineData[label]) {
+                                            return format(parseISO(timelineData[label].date), 'dd MMMM', { locale: es });
+                                        }
+                                        return label;
+                                    }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="balanceAfter"
+                                    stroke={finalBalance >= 0 ? "#10b981" : "#f43f5e"}
+                                    strokeWidth={3}
+                                    fill="url(#chartGradient2)"
+                                    animationDuration={500}
+                                />
+                                <ReferenceLine y={0} stroke="#e4e4e7" strokeDasharray="3 3" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Reset - Bottom */}
+                    <div className="mt-4">
+                        <button onClick={clearSimulation} className="w-full py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-bold text-zinc-400 hover:text-rose-500 hover:border-rose-200 dark:hover:border-rose-900 transition-all flex items-center justify-center gap-2 shadow-sm">
+                            <X size={14} /> REINICIAR SIMULACIÓN
+                        </button>
+                    </div>
+
+                </div>
             </div>
-        </div>
+
+        </div >
     );
-};
-
-// Start Icon helper
-const CheckIcon = ({ size, className }: { size: number, className?: string }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <polyline points="20 6 9 17 4 12" />
-    </svg>
-);
-
-export default Projections;
+}

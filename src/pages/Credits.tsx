@@ -267,7 +267,7 @@ const Credits = () => {
                     credits.map((credit: Credit) => {
                         const status = getCreditStatus(credit);
                         const progress = Math.min((status.totalPaid / status.totalToPay) * 100, 100);
-                        const nextPaymentDate = new Date(credit.startDate);
+                        const nextPaymentDate = new Date(credit.startDate + 'T12:00:00');
                         nextPaymentDate.setMonth(nextPaymentDate.getMonth() + (credit.payments?.length || 0) + 1);
 
                         return (

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, startOfWeek, endOfWeek, parse } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -16,8 +16,15 @@ interface DatePickerProps {
 export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, label, className }) => {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Parse value to Date object safely using date-fns parse to ensure local time
-    const selectedDate = value ? (typeof value === 'string' ? parse(value, 'yyyy-MM-dd', new Date()) : new Date(value)) : undefined;
+    // Parse value to Date object safely ensuring local time (00:00:00)
+    const selectedDate = value ? (
+        typeof value === 'string'
+            ? (() => {
+                const [y, m, d] = value.split('-').map(Number);
+                return new Date(y, m - 1, d, 12, 0, 0);
+            })()
+            : new Date(value)
+    ) : undefined;
 
     const [currentMonth, setCurrentMonth] = useState(selectedDate || new Date());
     const containerRef = useRef<HTMLDivElement>(null);
@@ -110,7 +117,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, label, 
 
                     {/* Week Days Header */}
                     <div className="grid grid-cols-7 mb-2 text-center">
-                        {['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'].map(d => (
+                        {['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'].map(d => (
                             <span key={d} className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">{d}</span>
                         ))}
                     </div>
@@ -118,7 +125,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, label, 
                     {/* Days Grid */}
                     <div className="grid grid-cols-7 gap-1">
                         {days.map((day) => {
-                            const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
+                            const dayStr = format(day, 'yyyy-MM-dd');
+                            // Normalize value to string for comparison safely
+                            const valueStr = value instanceof Date ? format(value, 'yyyy-MM-dd') : value;
+
+                            const isSelected = valueStr === dayStr;
                             const isCurrentMonth = isSameMonth(day, currentMonth);
                             const isTodayDate = isToday(day);
 

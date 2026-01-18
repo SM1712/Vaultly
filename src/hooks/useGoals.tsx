@@ -1,5 +1,7 @@
 import { useData } from '../context/DataContext';
 import type { Goal } from '../types';
+import { toCents, fromCents, safeAdd, safeSub } from '../utils/financialUtils';
+import { isBefore, isEqual, endOfDay, parseISO } from 'date-fns';
 
 export const useGoals = () => {
     const { data, updateData } = useData();
@@ -11,13 +13,15 @@ export const useGoals = () => {
         const targetMonth = date.getMonth();
         const targetYear = date.getFullYear();
 
-        return goal.history.reduce((acc, item) => {
+        let totalCents = 0;
+        goal.history.forEach(item => {
             const [y, m] = item.date.split('-').map(Number);
             if (y === targetYear && (m - 1) === targetMonth) {
-                return item.type === 'deposit' ? acc + item.amount : acc - item.amount;
+                if (item.type === 'deposit') totalCents += toCents(item.amount);
+                else totalCents -= toCents(item.amount);
             }
-            return acc;
-        }, 0);
+        });
+        return fromCents(totalCents);
     }
 
     // --- Actions ---
@@ -57,9 +61,13 @@ export const useGoals = () => {
         };
 
         const history = goal.history ? [...goal.history, newHistoryItem] : [newHistoryItem];
+
+        // Safe Add
+        const newAmount = safeAdd(goal.currentAmount || 0, amount);
+
         const updatedGoal = {
             ...goal,
-            currentAmount: (goal.currentAmount || 0) + amount,
+            currentAmount: newAmount,
             lastContributionDate: today,
             history
         };
@@ -81,9 +89,13 @@ export const useGoals = () => {
         };
 
         const history = goal.history ? [...goal.history, newHistoryItem] : [newHistoryItem];
+
+        // Safe Sub
+        const newAmount = Math.max(0, safeSub(goal.currentAmount || 0, amount));
+
         const updatedGoal = {
             ...goal,
-            currentAmount: Math.max(0, (goal.currentAmount || 0) - amount),
+            currentAmount: newAmount,
             recoveryStrategy: recoveryStrategy || goal.recoveryStrategy,
             history
         };
@@ -111,9 +123,6 @@ export const useGoals = () => {
 
         const weights = [];
         for (let i = 0; i < totalMonths; i++) {
-            // Variation between 0.8 and 1.4 for dynamism
-            // We use sin/cos for a "wave" like feel rather than pure chaos if desired, or just random
-            // User requested variability: "200, 150, 180, 250" -> Random-ish
             const r = pseudoRandom(seedBase + i);
             const weight = 0.8 + (r * 0.6); // Range [0.8, 1.4]
             weights.push(weight);
@@ -129,48 +138,33 @@ export const useGoals = () => {
         const deadlineDate = new Date(goal.deadline);
         const startDate = new Date(goal.startDate);
 
-        const currentAmount = (goal.currentAmount || 0) + simulatedAdditionalAmount;
-        const remainingAmount = Math.max(0, goal.targetAmount - currentAmount);
+        const currentAmount = safeAdd(goal.currentAmount || 0, simulatedAdditionalAmount);
+        const remainingAmount = Math.max(0, safeSub(goal.targetAmount, currentAmount));
 
         if (remainingAmount <= 0) return 0;
 
         // DYNAMIC NON-LINEAR DISTRIBUTION
         if (goal.calculationMethod === 'dynamic') {
             const weights = getGoalMonthlyWeights(goal);
-
-            // Calculate current month index relative to start
             const monthsPassed = (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth());
 
-            // If we are past the deadline, pay everything
             if (monthsPassed >= weights.length) return remainingAmount;
 
-            // If we are before start (shouldn't happen often), assume start
             const currentIndex = Math.max(0, monthsPassed);
-
-            // Sum remaining weights (inclusive of current month)
             let sumRemainingWeights = 0;
             for (let i = currentIndex; i < weights.length; i++) {
                 sumRemainingWeights += weights[i];
             }
 
-            // Safety div by zero
             if (sumRemainingWeights === 0) return remainingAmount;
 
             const currentWeight = weights[currentIndex];
 
-            // Stability: We need to account for what has *already* been paid this month to show the "Remainder of Quota"
-            // OR does the user want the "Total Quota for Month"?
-            // User context: "Cuota Requerida" generally implies what is due for the whole month.
-            // But if I paid part of it, it usually decreases. 
-            // However, the "Advance" logic relies on the "Quota" being a fixed target for the month.
-            // Let's stick to: Quota is the total expected for the month given the Current Remaining Balance at Start of Month.
-
-            // To do this accurately with "Start of Month" logic:
+            // Contributions check
             const isCurrentMonth = today.getMonth() === new Date().getMonth() && today.getFullYear() === new Date().getFullYear();
             const contributionsThisMonth = isCurrentMonth ? getattrContributionsThisMonth(goal, today) : 0;
-            const startOfMonthRemaining = remainingAmount + contributionsThisMonth;
+            const startOfMonthRemaining = safeAdd(remainingAmount, contributionsThisMonth);
 
-            // Allocation for this month
             const allocationShare = currentWeight / sumRemainingWeights;
             const quotaTotalForMonth = startOfMonthRemaining * allocationShare;
 
@@ -178,41 +172,34 @@ export const useGoals = () => {
         }
 
         // LINEAR / LEGACY LOGIC
-        // Calculate Remaining Months (Future)
         const yearsDiff = deadlineDate.getFullYear() - today.getFullYear();
         const monthsDiff = deadlineDate.getMonth() - today.getMonth();
         let monthsRemaining = Math.max(1, (yearsDiff * 12) + monthsDiff);
 
         // STRATEGY: SPREAD (Default)
         if (goal.recoveryStrategy === 'spread' || !goal.recoveryStrategy) {
-            // Stability: Add back this month's contributions to simulate "Start of Month" state
             const isCurrentMonth = today.getMonth() === new Date().getMonth() && today.getFullYear() === new Date().getFullYear();
             const contributionsThisMonth = isCurrentMonth ? getattrContributionsThisMonth(goal, today) : 0;
+            const startOfMonthRemaining = safeAdd(remainingAmount, contributionsThisMonth);
 
-            const startOfMonthRemaining = remainingAmount + contributionsThisMonth;
-
-            // Simple Linear Division
             const amount = startOfMonthRemaining / monthsRemaining;
             return Math.ceil(amount * 100) / 100;
         }
 
         // STRATEGY: CATCH UP
-        // Total duration inclusive
         const totalMonths = Math.max(1, (deadlineDate.getFullYear() - startDate.getFullYear()) * 12 + (deadlineDate.getMonth() - startDate.getMonth()) + 1);
-        // Months passed exclusive of current
         const monthsPassed = Math.max(0, (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth()));
 
         const idealPerMonth = goal.targetAmount / totalMonths;
         const idealCumulative = idealPerMonth * monthsPassed;
 
-        // Stability: Deficit based on start of month
         const isCurrentMonth = today.getMonth() === new Date().getMonth() && today.getFullYear() === new Date().getFullYear();
         const contributionsThisMonth = isCurrentMonth ? getattrContributionsThisMonth(goal, today) : 0;
+        const startOfMonthCurrent = safeSub(currentAmount, contributionsThisMonth);
 
-        const startOfMonthCurrent = currentAmount - contributionsThisMonth;
         const deficit = Math.max(0, idealCumulative - startOfMonthCurrent);
-
         const amount = idealPerMonth + deficit;
+
         return Math.ceil(amount * 100) / 100;
     };
 
@@ -224,23 +211,24 @@ export const useGoals = () => {
     };
 
     const getTotalSavingsAtDate = (date: Date) => {
-        return goals.reduce((acc, goal) => {
-            if (!goal.history || goal.history.length === 0) return acc;
+        // Robust End of Period
+        const endOfPeriod = endOfDay(new Date(date.getFullYear(), date.getMonth() + 1, 0));
 
-            const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        const totalCents = goals.reduce((accCents, goal) => {
+            if (!goal.history || goal.history.length === 0) return accCents;
 
-            const goalTotal = goal.history.reduce((hAcc, item) => {
-                const itemDate = new Date(item.date);
-                if (itemDate <= endOfMonth) {
-                    return item.type === 'deposit'
-                        ? hAcc + item.amount
-                        : hAcc - item.amount;
+            let gTotalCents = 0;
+            goal.history.forEach(item => {
+                const iDate = parseISO(item.date);
+                if (isBefore(iDate, endOfPeriod) || isEqual(iDate, endOfPeriod)) {
+                    if (item.type === 'deposit') gTotalCents += toCents(item.amount);
+                    else gTotalCents -= toCents(item.amount);
                 }
-                return hAcc;
-            }, 0);
-
-            return acc + Math.max(0, goalTotal);
+            });
+            return accCents + Math.max(0, gTotalCents);
         }, 0);
+
+        return fromCents(totalCents);
     };
 
     const getMonthsRemaining = (goal: Goal) => {

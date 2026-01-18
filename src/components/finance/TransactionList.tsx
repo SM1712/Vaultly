@@ -1,6 +1,7 @@
 import type { Transaction } from '../../types';
 import { Trash2, ArrowUpRight, ArrowDownLeft, Pencil } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useSettings } from '../../context/SettingsContext';
 
 interface TransactionListProps {
     transactions: Transaction[];
@@ -9,6 +10,8 @@ interface TransactionListProps {
 }
 
 const TransactionList = ({ transactions, onDelete, onEdit }: TransactionListProps) => {
+    const { currency } = useSettings();
+
     if (transactions.length === 0) {
         return (
             <div className="bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800/50 rounded-xl p-8 text-center">
@@ -61,8 +64,7 @@ const TransactionList = ({ transactions, onDelete, onEdit }: TransactionListProp
                                     "px-6 py-4 text-right font-mono font-bold text-base",
                                     t.type === 'income' ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                                 )}>
-                                    {t.type === 'expense' ? '-' : '+'}
-                                    ${t.amount.toFixed(2)}
+                                    {t.type === 'expense' ? '-' : '+'}{currency}{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                     {onEdit && (

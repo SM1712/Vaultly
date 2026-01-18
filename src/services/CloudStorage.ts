@@ -53,6 +53,8 @@ export const INITIAL_DATA: AppData = {
         simulatedCreditPayments: [],
         simulatedGoalContributions: [],
         simulatedFundTransfers: {},
+        excludedIds: [],
+        activeView: 'structure',
         toggles: {
             includeGlobalBalance: true,
             includeFundsInBalance: false,

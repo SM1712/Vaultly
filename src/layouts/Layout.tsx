@@ -1,6 +1,5 @@
-// Trigger deployment update (Correct API Key)
 import { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import SettingsMenu from '../components/settings/SettingsMenu';
 import MobileQuickAdd from '../components/ui/MobileQuickAdd';
@@ -10,6 +9,7 @@ import { SettingsProvider } from '../context/SettingsContext';
 import { ProjectsProvider } from '../context/ProjectsContext';
 import { Menu } from 'lucide-react';
 import { Toaster } from 'sonner';
+import { clsx } from 'clsx';
 import OnboardingModal from '../components/onboarding/OnboardingModal';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import { useGamification } from '../context/GamificationContext';
@@ -45,6 +45,11 @@ const GlobalLevelUpManager = () => {
 const Layout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const location = useLocation();
+
+    // Projections needs full width without padding
+    const isFullWidthPage = location.pathname === '/projections';
+
     // We need to access funds and balance here, but `useFunds` and `useBalance` 
     // must be used inside the providers. We will create a new component `AutoDepositManager`
     // inside the providers to handle this.
@@ -83,7 +88,10 @@ const Layout = () => {
                             />
                         </div>
 
-                        <main className="flex-1 overflow-auto p-4 lg:p-8 w-full max-w-[1600px] mx-auto relative">
+                        <main className={clsx(
+                            "flex-1 overflow-auto w-full relative",
+                            isFullWidthPage ? "p-0" : "p-4 lg:p-8 max-w-[1600px] mx-auto"
+                        )}>
 
                             <Outlet />
                         </main>

@@ -1,5 +1,6 @@
 import { useData } from '../context/DataContext';
 import type { Fund, FundTransaction } from '../types';
+import { safeAdd, safeSub, safePercent } from '../utils/financialUtils';
 
 export const useFunds = () => {
     const { data, updateData } = useData();
@@ -38,9 +39,13 @@ export const useFunds = () => {
             note
         };
 
-        const newAmount = type === 'deposit'
-            ? (fund.currentAmount || 0) + amount
-            : (fund.currentAmount || 0) - amount;
+        // Precise Math Update
+        let newAmount = 0;
+        if (type === 'deposit') {
+            newAmount = safeAdd(fund.currentAmount || 0, amount);
+        } else {
+            newAmount = safeSub(fund.currentAmount || 0, amount);
+        }
 
         const history = fund.history ? [newTx, ...fund.history] : [newTx];
 
@@ -78,7 +83,8 @@ export const useFunds = () => {
                 if (fund.autoSaveConfig.type === 'fixed') {
                     amountToSave = fund.autoSaveConfig.amount;
                 } else if (fund.autoSaveConfig.type === 'percentage') {
-                    amountToSave = Math.floor((availableBalance * fund.autoSaveConfig.amount) / 100);
+                    // Safe percentage calc
+                    amountToSave = safePercent(availableBalance, fund.autoSaveConfig.amount);
                 }
 
                 if (amountToSave > 0 && availableBalance >= amountToSave) {
@@ -95,10 +101,12 @@ export const useFunds = () => {
                     const newHistory = fund.history ? [newTx, ...fund.history] : [newTx];
                     fundsUpdated = true;
 
-                    // Update Fund
+                    // Update Fund Safe Add
+                    const newCurrentAmount = safeAdd(fund.currentAmount || 0, amountToSave);
+
                     return {
                         ...fund,
-                        currentAmount: (fund.currentAmount || 0) + amountToSave,
+                        currentAmount: newCurrentAmount,
                         history: newHistory,
                         autoSaveConfig: {
                             ...fund.autoSaveConfig,
@@ -112,8 +120,6 @@ export const useFunds = () => {
 
         if (fundsUpdated) {
             updateData({ funds: newFunds });
-            // We could show a toast here, but might be intrusive on load.
-            // toast.success("Auto-ahorro procesado");
         }
     };
 
