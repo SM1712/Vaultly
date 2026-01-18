@@ -254,7 +254,10 @@ const Reports = () => {
                                         ))}
                                     </Pie>
                                     <Tooltip
-                                        formatter={(value: number, name: string) => [`${currency}${value.toLocaleString()}`, name]}
+                                        formatter={(value: any, name: string | number, _props: unknown) => [
+                                            `${currency}${(typeof value === 'number' ? value : 0).toLocaleString()}`,
+                                            String(name)
+                                        ]}
                                         contentStyle={{ borderRadius: '12px' }}
                                     />
                                 </PieChart>
