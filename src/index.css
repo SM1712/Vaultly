@@ -174,6 +174,54 @@
     --color-primary: #5181b8;
 }
 
+/* NEW: Electric Pop (Ben-Day Dots Style) */
+:root[data-theme='pop'] {
+    --color-app-50: #eff6ff;
+    --color-app-100: #dbeafe;
+    --color-app-200: #bfdbfe;
+    --color-app-300: #93c5fd;
+    --color-app-400: #60a5fa;
+    --color-app-500: #3b82f6;
+    /* Electric Blue Base */
+    --color-app-600: #2563eb;
+    --color-app-700: #1d4ed8;
+    --color-app-800: #1e40af;
+    --color-app-900: #1e3a8a;
+    --color-app-950: #172554;
+    --color-primary: #3b82f6;
+}
+
+/* Global Pop Styles */
+:root[data-theme='pop'] body {
+    background-color: #3b82f6;
+    background-image: radial-gradient(#ffffff 20%, transparent 20%);
+    background-size: 20px 20px;
+    /* Big visible dots */
+    background-attachment: fixed;
+}
+
+/* Cleanup any Artastic overlays */
+:root[data-theme='pop'] body::after {
+    content: none;
+}
+
+/* Pop Cards: White with high contrast shadow to pop against the blue */
+:root[data-theme='pop'] .bg-white,
+:root[data-theme='pop'] .bg-zinc-50,
+:root[data-theme='pop'] .dark .bg-zinc-900 {
+    background-color: #ffffff !important;
+    border: 2px solid #1e3a8a !important;
+    /* Deep Blue Border */
+    box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.2) !important;
+    opacity: 1 !important;
+    /* No transparency here */
+}
+
+/* Force Light text on dark bg if needed, or rely on ThemeContext */
+:root[data-theme='pop'] {
+    color-scheme: light;
+}
+
 /* NEW: Comic Pop (Retro Yellow & Dark Coffee) */
 :root[data-theme='comic'] {
     --color-app-50: #fffbeb;

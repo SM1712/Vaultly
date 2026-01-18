@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 type Theme = 'dark' | 'light';
 // Updated Theme Styles
-export type ThemeStyle = 'classic' | 'clay' | 'mist' | 'royal' | 'bloom' | 'sage' | 'sand' | 'coffee' | 'nordic' | 'comic';
+export type ThemeStyle = 'classic' | 'clay' | 'mist' | 'royal' | 'bloom' | 'sage' | 'sand' | 'coffee' | 'nordic' | 'comic' | 'pop';
 
 interface ThemeContextType {
     theme: Theme; // Light/Dark
