@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 
 import { useTheme } from '../context/ThemeContext';
-import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, PiggyBank, Landmark, Calculator, X, Settings, Calendar } from 'lucide-react';
+import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, PiggyBank, Landmark, Calculator, X, Settings, Calendar, BarChart3, Download } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -40,6 +40,7 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
             items: [
                 { to: '/projects', icon: FolderKanban, label: 'Proyectos' },
                 { to: '/projections', icon: Calculator, label: 'Proyecciones' },
+                { to: '/reports', icon: BarChart3, label: 'Reportes' },
             ]
         }
     ];
@@ -103,6 +104,22 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
                 </nav>
 
                 <div className="p-4 mx-2 mb-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2 flex-shrink-0">
+                    <NavLink
+                        to="/download"
+                        className={({ isActive }) =>
+                            twMerge(
+                                clsx(
+                                    "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group font-medium text-sm",
+                                    "hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 stroke-2",
+                                    isActive ? "bg-indigo-50 dark:bg-indigo-900/30" : ""
+                                )
+                            )
+                        }
+                    >
+                        <Download size={18} />
+                        <span>Descargar App</span>
+                    </NavLink>
+
                     <button
                         onClick={() => {
                             onOpenSettings();

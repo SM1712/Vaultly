@@ -17,6 +17,8 @@ import Credits from './pages/Credits';
 import Projections from './pages/Projections';
 import Login from './pages/Login';
 import Calendar from './pages/Calendar';
+import Reports from './pages/Reports';
+import DownloadPage from './pages/Download';
 import { Component, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Toaster } from 'sonner';
@@ -100,6 +102,8 @@ function App() {
                           <Route path="projections" element={<Projections />} />
                           <Route path="projects" element={<Projects />} />
                           <Route path="calendar" element={<Calendar />} />
+                          <Route path="reports" element={<Reports />} />
+                          <Route path="download" element={<DownloadPage />} />
                           {/* Redirección por defecto */}
                           <Route path="*" element={<Navigate to="/" replace />} />
                         </Route>
