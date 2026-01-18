@@ -174,6 +174,91 @@
     --color-primary: #5181b8;
 }
 
+/* NEW: Comic Pop (Retro Yellow & Dark Coffee) */
+:root[data-theme='comic'] {
+    --color-app-50: #fffbeb;
+    /* Stronger Yellow Tint */
+    --color-app-100: #fef3c7;
+    /* Visible Yellow Background */
+    --color-app-200: #fde047;
+    /* Vibrant Yellow Accent */
+    --color-app-300: #fcd34d;
+    --color-app-400: #fbbf24;
+    --color-app-500: #f59e0b;
+    --color-app-600: #d97706;
+    --color-app-700: #b45309;
+    --color-app-800: #78350f;
+    --color-app-900: #451a03;
+    --color-app-950: #290e03;
+    --color-primary: #78350f;
+}
+
+/* Global Comic Styles Override */
+:root[data-theme='comic'] * {
+    --color-primary: #78350f;
+}
+
+/* Apply borders to common containers in Comic Mode */
+:root[data-theme='comic'] .bg-white,
+:root[data-theme='comic'] .bg-zinc-50,
+:root[data-theme='comic'] .dark .bg-zinc-900,
+:root[data-theme='comic'] .dark .bg-zinc-950,
+:root[data-theme='comic'] .bg-emerald-50,
+:root[data-theme='comic'] .bg-rose-50,
+:root[data-theme='comic'] input,
+:root[data-theme='comic'] select,
+:root[data-theme='comic'] textarea {
+    border: 2px solid #290e03 !important;
+    box-shadow: 4px 4px 0px 0px #290e03 !important;
+}
+
+/* Specific button overrides */
+:root[data-theme='comic'] button {
+    border: 2px solid #290e03 !important;
+    box-shadow: 3px 3px 0px 0px #290e03 !important;
+    transform: translate(-2px, -2px);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+:root[data-theme='comic'] button:active {
+    transform: translate(0px, 0px) !important;
+    box-shadow: none !important;
+}
+
+:root[data-theme='comic'] button.border-transparent {
+    border: 2px solid transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+:root[data-theme='comic'] button.border-transparent:hover {
+    border: 2px solid #290e03 !important;
+    background-color: #fde047 !important;
+    box-shadow: 3px 3px 0px 0px #290e03 !important;
+    transform: translate(-2px, -2px) !important;
+    color: #290e03 !important;
+}
+
+:root[data-theme='comic'] .rounded-3xl,
+:root[data-theme='comic'] .rounded-2xl,
+:root[data-theme='comic'] .rounded-xl,
+:root[data-theme='comic'] .rounded-lg {
+    border-radius: 8px !important;
+}
+
+/* Scrollbar Override for Comic Mode */
+:root[data-theme='comic'] ::-webkit-scrollbar-thumb {
+    background-color: #fde047 !important;
+    border: 2px solid #290e03 !important;
+}
+
+:root[data-theme='comic'] ::-webkit-scrollbar-track {
+    background-color: #fffbeb !important;
+    border-left: 2px solid #290e03 !important;
+}
+
 /* Force class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));
 

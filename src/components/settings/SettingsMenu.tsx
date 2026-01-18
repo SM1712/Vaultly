@@ -68,6 +68,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
         { id: 'mist', name: 'Soft Mist', color: 'bg-[#94a3b8]' }, // slate-400
         { id: 'royal', name: 'Soft Royal', color: 'bg-[#a78bfa]' }, // violet-400
         { id: 'bloom', name: 'Soft Bloom', color: 'bg-[#fb7185]' }, // rose-400
+        { id: 'comic', name: 'Comic Pop', color: 'bg-[#fde047] border-2 border-[#451a03]' }, // amber-300
     ];
 
     const currencies = ['$', '€', '£', '¥', 'COP', 'MXN', 'ARS', 'S/'];
