@@ -23,6 +23,7 @@ import { Component, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import LoadingScreen from './components/ui/LoadingScreen';
+import { ViewTransitionHandler } from './components/ui/ViewTransitionHandler';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -88,29 +89,31 @@ function App() {
               <CollaborationProvider>
                 <ThemeProvider>
                   <HashRouter>
-                    <Routes>
-                      <Route path="/login" element={<Login />} />
+                    <ViewTransitionHandler>
+                      <Routes>
+                        <Route path="/login" element={<Login />} />
 
-                      <Route element={<ProtectedRoute />}>
-                        <Route path="/" element={<Layout />}>
-                          <Route index element={<Dashboard />} />
-                          <Route path="expenses" element={<Expenses />} />
-                          <Route path="income" element={<Income />} />
-                          <Route path="goals" element={<Goals />} />
-                          <Route path="funds" element={<Funds />} />
-                          <Route path="credits" element={<Credits />} />
-                          <Route path="projections" element={<Projections />} />
-                          <Route path="projects" element={<Projects />} />
-                          <Route path="calendar" element={<Calendar />} />
-                          <Route path="reports" element={<Reports />} />
-                          <Route path="download" element={<DownloadPage />} />
-                          {/* Redirección por defecto */}
-                          <Route path="*" element={<Navigate to="/" replace />} />
+                        <Route element={<ProtectedRoute />}>
+                          <Route path="/" element={<Layout />}>
+                            <Route index element={<Dashboard />} />
+                            <Route path="expenses" element={<Expenses />} />
+                            <Route path="income" element={<Income />} />
+                            <Route path="goals" element={<Goals />} />
+                            <Route path="funds" element={<Funds />} />
+                            <Route path="credits" element={<Credits />} />
+                            <Route path="projections" element={<Projections />} />
+                            <Route path="projects" element={<Projects />} />
+                            <Route path="calendar" element={<Calendar />} />
+                            <Route path="reports" element={<Reports />} />
+                            <Route path="download" element={<DownloadPage />} />
+                            {/* Redirección por defecto */}
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                          </Route>
                         </Route>
-                      </Route>
-                    </Routes>
-                    <Toaster richColors position="top-center" />
-                    {/* <DebugFooter /> Removed per user request */}
+                      </Routes>
+                      <Toaster richColors position="top-center" />
+                      {/* <DebugFooter /> Removed per user request */}
+                    </ViewTransitionHandler>
                   </HashRouter>
                 </ThemeProvider>
               </CollaborationProvider>

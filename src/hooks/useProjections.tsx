@@ -91,7 +91,7 @@ export const useProjections = () => {
         updateProjections({ excludedIds: Array.from(currentExcluded) });
     };
 
-    const setActiveView = (view: 'structure' | 'scenarios') => {
+    const setActiveView = (view: 'structure' | 'scenarios' | 'vision') => {
         updateProjections({ activeView: view });
     };
 

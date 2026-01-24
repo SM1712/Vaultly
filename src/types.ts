@@ -152,6 +152,7 @@ export interface SimulatedTransaction {
     description: string;
     amount: number;
     type: 'income' | 'expense';
+    date?: string;
 }
 
 export interface ProjectionsData {
@@ -161,7 +162,7 @@ export interface ProjectionsData {
     simulatedGoalContributions: string[]; // IDs
     simulatedFundTransfers: Record<string, string>;
     excludedIds: string[];
-    activeView: 'structure' | 'scenarios';
+    activeView: 'structure' | 'scenarios' | 'vision';
     toggles: {
         includeGlobalBalance: boolean;
         includeFundsInBalance: boolean;
