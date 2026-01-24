@@ -24,6 +24,7 @@ import { useGamification } from '../../context/GamificationContext';
 import { AchievementsList } from '../gamification/AchievementsList';
 import { getDynamicAvatar } from '../../context/GamificationConstants';
 import { HelpCenter } from '../help/HelpCenter';
+import { NAV_SECTIONS } from '../../constants/navigation';
 
 
 interface SettingsMenuProps {
@@ -33,7 +34,7 @@ interface SettingsMenuProps {
 
 const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const { currency, setCurrency, goalPreferences, setGoalPreferences } = useSettings();
-    const { themeStyle, setThemeStyle } = useTheme();
+    const { themeStyle, setThemeStyle, navMode, setNavigationMode, customModeItems, toggleCustomModeItem } = useTheme();
     const { logout, user } = useAuth();
     const { data: appData } = useData();
     const { categories: incomeCats, addCategory: addIncomeCat, removeCategory: removeIncomeCat } = useCategories('income');
@@ -499,6 +500,97 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                             </button>
                                         ))}
                                     </div>
+                                </div>
+
+                                {/* Navigation Mode Section */}
+                                <div className="bg-zinc-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-800 mt-6">
+                                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-4">Modo de Navegación</h3>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                                        <button
+                                            onClick={() => setNavigationMode('normal')}
+                                            className={`p-4 rounded-xl border-2 text-left transition-all ${navMode === 'normal'
+                                                ? 'border-primary bg-primary/5'
+                                                : 'border-transparent bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                                                }`}
+                                        >
+                                            <span className={`block font-bold mb-1 ${navMode === 'normal' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'}`}>Normal</span>
+                                            <span className="text-xs text-zinc-500">Muestra todas las opciones disponibles.</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setNavigationMode('essential')}
+                                            className={`p-4 rounded-xl border-2 text-left transition-all ${navMode === 'essential'
+                                                ? 'border-primary bg-primary/5'
+                                                : 'border-transparent bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                                                }`}
+                                        >
+                                            <span className={`block font-bold mb-1 ${navMode === 'essential' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'}`}>Esencial</span>
+                                            <span className="text-xs text-zinc-500">Solo lo vital: Dashboard, Gastos e Ingresos.</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setNavigationMode('simple')}
+                                            className={`p-4 rounded-xl border-2 text-left transition-all ${navMode === 'simple'
+                                                ? 'border-primary bg-primary/5'
+                                                : 'border-transparent bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                                                }`}
+                                        >
+                                            <span className={`block font-bold mb-1 ${navMode === 'simple' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'}`}>Simple</span>
+                                            <span className="text-xs text-zinc-500">Experiencia balanceada con finanzas básicas.</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => setNavigationMode('custom')}
+                                            className={`p-4 rounded-xl border-2 text-left transition-all ${navMode === 'custom'
+                                                ? 'border-primary bg-primary/5'
+                                                : 'border-transparent bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                                                }`}
+                                        >
+                                            <span className={`block font-bold mb-1 ${navMode === 'custom' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'}`}>Personalizado</span>
+                                            <span className="text-xs text-zinc-500">Tú eliges qué ver y qué ocultar.</span>
+                                        </button>
+                                    </div>
+
+                                    {/* Custom Mode Configuration */}
+                                    {navMode === 'custom' && (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Elementos Visibles</p>
+                                                <button
+                                                    onClick={() => setNavigationMode('normal')} // This button is just decorative for UX flow or reset, actually maybe no button needed here.
+                                                    className="text-xs text-primary font-bold hover:underline hidden"
+                                                >
+                                                    Restablecer
+                                                </button>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                {NAV_SECTIONS.flatMap(s => s.items).map((item) => (
+                                                    <label
+                                                        key={item.id}
+                                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${customModeItems.includes(item.id)
+                                                            ? 'bg-white dark:bg-zinc-800 border-primary/50 shadow-sm'
+                                                            : 'bg-transparent border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                                                            }`}
+                                                    >
+                                                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${customModeItems.includes(item.id)
+                                                            ? 'bg-primary border-primary text-white'
+                                                            : 'border-zinc-300 dark:border-zinc-600'
+                                                            }`}>
+                                                            {customModeItems.includes(item.id) && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                                        </div>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="hidden"
+                                                            checked={customModeItems.includes(item.id)}
+                                                            onChange={() => toggleCustomModeItem(item.id)}
+                                                        />
+                                                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{item.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

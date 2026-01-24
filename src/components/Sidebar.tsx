@@ -1,12 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom';
 
 import { useTheme } from '../context/ThemeContext';
-import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, PiggyBank, Landmark, Calculator, X, Settings, Calendar, BarChart3, Download } from 'lucide-react';
+import { Moon, Sun, X, Settings, Download, PanelLeftClose } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 import { SyncStatus } from './SyncStatus';
 import { LogoCombined } from './ui/Logo';
+import { NAV_SECTIONS, ESSENTIAL_MODE_ITEMS, SIMPLE_MODE_ITEMS } from '../constants/navigation';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -15,7 +16,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
-    const { theme, toggleTheme } = useTheme();
+    const { theme, toggleTheme, toggleSidebarCollapsed, navMode, customModeItems } = useTheme();
     const location = useLocation();
 
     // Logic to keep user in Onboarding environment if they are already there
@@ -26,33 +27,22 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
         return path === '/' ? '/onboarding' : `/onboarding${path}`;
     };
 
-    const sections = [
-        {
-            title: undefined, // General items don't need a title
-            items: [
-                { to: getPath('/'), icon: LayoutDashboard, label: 'Dashboard' },
-                { to: getPath('/calendar'), icon: Calendar, label: 'Calendario' },
-            ]
-        },
-        {
-            title: 'Finanzas',
-            items: [
-                { to: getPath('/expenses'), icon: Wallet, label: 'Gastos' },
-                { to: getPath('/income'), icon: Receipt, label: 'Ingresos' },
-                { to: getPath('/goals'), icon: Target, label: 'Metas' },
-                { to: getPath('/funds'), icon: PiggyBank, label: 'Fondos' },
-                { to: getPath('/credits'), icon: Landmark, label: 'Créditos' },
-            ]
-        },
-        {
-            title: 'Gestión',
-            items: [
-                { to: getPath('/projects'), icon: FolderKanban, label: 'Proyectos' },
-                { to: getPath('/projections'), icon: Calculator, label: 'Proyecciones' },
-                { to: getPath('/reports'), icon: BarChart3, label: 'Reportes' },
-            ]
-        }
-    ];
+    // Filter and Process Sections
+    const sections = NAV_SECTIONS.map(section => ({
+        ...section,
+        items: section.items
+            .filter(item => {
+                if (navMode === 'normal') return true;
+                if (navMode === 'essential') return ESSENTIAL_MODE_ITEMS.includes(item.id);
+                if (navMode === 'simple') return SIMPLE_MODE_ITEMS.includes(item.id);
+                if (navMode === 'custom') return customModeItems.includes(item.id);
+                return true;
+            })
+            .map(item => ({
+                ...item,
+                to: getPath(item.to)
+            }))
+    })).filter(section => section.items.length > 0); // Hide empty sections
 
     return (
         <>
@@ -64,9 +54,18 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
             )}>
                 <div className="p-6 flex-shrink-0 flex items-center justify-between">
                     <LogoCombined />
-                    <button onClick={onClose} className="md:hidden text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
-                        <X size={20} />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={toggleSidebarCollapsed}
+                            className="hidden md:flex p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                            title="Ocultar menú lateral"
+                        >
+                            <PanelLeftClose size={20} />
+                        </button>
+                        <button onClick={onClose} className="md:hidden text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 <nav className="flex-1 px-4 overflow-y-auto no-scrollbar space-y-6">
