@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * ViewTransitionHandler (Link Interceptor Version)
@@ -10,10 +10,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
  */
 export function ViewTransitionHandler({ children }: { children: React.ReactNode }) {
     const navigate = useNavigate();
-    const location = useLocation();
-
-    // We use a ref to track if we explain why we are here
-    const isTransitioning = useRef(false);
 
     useEffect(() => {
         // Feature detection

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Wallet, GraduationCap, ArrowRight, LayoutGrid, Settings, Check, Landmark, Moon, Sun } from 'lucide-react';
+import { GraduationCap, ArrowRight, LayoutGrid, Settings, Check, Landmark, Moon, Sun } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { LogoCombined } from '../components/ui/Logo';
 import { useTheme } from '../context/ThemeContext';
