@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useData } from '../context/DataContext';
 import type { Goal } from '../types';
 import { toCents, fromCents, safeAdd, safeSub } from '../utils/financialUtils';
@@ -8,7 +9,7 @@ export const useGoals = () => {
     const goals: Goal[] = data.goals || [];
 
     // --- Helpers defined first to avoid ReferenceError ---
-    const getattrContributionsThisMonth = (goal: Goal, date: Date) => {
+    const getattrContributionsThisMonth = useCallback((goal: Goal, date: Date) => {
         if (!goal.history) return 0;
         const targetMonth = date.getMonth();
         const targetYear = date.getFullYear();
@@ -22,11 +23,11 @@ export const useGoals = () => {
             }
         });
         return fromCents(totalCents);
-    }
+    }, []);
 
     // --- Actions ---
 
-    const addGoal = (goalData: Omit<Goal, 'id' | 'currentAmount' | 'history'>) => {
+    const addGoal = useCallback((goalData: Omit<Goal, 'id' | 'currentAmount' | 'history'>) => {
         const newGoal: Goal = {
             id: crypto.randomUUID(),
             ...goalData,
@@ -35,19 +36,19 @@ export const useGoals = () => {
             history: []
         };
         updateData({ goals: [...goals, newGoal] });
-    };
+    }, [goals, updateData]);
 
-    const updateGoal = (id: string, updates: Partial<Goal>) => {
+    const updateGoal = useCallback((id: string, updates: Partial<Goal>) => {
         const newGoals = goals.map(g => g.id === id ? { ...g, ...updates } : g);
         updateData({ goals: newGoals });
-    };
+    }, [goals, updateData]);
 
-    const deleteGoal = (id: string) => {
+    const deleteGoal = useCallback((id: string) => {
         const newGoals = goals.filter(g => g.id !== id);
         updateData({ goals: newGoals });
-    };
+    }, [goals, updateData]);
 
-    const addContribution = (id: string, amount: number, note?: string) => {
+    const addContribution = useCallback((id: string, amount: number, note?: string) => {
         const goal = goals.find(g => g.id === id);
         if (!goal) return;
 
@@ -72,10 +73,11 @@ export const useGoals = () => {
             history
         };
 
-        updateGoal(id, updatedGoal);
-    };
+        const newGoals = goals.map(g => g.id === id ? updatedGoal : g);
+        updateData({ goals: newGoals });
+    }, [goals, updateData]);
 
-    const withdraw = (id: string, amount: number, note?: string, recoveryStrategy?: 'spread' | 'catch_up') => {
+    const withdraw = useCallback((id: string, amount: number, note?: string, recoveryStrategy?: 'spread' | 'catch_up') => {
         const goal = goals.find(g => g.id === id);
         if (!goal) return;
 
@@ -100,12 +102,13 @@ export const useGoals = () => {
             history
         };
 
-        updateGoal(id, updatedGoal);
-    };
+        const newGoals = goals.map(g => g.id === id ? updatedGoal : g);
+        updateData({ goals: newGoals });
+    }, [goals, updateData]);
 
-    const contributeToGoal = (id: string, amount: number) => {
+    const contributeToGoal = useCallback((id: string, amount: number) => {
         addContribution(id, amount, 'Cuota Mensual');
-    };
+    }, [addContribution]);
 
     // --- Deterministic Random Helper ---
     const pseudoRandom = (seed: number) => {
@@ -113,7 +116,7 @@ export const useGoals = () => {
         return x - Math.floor(x);
     };
 
-    const getGoalMonthlyWeights = (goal: Goal): number[] => {
+    const getGoalMonthlyWeights = useCallback((goal: Goal): number[] => {
         const start = new Date(goal.startDate);
         const end = new Date(goal.deadline);
         const totalMonths = Math.max(1, (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1);
@@ -128,10 +131,10 @@ export const useGoals = () => {
             weights.push(weight);
         }
         return weights;
-    };
+    }, []);
 
     // Calculate dynamic monthly quota based on Strategy
-    const getMonthlyQuota = (goal: Goal, referenceDate: Date = new Date(), simulatedAdditionalAmount: number = 0): number => {
+    const getMonthlyQuota = useCallback((goal: Goal, referenceDate: Date = new Date(), simulatedAdditionalAmount: number = 0): number => {
         if (!goal.deadline) return 0;
 
         const today = new Date(referenceDate);
@@ -201,16 +204,16 @@ export const useGoals = () => {
         const amount = idealPerMonth + deficit;
 
         return Math.ceil(amount * 100) / 100;
-    };
+    }, [getattrContributionsThisMonth, getGoalMonthlyWeights]);
 
-    const isGoalPaidThisMonth = (goal: Goal) => {
+    const isGoalPaidThisMonth = useCallback((goal: Goal) => {
         const nav = new Date();
         const contributionsThisMonth = getattrContributionsThisMonth(goal, nav);
         const required = getMonthlyQuota(goal);
         return contributionsThisMonth >= (required * 0.95);
-    };
+    }, [getattrContributionsThisMonth, getMonthlyQuota]);
 
-    const getTotalSavingsAtDate = (date: Date) => {
+    const getTotalSavingsAtDate = useCallback((date: Date) => {
         // Robust End of Period
         const endOfPeriod = endOfDay(new Date(date.getFullYear(), date.getMonth() + 1, 0));
 
@@ -229,16 +232,16 @@ export const useGoals = () => {
         }, 0);
 
         return fromCents(totalCents);
-    };
+    }, [goals]);
 
-    const getMonthsRemaining = (goal: Goal) => {
+    const getMonthsRemaining = useCallback((goal: Goal) => {
         if (!goal.deadline) return 0;
         const today = new Date();
         const deadlineDate = new Date(goal.deadline);
         const yearsDiff = deadlineDate.getFullYear() - today.getFullYear();
         const monthsDiff = deadlineDate.getMonth() - today.getMonth();
         return Math.max(0, (yearsDiff * 12) + monthsDiff);
-    };
+    }, []);
 
     return {
         goals,

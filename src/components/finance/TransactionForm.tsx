@@ -314,6 +314,7 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialDat
             </div>
 
             <button
+                id="add-btn"
                 type="submit"
                 disabled={isSubmitting || !amount || !category}
                 className={twMerge(

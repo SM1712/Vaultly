@@ -10,7 +10,6 @@ import { ProjectsProvider } from '../context/ProjectsContext';
 import { Menu } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { clsx } from 'clsx';
-import OnboardingModal from '../components/onboarding/OnboardingModal';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import { useGamification } from '../context/GamificationContext';
 
@@ -99,7 +98,7 @@ const Layout = () => {
                         <MobileQuickAdd />
                         <SettingsMenu isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
                         <GlobalLevelUpManager />
-                        <OnboardingModal />
+                        {/* <OnboardingModal /> Legacy removed */}
                         <Toaster position="top-center" />
                     </div>
                 </ProjectsProvider>

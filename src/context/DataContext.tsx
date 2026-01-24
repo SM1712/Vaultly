@@ -14,7 +14,7 @@ interface DataContextType {
     resetData: () => Promise<void>;
 }
 
-const DataContext = createContext<DataContextType | undefined>(undefined);
+export const DataContext = createContext<DataContextType | undefined>(undefined);
 
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {

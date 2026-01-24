@@ -15,7 +15,7 @@ import {
     PlayCircle, PauseCircle, Database,
     Download, Upload, Bomb, Radiation, RefreshCw, Siren,
     LayoutGrid, Palette, List, Zap, History, Sparkles, ChevronRight, SlidersHorizontal, Trophy, Bell,
-    Target, Users
+    Target, Users, Rocket
 } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import Logo from '../ui/Logo';
@@ -1107,8 +1107,34 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                         )}
 
                         {activeTab === 'help' && (
-                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 h-full">
-                                <HelpCenter />
+                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
+                                {/* Tuition Banner */}
+                                <div className="mb-6 p-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl">
+                                    <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 flex items-center justify-between">
+                                        <div>
+                                            <h4 className="font-black text-lg text-zinc-900 dark:text-white flex items-center gap-2">
+                                                <Rocket className="text-indigo-500" /> Entrenamiento Básico
+                                            </h4>
+                                            <p className="text-sm text-zinc-500 max-w-md mt-1">
+                                                Aprende a usar Vaultly en un entorno de simulación seguro.
+                                                Tus datos reales no se verán afectados.
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                onClose();
+                                                window.location.hash = '#/onboarding';
+                                            }}
+                                            className="px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold rounded-xl hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-2"
+                                        >
+                                            <PlayCircle size={20} />
+                                            Iniciar Tutorial
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-y-auto">
+                                    <HelpCenter />
+                                </div>
                             </div>
                         )}
                     </div>

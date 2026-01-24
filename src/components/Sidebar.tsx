@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 import { useTheme } from '../context/ThemeContext';
 import { LayoutDashboard, Wallet, Receipt, Target, FolderKanban, Moon, Sun, PiggyBank, Landmark, Calculator, X, Settings, Calendar, BarChart3, Download } from 'lucide-react';
@@ -16,31 +16,40 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
     const { theme, toggleTheme } = useTheme();
+    const location = useLocation();
+
+    // Logic to keep user in Onboarding environment if they are already there
+    const isOnboarding = location.pathname.startsWith('/onboarding');
+    const getPath = (path: string) => {
+        if (!isOnboarding) return path;
+        // If we are in onboarding, force all sidebar links to stay in /onboarding prefix
+        return path === '/' ? '/onboarding' : `/onboarding${path}`;
+    };
 
     const sections = [
         {
             title: undefined, // General items don't need a title
             items: [
-                { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-                { to: '/calendar', icon: Calendar, label: 'Calendario' },
+                { to: getPath('/'), icon: LayoutDashboard, label: 'Dashboard' },
+                { to: getPath('/calendar'), icon: Calendar, label: 'Calendario' },
             ]
         },
         {
             title: 'Finanzas',
             items: [
-                { to: '/expenses', icon: Wallet, label: 'Gastos' },
-                { to: '/income', icon: Receipt, label: 'Ingresos' },
-                { to: '/goals', icon: Target, label: 'Metas' },
-                { to: '/funds', icon: PiggyBank, label: 'Fondos' },
-                { to: '/credits', icon: Landmark, label: 'Créditos' },
+                { to: getPath('/expenses'), icon: Wallet, label: 'Gastos' },
+                { to: getPath('/income'), icon: Receipt, label: 'Ingresos' },
+                { to: getPath('/goals'), icon: Target, label: 'Metas' },
+                { to: getPath('/funds'), icon: PiggyBank, label: 'Fondos' },
+                { to: getPath('/credits'), icon: Landmark, label: 'Créditos' },
             ]
         },
         {
             title: 'Gestión',
             items: [
-                { to: '/projects', icon: FolderKanban, label: 'Proyectos' },
-                { to: '/projections', icon: Calculator, label: 'Proyecciones' },
-                { to: '/reports', icon: BarChart3, label: 'Reportes' },
+                { to: getPath('/projects'), icon: FolderKanban, label: 'Proyectos' },
+                { to: getPath('/projections'), icon: Calculator, label: 'Proyecciones' },
+                { to: getPath('/reports'), icon: BarChart3, label: 'Reportes' },
             ]
         }
     ];
@@ -84,6 +93,7 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
                                             )
                                         )
                                     }
+                                    id={`nav-${item.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}
                                 >
                                     {({ isActive }) => (
                                         <>
@@ -151,4 +161,3 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
 };
 
 export default Sidebar;
-

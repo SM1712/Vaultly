@@ -86,6 +86,7 @@ const MobileQuickAdd = () => {
         return (
             <button
                 onClick={() => setIsOpen(true)}
+                id="quick-add-btn"
                 className="md:hidden fixed bottom-6 right-6 w-16 h-16 bg-zinc-900 dark:bg-emerald-600 text-white rounded-full shadow-2xl shadow-zinc-900/40 dark:shadow-emerald-600/40 flex items-center justify-center active:scale-95 transition-transform z-50"
                 aria-label="Agregar transacción"
             >

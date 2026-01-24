@@ -633,7 +633,7 @@ export default function Projections() {
                         </div>
 
                         {/* Balance */}
-                        <div className="mb-6 text-center">
+                        <div className="mb-6 text-center" id="projections-summary">
                             <span className="text-zinc-400 text-xs font-bold uppercase tracking-wide opacity-70">Saldo Final Proyectado</span>
                             <div className={clsx("text-5xl font-black tracking-tighter transition-all duration-300 mt-1", finalBalance < 0 ? "text-rose-500" : "text-zinc-900 dark:text-zinc-100")}>
                                 <span className="text-2xl tracking-normal text-zinc-300 dark:text-zinc-700 mr-1">{currency}</span>

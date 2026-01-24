@@ -148,6 +148,7 @@ export const GoalForm = ({ formData, setFormData, onSubmit, editingId, onCancel,
                     </button>
                 )}
                 <button
+                    id="create-goal-btn"
                     type="submit"
                     className={clsx("flex-[2] py-4 rounded-xl font-bold px-4 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 whitespace-nowrap",
                         editingId
@@ -170,8 +171,8 @@ const Goals = () => {
     const { currency, goalPreferences } = useSettings();
 
     // Calculate Available Balance
-    const totalSaved = goals.reduce((acc, goal) => acc + (goal.currentAmount || 0), 0);
-    const availableBalance = (totalIncome - totalExpenses) - totalSaved;
+    const totalSaved = React.useMemo(() => goals.reduce((acc, goal) => acc + (goal.currentAmount || 0), 0), [goals]);
+    const availableBalance = React.useMemo(() => (totalIncome - totalExpenses) - totalSaved, [totalIncome, totalExpenses, totalSaved]);
 
     // State for Create/Edit
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -328,7 +329,7 @@ const Goals = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Desktop Side Form - Hidden on Mobile */}
                 <div className="hidden lg:block lg:col-span-1">
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm dark:shadow-none sticky top-4">
+                    <div id="goal-form-container" className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm dark:shadow-none sticky top-4">
                         <GoalForm
                             formData={formData}
                             setFormData={setFormData}

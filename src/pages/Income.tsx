@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useTransactions } from '../hooks/useTransactions';
 import type { Transaction } from '../types';
@@ -18,14 +18,14 @@ const Income = () => {
     const { currency } = useSettings();
 
     // Filter transactions by month
-    const filteredTransactions = transactions.filter(t => {
+    const filteredTransactions = useMemo(() => transactions.filter(t => {
         const [year, month] = t.date.split('-').map(Number);
         return month === (selectedDate.getMonth() + 1) && year === selectedDate.getFullYear();
-    });
+    }), [transactions, selectedDate]);
 
-    const filteredTotal = filteredTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+    const filteredTotal = useMemo(() => filteredTransactions.reduce((acc, curr) => acc + curr.amount, 0), [filteredTransactions]);
 
-    const getByCategory = () => {
+    const getByCategory = useCallback(() => {
         const grouped = filteredTransactions.reduce((acc, curr) => {
             const categoryName = curr.category || 'Sin Categoría';
             acc[categoryName] = (acc[categoryName] || 0) + curr.amount;
@@ -33,7 +33,7 @@ const Income = () => {
         }, {} as Record<string, number>);
 
         return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-    };
+    }, [filteredTransactions]);
 
     const { checkAchievement, addXp } = useGamification();
 

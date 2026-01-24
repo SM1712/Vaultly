@@ -16,6 +16,7 @@ import Funds from './pages/Funds';
 import Credits from './pages/Credits';
 import Projections from './pages/Projections';
 import Login from './pages/Login';
+import OnboardingPage from './pages/OnboardingPage';
 import Calendar from './pages/Calendar';
 import Reports from './pages/Reports';
 import DownloadPage from './pages/Download';
@@ -109,6 +110,21 @@ function App() {
                             {/* Redirección por defecto */}
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Route>
+                        </Route>
+
+                        {/* Onboarding / Simulation Routes - Isolated Environment */}
+                        <Route path="/onboarding" element={<OnboardingPage />}>
+                          <Route index element={<Dashboard />} />
+                          <Route path="expenses" element={<Expenses />} />
+                          <Route path="income" element={<Income />} />
+                          <Route path="goals" element={<Goals />} />
+                          <Route path="funds" element={<Funds />} />
+                          <Route path="credits" element={<Credits />} />
+                          <Route path="projections" element={<Projections />} />
+                          <Route path="projects" element={<Projects />} />
+                          <Route path="calendar" element={<Calendar />} />
+                          <Route path="reports" element={<Reports />} />
+                          <Route path="*" element={<Navigate to="/onboarding" replace />} />
                         </Route>
                       </Routes>
                       <Toaster richColors position="top-center" />
