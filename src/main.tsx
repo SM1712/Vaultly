@@ -4,10 +4,14 @@ import { FinanceProvider } from './context/FinanceContext.tsx';
 import './index.css';
 import App from './App.tsx';
 
+import { ThemeProvider } from './context/ThemeContext';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <FinanceProvider>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </FinanceProvider>
   </StrictMode>,
 );

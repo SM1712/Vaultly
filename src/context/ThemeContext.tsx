@@ -2,16 +2,32 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
 type Theme = 'dark' | 'light';
-// Updated Theme Styles
 export type ThemeStyle = 'classic' | 'clay' | 'mist' | 'royal' | 'bloom' | 'sage' | 'sand' | 'coffee' | 'nordic' | 'comic' | 'pop';
 
+export type SidebarPosition = 'left' | 'right' | 'top' | 'bottom';
+export type SidebarVisibility = 'pinned' | 'auto' | 'floating';
+
 interface ThemeContextType {
-    theme: Theme; // Light/Dark
-    themeStyle: ThemeStyle; // Color Palette
+    theme: Theme;
+    themeStyle: ThemeStyle;
     toggleTheme: () => void;
     setThemeStyle: (style: ThemeStyle) => void;
+
+    // Legacy support (to be deprecated or mapped to visibility)
     isSidebarCollapsed: boolean;
     toggleSidebarCollapsed: () => void;
+
+    // New Navigation Config
+    sidebarPosition: SidebarPosition;
+    setSidebarPosition: (pos: SidebarPosition) => void;
+    sidebarVisibility: SidebarVisibility;
+    setSidebarVisibility: (vis: SidebarVisibility) => void;
+
+    // Tabs
+    openTabs: string[];
+    addTab: (path: string) => void;
+    closeTab: (path: string) => void;
+
     // Navigation Mode
     navMode: 'normal' | 'simple' | 'essential' | 'custom';
     setNavigationMode: (mode: 'normal' | 'simple' | 'essential' | 'custom') => void;
@@ -22,19 +38,17 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-    // Mode (Light/Dark) - DEFAULT LIGHT
+    // Mode (Light/Dark)
     const [theme, setTheme] = useState<Theme>(() => {
-        const saved = localStorage.getItem('vault_theme');
-        return (saved as Theme) || 'light';
+        return (localStorage.getItem('vault_theme') as Theme) || 'light';
     });
 
     // Style (Color Palette)
     const [themeStyle, setThemeStyleState] = useState<ThemeStyle>(() => {
-        const saved = localStorage.getItem('vault_theme_style');
-        return (saved as ThemeStyle) || 'classic';
+        return (localStorage.getItem('vault_theme_style') as ThemeStyle) || 'classic';
     });
 
-    // Apply Mode (Light/Dark)
+    // Apply Mode
     useEffect(() => {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
@@ -42,10 +56,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('vault_theme', theme);
     }, [theme]);
 
-    // Apply Style (Attribute for CSS variables)
+    // Apply Style
     useEffect(() => {
         const root = window.document.documentElement;
-        // If classic, remove attribute to fallback to default :root
         if (themeStyle === 'classic') {
             root.removeAttribute('data-theme');
         } else {
@@ -54,18 +67,29 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('vault_theme_style', themeStyle);
     }, [themeStyle]);
 
-    const toggleTheme = () => {
-        setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    // New Navigation Configuration
+    const [sidebarPosition, setSidebarPositionState] = useState<SidebarPosition>(() => {
+        return (localStorage.getItem('vault_sidebar_position') as SidebarPosition) || 'left';
+    });
+
+    const [sidebarVisibility, setSidebarVisibilityState] = useState<SidebarVisibility>(() => {
+        return (localStorage.getItem('vault_sidebar_visibility') as SidebarVisibility) || 'pinned';
+    });
+
+    const setSidebarPosition = (pos: SidebarPosition) => {
+        setSidebarPositionState(pos);
+        localStorage.setItem('vault_sidebar_position', pos);
     };
 
-    const setThemeStyle = (style: ThemeStyle) => {
-        setThemeStyleState(style);
+    const setSidebarVisibility = (vis: SidebarVisibility) => {
+        setSidebarVisibilityState(vis);
+        localStorage.setItem('vault_sidebar_visibility', vis);
     };
 
-    // Sidebar State
+    // Legacy Sidebar State (Mapped to visibility for backward compatibility if needed)
+    // We keep this for now to not break existing calls, but logic might shift.
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
-        const saved = localStorage.getItem('vault_sidebar_collapsed');
-        return saved === 'true';
+        return localStorage.getItem('vault_sidebar_collapsed') === 'true';
     });
 
     const toggleSidebarCollapsed = () => {
@@ -80,6 +104,31 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const [navMode, setNavMode] = useState<'normal' | 'simple' | 'essential' | 'custom'>(() => {
         return (localStorage.getItem('vault_nav_mode') as 'normal' | 'simple' | 'essential' | 'custom') || 'normal';
     });
+
+    // OPEN TABS STATE
+    const [openTabs, setOpenTabs] = useState<string[]>(() => {
+        const saved = localStorage.getItem('vault_open_tabs');
+        // Default to dashboard if empty
+        return saved ? JSON.parse(saved) : ['/'];
+    });
+
+    const addTab = (path: string) => {
+        setOpenTabs(prev => {
+            if (prev.includes(path)) return prev;
+            const newTabs = [...prev, path];
+            localStorage.setItem('vault_open_tabs', JSON.stringify(newTabs));
+            return newTabs;
+        });
+    };
+
+    const closeTab = (path: string) => {
+        setOpenTabs(prev => {
+            if (prev.length <= 1) return prev; // Don't close last tab
+            const newTabs = prev.filter(p => p !== path);
+            localStorage.setItem('vault_open_tabs', JSON.stringify(newTabs));
+            return newTabs;
+        });
+    };
 
     // Custom Mode Memory (Persisted)
     const [customModeItems, setCustomModeItems] = useState<string[]>(() => {
@@ -102,6 +151,14 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    };
+
+    const setThemeStyle = (style: ThemeStyle) => {
+        setThemeStyleState(style);
+    };
+
     return (
         <ThemeContext.Provider value={{
             theme,
@@ -110,10 +167,17 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
             setThemeStyle,
             isSidebarCollapsed,
             toggleSidebarCollapsed,
+            sidebarPosition,
+            setSidebarPosition,
+            sidebarVisibility,
+            setSidebarVisibility,
             navMode,
             setNavigationMode,
             customModeItems,
-            toggleCustomModeItem
+            toggleCustomModeItem,
+            openTabs,
+            addTab,
+            closeTab
         }}>
             {children}
         </ThemeContext.Provider>

@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { ThemeProvider } from './context/ThemeContext';
+// import { ThemeProvider } from './context/ThemeContext'; // Moved to main.tsx
+
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider, useData } from './context/DataContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -88,32 +89,13 @@ function App() {
           <NotificationProvider>
             <GamificationProvider>
               <CollaborationProvider>
-                <ThemeProvider>
-                  <HashRouter>
-                    <ViewTransitionHandler>
-                      <Routes>
-                        <Route path="/login" element={<Login />} />
+                <HashRouter>
+                  <ViewTransitionHandler>
+                    <Routes>
+                      <Route path="/login" element={<Login />} />
 
-                        <Route element={<ProtectedRoute />}>
-                          <Route path="/" element={<Layout />}>
-                            <Route index element={<Dashboard />} />
-                            <Route path="expenses" element={<Expenses />} />
-                            <Route path="income" element={<Income />} />
-                            <Route path="goals" element={<Goals />} />
-                            <Route path="funds" element={<Funds />} />
-                            <Route path="credits" element={<Credits />} />
-                            <Route path="projections" element={<Projections />} />
-                            <Route path="projects" element={<Projects />} />
-                            <Route path="calendar" element={<Calendar />} />
-                            <Route path="reports" element={<Reports />} />
-                            <Route path="download" element={<DownloadPage />} />
-                            {/* Redirección por defecto */}
-                            <Route path="*" element={<Navigate to="/" replace />} />
-                          </Route>
-                        </Route>
-
-                        {/* Onboarding / Simulation Routes - Isolated Environment */}
-                        <Route path="/onboarding" element={<OnboardingPage />}>
+                      <Route element={<ProtectedRoute />}>
+                        <Route path="/" element={<Layout />}>
                           <Route index element={<Dashboard />} />
                           <Route path="expenses" element={<Expenses />} />
                           <Route path="income" element={<Income />} />
@@ -124,14 +106,31 @@ function App() {
                           <Route path="projects" element={<Projects />} />
                           <Route path="calendar" element={<Calendar />} />
                           <Route path="reports" element={<Reports />} />
-                          <Route path="*" element={<Navigate to="/onboarding" replace />} />
+                          <Route path="download" element={<DownloadPage />} />
+                          {/* Redirección por defecto */}
+                          <Route path="*" element={<Navigate to="/" replace />} />
                         </Route>
-                      </Routes>
-                      <Toaster richColors position="top-center" />
-                      {/* <DebugFooter /> Removed per user request */}
-                    </ViewTransitionHandler>
-                  </HashRouter>
-                </ThemeProvider>
+                      </Route>
+
+                      {/* Onboarding / Simulation Routes - Isolated Environment */}
+                      <Route path="/onboarding" element={<OnboardingPage />}>
+                        <Route index element={<Dashboard />} />
+                        <Route path="expenses" element={<Expenses />} />
+                        <Route path="income" element={<Income />} />
+                        <Route path="goals" element={<Goals />} />
+                        <Route path="funds" element={<Funds />} />
+                        <Route path="credits" element={<Credits />} />
+                        <Route path="projections" element={<Projections />} />
+                        <Route path="projects" element={<Projects />} />
+                        <Route path="calendar" element={<Calendar />} />
+                        <Route path="reports" element={<Reports />} />
+                        <Route path="*" element={<Navigate to="/onboarding" replace />} />
+                      </Route>
+                    </Routes>
+                    <Toaster richColors position="top-center" />
+                    {/* <DebugFooter /> Removed per user request */}
+                  </ViewTransitionHandler>
+                </HashRouter>
               </CollaborationProvider>
             </GamificationProvider>
           </NotificationProvider>

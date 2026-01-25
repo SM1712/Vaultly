@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    body {
+        overflow-x: hidden;
+    }
+}
+
 :root {
     /* Map Zinc to our Dynamic App Variables */
     --color-zinc-50: var(--color-app-50);

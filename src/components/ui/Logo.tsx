@@ -33,18 +33,20 @@ const Logo = ({ className = "", size = 32, color }: LogoProps) => {
     );
 };
 
-export const LogoCombined = ({ className = "" }: { className?: string }) => {
+export const LogoCombined = ({ className = "", showText = true }: { className?: string; showText?: boolean }) => {
     return (
         <div className={`flex items-center gap-3 ${className}`}>
             <Logo size={28} />
-            <div className="flex flex-col">
-                <span className="font-mono font-bold text-lg tracking-wider leading-none text-zinc-900 dark:text-zinc-100">
-                    VAULTLY
-                </span>
-                <span className="text-[9px] font-medium tracking-widest text-zinc-400 uppercase">
-                    Finance
-                </span>
-            </div>
+            {showText && (
+                <div className="flex flex-col animate-in fade-in duration-200">
+                    <span className="font-mono font-bold text-lg tracking-wider leading-none text-zinc-900 dark:text-zinc-100">
+                        VAULTLY
+                    </span>
+                    <span className="text-[9px] font-medium tracking-widest text-zinc-400 uppercase">
+                        Finance
+                    </span>
+                </div>
+            )}
         </div>
     )
 }

@@ -46,22 +46,41 @@ const Layout = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const location = useLocation();
-    const { isSidebarCollapsed, toggleSidebarCollapsed } = useTheme();
+    const { isSidebarCollapsed, toggleSidebarCollapsed, sidebarPosition, sidebarVisibility } = useTheme();
 
     // Projections needs full width without padding
     const isFullWidthPage = location.pathname === '/projections';
 
-    // We need to access funds and balance here, but `useFunds` and `useBalance` 
-    // must be used inside the providers. We will create a new component `AutoDepositManager`
-    // inside the providers to handle this.
+    // Desktop Layout Logic
+    const isVertical = sidebarPosition === 'left' || sidebarPosition === 'right';
+    const isFloating = sidebarVisibility === 'floating';
+    const isAuto = sidebarVisibility === 'auto';
+    const isOverlayMode = isFloating || isAuto;
+
+    // Determine the main flex container direction
+    const layoutClasses = clsx(
+        "flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300 animate-enter-app",
+        !isOverlayMode && sidebarPosition === 'left' && "flex-col lg:flex-row",
+        !isOverlayMode && sidebarPosition === 'right' && "flex-col lg:flex-row-reverse",
+        !isOverlayMode && sidebarPosition === 'top' && "flex-col",
+        !isOverlayMode && sidebarPosition === 'bottom' && "flex-col-reverse",
+        isOverlayMode && "flex-col lg:flex-row"
+    );
+
+    // Padding Logic
+    const mainStyles: React.CSSProperties = {};
+    if (!isOverlayMode) {
+        if (sidebarPosition === 'top') mainStyles.paddingTop = '4rem';
+        if (sidebarPosition === 'bottom') mainStyles.paddingBottom = '4rem';
+    }
 
     return (
         <FinanceProvider>
             <SettingsProvider>
                 <ProjectsProvider>
                     <AutoDepositManager />
-                    <div className="flex flex-col lg:flex-row h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300 animate-enter-app">
-                        {/* Mobile Header - Push content down */}
+                    <div className={layoutClasses}>
+                        {/* Mobile Header */}
                         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 shrink-0 z-30">
                             <LogoCombined />
                             <div className="flex gap-2">
@@ -82,12 +101,11 @@ const Layout = () => {
                             />
                         )}
 
-                        {/* Sidebar */}
+                        {/* Sidebar Wrapper */}
                         <div className={clsx(
-                            "fixed inset-y-0 left-0 z-[60] transform transition-transform duration-200 ease-in-out",
-                            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
-                            // If NOT collapsed (normal mode), force show on desktop
-                            !isSidebarCollapsed && "lg:static lg:translate-x-0"
+                            "z-[60] lg:z-40 h-full", // Added h-full
+                            isMobileMenuOpen ? "fixed inset-0 pointer-events-none" : "",
+                            !isFloating && isVertical && "flex-shrink-0"
                         )}>
                             <Sidebar
                                 isOpen={isMobileMenuOpen}
@@ -96,22 +114,26 @@ const Layout = () => {
                             />
                         </div>
 
-                        <main className={clsx(
-                            "flex-1 overflow-auto w-full relative",
-                            isFullWidthPage ? "p-0" : "p-4 lg:p-8 max-w-[1600px] mx-auto"
-                        )}>
-                            {/* Desktop: Show Trigger when sidebar is collapsed */}
-                            {isSidebarCollapsed && (
+                        <main
+                            className={clsx(
+                                "flex-1 overflow-auto w-full relative transition-all duration-300",
+                                isFullWidthPage ? "p-0" : "p-4 lg:p-8 max-w-[1600px] mx-auto"
+                            )}
+                            style={mainStyles}
+                        >
+                            {/* Desktop: Show Trigger when sidebar is collapsed (Only for Vertical Pinned) */}
+                            {isSidebarCollapsed && isVertical && !isFloating && sidebarVisibility === 'pinned' && (
                                 <div className={clsx(
                                     "hidden lg:flex z-40",
-                                    isFullWidthPage ? "absolute top-4 left-4" : "mb-4"
+                                    isFullWidthPage ? "absolute top-4 left-4" : "mb-4",
+                                    sidebarPosition === 'right' && "justify-end"
                                 )}>
                                     <button
                                         onClick={toggleSidebarCollapsed}
                                         className="p-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-900 transition-all"
                                         title="Mostrar menú lateral"
                                     >
-                                        <PanelLeftOpen size={20} />
+                                        <PanelLeftOpen size={20} className={sidebarPosition === 'right' ? "rotate-180" : ""} />
                                     </button>
                                 </div>
                             )}
@@ -122,7 +144,6 @@ const Layout = () => {
                         <MobileQuickAdd />
                         <SettingsMenu isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
                         <GlobalLevelUpManager />
-                        {/* <OnboardingModal /> Legacy removed */}
                         <Toaster position="top-center" />
                     </div>
                 </ProjectsProvider>

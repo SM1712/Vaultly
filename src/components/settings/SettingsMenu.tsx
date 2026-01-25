@@ -15,8 +15,9 @@ import {
     PlayCircle, PauseCircle, Database,
     Download, Upload, Bomb, Radiation, RefreshCw, Siren,
     LayoutGrid, Palette, List, Zap, History, Sparkles, ChevronRight, SlidersHorizontal, Trophy, Bell,
-    Target, Users, Rocket
+    Target, Users, Rocket, PanelLeftClose
 } from 'lucide-react';
+import { clsx } from 'clsx';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import Logo from '../ui/Logo';
 import { useLocalNotifications } from '../../hooks/useLocalNotifications';
@@ -34,7 +35,13 @@ interface SettingsMenuProps {
 
 const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     const { currency, setCurrency, goalPreferences, setGoalPreferences } = useSettings();
-    const { themeStyle, setThemeStyle, navMode, setNavigationMode, customModeItems, toggleCustomModeItem } = useTheme();
+    const {
+        themeStyle, setThemeStyle,
+        navMode, setNavigationMode,
+        customModeItems, toggleCustomModeItem,
+        sidebarPosition, setSidebarPosition,
+        sidebarVisibility, setSidebarVisibility
+    } = useTheme();
     const { logout, user } = useAuth();
     const { data: appData } = useData();
     const { categories: incomeCats, addCategory: addIncomeCat, removeCategory: removeIncomeCat } = useCategories('income');
@@ -134,9 +141,10 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     };
 
     const handleExport = () => {
-        const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
+        const jsonString = `data: text / json; chatset = utf - 8, ${encodeURIComponent(
             JSON.stringify(appData)
-        )}`;
+        )
+            } `;
         const link = document.createElement("a");
         link.href = jsonString;
         link.download = `vault_backup_${new Date().toISOString().split('T')[0]}.json`;
@@ -180,7 +188,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
     };
 
     const handleDeleteCategory = (category: string) => {
-        if (confirm(`¿Eliminar categoría "${category}"? Las transacciones pasarán a "Desconocido".`)) {
+        if (confirm(`¿Eliminar categoría "${category}" ? Las transacciones pasarán a "Desconocido".`)) {
             if (catType === 'income') removeIncomeCat(category);
             else removeExpenseCat(category);
             updateCategory(category, 'Desconocido');
@@ -244,10 +252,11 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
             <div className="flex h-full w-full overflow-hidden relative">
 
                 {/* 1. LAYER: NAVIGATION MENU (Mobile: Full Width / Desktop: Sidebar) */}
-                <div className={`
-                    bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-800 flex flex-col p-2 md:p-3 space-y-6 overflow-y-auto no-scrollbar
-                    ${isMobileDetailOpen ? 'hidden md:flex md:w-64 flex-shrink-0' : 'w-full md:w-64 flex-shrink-0'}
-                `}>
+                {/* 1. LAYER: NAVIGATION MENU (Mobile: Full Width / Desktop: Sidebar) */}
+                <div className={clsx(
+                    "bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-800 flex flex-col p-2 md:p-3 space-y-6 overflow-y-auto no-scrollbar",
+                    isMobileDetailOpen ? "hidden md:flex md:w-64 flex-shrink-0" : "w-full md:w-64 flex-shrink-0"
+                )}>
                     {menuGroups.map((group, gIdx) => (
                         <div key={gIdx} className="space-y-1">
                             {group.title && (
@@ -262,17 +271,18 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                         setActiveTab(item.id);
                                         setIsMobileDetailOpen(true);
                                     }}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group border md:border-transparent
-                                        ${activeTab === item.id
-                                            ? 'md:bg-white md:dark:bg-zinc-800 md:shadow-sm md:border-zinc-200 md:dark:border-zinc-700 font-bold bg-white shadow-sm border-zinc-200'
-                                            : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent'
-                                        }`}
+                                    className={clsx(
+                                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group border md:border-transparent",
+                                        activeTab === item.id
+                                            ? "md:bg-white md:dark:bg-zinc-800 md:shadow-sm md:border-zinc-200 md:dark:border-zinc-700 font-bold bg-white shadow-sm border-zinc-200"
+                                            : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
+                                    )}
                                 >
-                                    <div className={`p-1.5 rounded-lg shrink-0 ${activeTab === item.id ? 'bg-primary/10 text-primary' : 'bg-transparent text-zinc-500 dark:text-zinc-500'}`}>
+                                    <div className={clsx("p-1.5 rounded-lg shrink-0", activeTab === item.id ? "bg-primary/10 text-primary" : "bg-transparent text-zinc-500 dark:text-zinc-500")}>
                                         <item.icon size={18} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <span className={`block text-sm truncate ${activeTab === item.id ? 'text-zinc-900 dark:text-zinc-100' : ''}`}>{item.label}</span>
+                                        <span className={clsx("block text-sm truncate", activeTab === item.id ? "text-zinc-900 dark:text-zinc-100" : "")}>{item.label}</span>
                                     </div>
 
                                     {activeTab === item.id && <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
@@ -289,13 +299,14 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                 </div>
 
                 {/* 2. LAYER: CONTENT AREA (Mobile: Full Modal / Desktop: Main Area) */}
-                <div className={`
-                    flex-1 bg-white dark:bg-zinc-950
-                    ${isMobileDetailOpen ? 'block w-full' : 'hidden md:block'}
-                    ${activeTab === 'help' ? 'overflow-hidden' : 'overflow-y-auto'}
-                `}>
+                {/* 2. LAYER: CONTENT AREA (Mobile: Full Modal / Desktop: Main Area) */}
+                <div className={clsx(
+                    "flex-1 bg-white dark:bg-zinc-950",
+                    isMobileDetailOpen ? "block w-full" : "hidden md:block",
+                    activeTab === 'help' ? "overflow-hidden" : "overflow-y-auto"
+                )}>
                     {/* Mobile Header with Back Button */}
-                    <div className={`md:hidden sticky top-0 z-20 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800 px-4 py-3 flex items-center gap-3 ${activeTab === 'help' ? 'hidden' : ''}`}>
+                    <div className={`md:hidden sticky top - 0 z - 20 bg - white / 80 dark: bg - zinc - 950 / 80 backdrop - blur - md border - b border - zinc - 100 dark: border - zinc - 800 px - 4 py - 3 flex items - center gap - 3 ${activeTab === 'help' ? 'hidden' : ''} `}>
                         <button
                             onClick={() => setIsMobileDetailOpen(false)}
                             className="p-2 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
@@ -314,7 +325,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                 <div className="bg-zinc-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-800">
                                     <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4">Cálculo de Cuota Mensual</h3>
                                     <div className="space-y-4">
-                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultCalculationMethod === 'dynamic' ? 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'}`}>
+                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultCalculationMethod === 'dynamic' ? 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'} `}>
                                             <input
                                                 type="radio"
                                                 name="calculationMethod"
@@ -327,7 +338,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                 <p className="text-sm text-zinc-500 mt-1">La cuota se ajusta automáticamente cada mes. Si ahorras de más, la cuota baja. Si te atrasas, sube. Ideal para mantener el objetivo final fijo.</p>
                                             </div>
                                         </label>
-                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultCalculationMethod === 'static' ? 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'}`}>
+                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultCalculationMethod === 'static' ? 'bg-indigo-50 dark:bg-indigo-900/10 border-indigo-200 dark:border-indigo-800 ring-1 ring-indigo-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'} `}>
                                             <input
                                                 type="radio"
                                                 name="calculationMethod"
@@ -346,7 +357,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                 <div className="bg-zinc-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-800">
                                     <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4">Estrategia de Recuperación (Default)</h3>
                                     <div className="space-y-4">
-                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultRecoveryStrategy === 'spread' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 ring-1 ring-emerald-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'}`}>
+                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultRecoveryStrategy === 'spread' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 ring-1 ring-emerald-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'} `}>
                                             <input
                                                 type="radio"
                                                 name="recoveryStrategy"
@@ -359,7 +370,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                 <p className="text-sm text-zinc-500 mt-1">Si retiras dinero, el faltante se divide entre todos los meses restantes.</p>
                                             </div>
                                         </label>
-                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultRecoveryStrategy === 'catch_up' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 ring-1 ring-emerald-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'}`}>
+                                        <label className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${goalPreferences.defaultRecoveryStrategy === 'catch_up' ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 ring-1 ring-emerald-500/20' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800'} `}>
                                             <input
                                                 type="radio"
                                                 name="recoveryStrategy"
@@ -458,7 +469,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                     className={`w-12 h-12 rounded-xl flex items-center justify-center font-mono font-bold transition-all ${currency === c
                                                         ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110'
                                                         : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                                                        }`}
+                                                        } `}
                                                 >
                                                     {c}
                                                 </button>
@@ -488,10 +499,10 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                 className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-3 transition-all relative overflow-hidden group ${themeStyle === style.id
                                                     ? 'border-primary bg-primary/5 shadow-md'
                                                     : 'border-transparent bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-900'
-                                                    }`}
+                                                    } `}
                                             >
-                                                <div className={`w-12 h-12 rounded-full ${style.color} shadow-sm group-hover:scale-110 transition-transform duration-300`} />
-                                                <span className={`text-sm font-bold ${themeStyle === style.id ? 'text-primary' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                                                <div className={`w - 12 h - 12 rounded - full ${style.color} shadow - sm group - hover: scale - 110 transition - transform duration - 300`} />
+                                                <span className={`text - sm font - bold ${themeStyle === style.id ? 'text-primary' : 'text-zinc-600 dark:text-zinc-400'} `}>
                                                     {style.name}
                                                 </span>
                                                 {themeStyle === style.id && (
@@ -499,6 +510,91 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                 )}
                                             </button>
                                         ))}
+                                    </div>
+                                </div>
+
+                                {/* Sidebar Position Configuration */}
+                                <div className="bg-zinc-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-800 mt-6">
+                                    <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-4">Posición de Barra</h3>
+
+                                    <div className="space-y-6">
+                                        {/* Position Grid */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            {[
+                                                { id: 'left', label: 'Izquierda', icon: "M3 3h18v18H3V3zm0 0v18M9 3v18" },
+                                                { id: 'right', label: 'Derecha', icon: "M3 3h18v18H3V3zm18 0v18M15 3v18" },
+                                                { id: 'top', label: 'Superior', icon: "M3 3h18v18H3V3zm0 0h18M3 9h18" },
+                                                { id: 'bottom', label: 'Inferior', icon: "M3 3h18v18H3V3zm0 18h18M3 15h18" },
+                                            ].map((pos) => (
+                                                <button
+                                                    key={pos.id}
+                                                    onClick={() => setSidebarPosition(pos.id as any)}
+                                                    className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${sidebarPosition === pos.id
+                                                        ? 'bg-white dark:bg-zinc-800 border-primary text-primary shadow-sm'
+                                                        : 'bg-transparent border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500'
+                                                        } `}
+                                                >
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={sidebarPosition === pos.id ? "stroke-primary" : "stroke-zinc-400"}>
+                                                        {/* Simple SVG paths for layout viz */}
+                                                        <path d={pos.icon.includes('M') ? undefined : "M3 3h18v18H3z"} />
+                                                        {/* Reusing existing path or rendering custom */}
+                                                        <path d="M4 4h16v16H4z" className="opacity-20" />
+                                                        {pos.id === 'left' && <path d="M9 4v16" />}
+                                                        {pos.id === 'right' && <path d="M15 4v16" />}
+                                                        {pos.id === 'top' && <path d="M4 9h16" />}
+                                                        {pos.id === 'bottom' && <path d="M4 15h16" />}
+                                                    </svg>
+                                                    <span className="text-xs font-bold">{pos.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Visibility Mode (Dock vs Pinned) */}
+                                        <div>
+                                            <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">Estilo de Navegación</label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <button
+                                                    onClick={() => setSidebarVisibility('pinned')}
+                                                    className={`p-4 rounded-xl border text-left transition-all ${sidebarVisibility === 'pinned'
+                                                        ? 'bg-white dark:bg-zinc-800 border-primary shadow-sm'
+                                                        : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-500'
+                                                        } `}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className={`font-bold ${sidebarVisibility === 'pinned' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'} `}>Clásico (Fijo)</span>
+                                                    </div>
+                                                    <p className="text-xs text-zinc-500">La barra ocupa espacio y empuja el contenido.</p>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => setSidebarVisibility('floating')}
+                                                    className={`p-4 rounded-xl border text-left transition-all ${sidebarVisibility === 'floating'
+                                                        ? 'bg-white dark:bg-zinc-800 border-primary shadow-sm'
+                                                        : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-500'
+                                                        } `}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Sparkles size={14} className={sidebarVisibility === 'floating' ? 'text-purple-500' : ''} />
+                                                        <span className={`font-bold ${sidebarVisibility === 'floating' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'} `}>Dock Flotante</span>
+                                                    </div>
+                                                    <p className="text-xs text-zinc-500">Estilo moderno, flota sobre el contenido.</p>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => setSidebarVisibility('auto')}
+                                                    className={`p-4 rounded-xl border text-left transition-all md:col-span-2 ${sidebarVisibility === 'auto'
+                                                        ? 'bg-white dark:bg-zinc-800 border-primary shadow-sm'
+                                                        : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-500'
+                                                        } `}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <PanelLeftClose size={14} />
+                                                        <span className={`font-bold ${sidebarVisibility === 'auto' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'} `}>Ocultar Automáticamente</span>
+                                                    </div>
+                                                    <p className="text-xs text-zinc-500">Se oculta para maximizar espacio. Pasa el ratón por el borde para mostrar.</p>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -512,9 +608,9 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                             className={`p-4 rounded-xl border-2 text-left transition-all ${navMode === 'normal'
                                                 ? 'border-primary bg-primary/5'
                                                 : 'border-transparent bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                                                }`}
+                                                } `}
                                         >
-                                            <span className={`block font-bold mb-1 ${navMode === 'normal' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'}`}>Normal</span>
+                                            <span className={`block font - bold mb - 1 ${navMode === 'normal' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'} `}>Normal</span>
                                             <span className="text-xs text-zinc-500">Muestra todas las opciones disponibles.</span>
                                         </button>
 
@@ -523,9 +619,9 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                             className={`p-4 rounded-xl border-2 text-left transition-all ${navMode === 'essential'
                                                 ? 'border-primary bg-primary/5'
                                                 : 'border-transparent bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                                                }`}
+                                                } `}
                                         >
-                                            <span className={`block font-bold mb-1 ${navMode === 'essential' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'}`}>Esencial</span>
+                                            <span className={`block font-bold mb-1 ${navMode === 'essential' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'} `}>Esencial</span>
                                             <span className="text-xs text-zinc-500">Solo lo vital: Dashboard, Gastos e Ingresos.</span>
                                         </button>
 
@@ -534,9 +630,9 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                             className={`p-4 rounded-xl border-2 text-left transition-all ${navMode === 'simple'
                                                 ? 'border-primary bg-primary/5'
                                                 : 'border-transparent bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                                                }`}
+                                                } `}
                                         >
-                                            <span className={`block font-bold mb-1 ${navMode === 'simple' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'}`}>Simple</span>
+                                            <span className={`block font-bold mb-1 ${navMode === 'simple' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'} `}>Simple</span>
                                             <span className="text-xs text-zinc-500">Experiencia balanceada con finanzas básicas.</span>
                                         </button>
 
@@ -545,9 +641,9 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                             className={`p-4 rounded-xl border-2 text-left transition-all ${navMode === 'custom'
                                                 ? 'border-primary bg-primary/5'
                                                 : 'border-transparent bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700'
-                                                }`}
+                                                } `}
                                         >
-                                            <span className={`block font-bold mb-1 ${navMode === 'custom' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'}`}>Personalizado</span>
+                                            <span className={`block font - bold mb - 1 ${navMode === 'custom' ? 'text-primary' : 'text-zinc-900 dark:text-zinc-100'} `}>Personalizado</span>
                                             <span className="text-xs text-zinc-500">Tú eliges qué ver y qué ocultar.</span>
                                         </button>
                                     </div>
@@ -571,12 +667,12 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                         className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${customModeItems.includes(item.id)
                                                             ? 'bg-white dark:bg-zinc-800 border-primary/50 shadow-sm'
                                                             : 'bg-transparent border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                                                            }`}
+                                                            } `}
                                                     >
                                                         <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${customModeItems.includes(item.id)
                                                             ? 'bg-primary border-primary text-white'
                                                             : 'border-zinc-300 dark:border-zinc-600'
-                                                            }`}>
+                                                            } `}>
                                                             {customModeItems.includes(item.id) && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                                         </div>
                                                         <input
@@ -603,7 +699,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${catType === 'expense'
                                             ? 'bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-zinc-100'
                                             : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
-                                            }`}
+                                            } `}
                                     >
                                         Gastos
                                     </button>
@@ -612,7 +708,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                         className={`flex-1 py-1.5 text-sm font-bold rounded-lg transition-all ${catType === 'income'
                                             ? 'bg-white dark:bg-zinc-800 shadow-sm text-zinc-900 dark:text-zinc-100'
                                             : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
-                                            }`}
+                                            } `}
                                     >
                                         Ingresos
                                     </button>
@@ -673,12 +769,12 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                         {scheduled.map(item => (
                                             <div key={item.id} className={`p-4 rounded-xl border transition-all hover:shadow-md ${!item.active ? 'bg-zinc-50 dark:bg-zinc-900/20 border-zinc-100 dark:border-zinc-800 opacity-60 grayscale'
                                                 : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
-                                                }`}>
+                                                } `}>
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div>
                                                         <div className="flex items-center gap-2 mb-1">
                                                             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${item.type === 'income' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                                                                }`}>
+                                                                } `}>
                                                                 {item.type === 'income' ? 'Ingreso' : 'Gasto'}
                                                             </span>
                                                             <span className="text-[10px] text-zinc-500 font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md flex items-center gap-1">
@@ -705,7 +801,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${item.active
                                                             ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
                                                             : 'bg-primary/20 text-primary hover:bg-primary/30'
-                                                            }`}
+                                                            } `}
                                                     >
                                                         {item.active ? (
                                                             <> <PauseCircle size={14} /> Pausar </>
@@ -793,7 +889,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                             <div>
                                                 <p className="font-bold text-sm truncate">{p.label}</p>
                                                 <p className="text-xs text-zinc-500 mt-1">
-                                                    {p.amount ? `${currency}${p.amount}` : 'Var'} • <span className="text-zinc-400">{p.category}</span>
+                                                    {p.amount ? `${currency}${p.amount} ` : 'Var'} • <span className="text-zinc-400">{p.category}</span>
                                                 </p>
                                             </div>
                                             <button
@@ -872,7 +968,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                         className="w-full flex items-center justify-between p-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className={`${isUpdating ? 'animate-spin' : ''}`}>
+                                            <div className={`${isUpdating ? 'animate-spin' : ''} `}>
                                                 <RefreshCw size={18} />
                                             </div>
                                             <span className="font-bold text-sm">{isUpdating ? updateStatus : 'Buscar Actualizaciones'}</span>
@@ -932,7 +1028,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
                                     </div>
 
                                     {/* Sound Toggle */}
-                                    <div className={`flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 transition-opacity ${!notificationsEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    <div className={`flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border border-zinc-200 dark:border-zinc-800 transition-opacity ${!notificationsEnabled ? 'opacity-50 pointer-events-none' : ''} `}>
                                         <div>
                                             <span className="block font-bold text-zinc-900 dark:text-zinc-100">Sonidos</span>
                                             <span className="text-sm text-zinc-500">Reproducir efectos al desbloquear logros.</span>
