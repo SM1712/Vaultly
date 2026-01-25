@@ -22,14 +22,15 @@ export const SidebarVertical = ({ isOpen, onClose, onOpenSettings, position }: S
     const isFloating = sidebarVisibility === 'floating';
 
     // Collapsed state only applies if NOT auto and NOT floating (effectively 'pinned')
-    // and only on desktop (lg).
-    const isCollapsed = isSidebarCollapsed && !isAuto && !isFloating;
+    // and only on desktop (lg). On mobile (isOpen), we always want expanded text.
+    const isCollapsed = isSidebarCollapsed && !isAuto && !isFloating && !isOpen;
 
     return (
         <aside className={clsx(
-            "fixed inset-y-0 z-[60] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]",
+            "fixed inset-y-0 z-[60] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] pointer-events-auto", // Added pointer-events-auto
             "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-2xl lg:shadow-none",
             !isAuto && "lg:static lg:h-full", // Static on desktop if pinned, with FULL HEIGHT enforced
+            // ...
 
             // Width Logic
             isCollapsed ? "w-72 lg:w-20" : "w-72 lg:w-64", // Mobile always 72, Desktop dynamic

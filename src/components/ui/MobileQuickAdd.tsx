@@ -4,6 +4,7 @@ import { Plus, ArrowUpRight, ArrowDownLeft, Check, ChevronDown } from 'lucide-re
 import { useTransactions } from '../../hooks/useTransactions';
 import { useCategories } from '../../hooks/useCategories';
 import { useSettings } from '../../context/SettingsContext';
+import { useTheme } from '../../context/ThemeContext';
 import { usePresets } from '../../hooks/usePresets';
 import { clsx } from 'clsx';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ const MobileQuickAdd = () => {
     const { currency } = useSettings();
     const { presets } = usePresets();
     const { isSoundEnabled } = useLocalNotifications();
+    const { sidebarVisibility } = useTheme();
 
     const playSound = () => {
         if (isSoundEnabled) {
@@ -87,7 +89,10 @@ const MobileQuickAdd = () => {
             <button
                 onClick={() => setIsOpen(true)}
                 id="quick-add-btn"
-                className="md:hidden fixed bottom-6 right-6 w-16 h-16 bg-zinc-900 dark:bg-emerald-600 text-white rounded-full shadow-2xl shadow-zinc-900/40 dark:shadow-emerald-600/40 flex items-center justify-center active:scale-95 transition-transform z-50"
+                className={clsx(
+                    "md:hidden fixed right-6 w-16 h-16 bg-zinc-900 dark:bg-emerald-600 text-white rounded-full shadow-2xl shadow-zinc-900/40 dark:shadow-emerald-600/40 flex items-center justify-center active:scale-95 transition-transform z-50",
+                    sidebarVisibility === 'floating' ? "bottom-24" : "bottom-6"
+                )}
                 aria-label="Agregar transacción"
             >
                 <Plus size={32} strokeWidth={2.5} />

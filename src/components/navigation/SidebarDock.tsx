@@ -18,14 +18,15 @@ export const SidebarDock = ({ onOpenSettings }: SidebarDockProps) => {
     const allItems = sections.flatMap(s => s.items);
 
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex flex-col items-center gap-2">
+        <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-[70] flex flex-col items-center gap-2 w-full max-w-[85vw] sm:max-w-fit">
 
             {/* Main Dock Pill */}
             <nav className={clsx(
-                "flex items-center gap-2 px-3 py-2.5 rounded-2xl",
-                "bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-2xl",
+                "bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl",
                 "border border-white/20 dark:border-zinc-800/50",
-                "shadow-2xl shadow-zinc-900/20 ring-1 ring-black/5"
+                "shadow-2xl shadow-zinc-900/20 ring-1 ring-black/5",
+                "overflow-x-auto no-scrollbar w-full sm:w-auto"
             )}>
                 {allItems.map((item) => (
                     <div key={item.to} className="relative group">
@@ -39,7 +40,7 @@ export const SidebarDock = ({ onOpenSettings }: SidebarDockProps) => {
                             className={({ isActive }) =>
                                 twMerge(
                                     clsx(
-                                        "p-2.5 rounded-xl transition-all duration-300 ease-out flex items-center justify-center",
+                                        "p-2 rounded-xl transition-all duration-300 ease-out flex items-center justify-center",
                                         "hover:bg-zinc-100 dark:hover:bg-zinc-800",
                                         isActive
                                             ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-110"
@@ -54,12 +55,12 @@ export const SidebarDock = ({ onOpenSettings }: SidebarDockProps) => {
                 ))}
 
                 {/* Apps Separator */}
-                <div className="w-px h-8 bg-zinc-200 dark:bg-zinc-800 mx-1" />
+                <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1" />
 
                 <div className="flex gap-1">
                     <button
                         onClick={onOpenSettings}
-                        className="p-2.5 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all hover:scale-110"
+                        className="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all hover:scale-110"
                         title="Configuración"
                     >
                         <Settings size={20} />

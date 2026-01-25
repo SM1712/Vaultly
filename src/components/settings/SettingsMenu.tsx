@@ -582,7 +582,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
 
                                                 <button
                                                     onClick={() => setSidebarVisibility('auto')}
-                                                    className={`p-4 rounded-xl border text-left transition-all md:col-span-2 ${sidebarVisibility === 'auto'
+                                                    className={`hidden lg:block p-4 rounded-xl border text-left transition-all lg:col-span-2 ${sidebarVisibility === 'auto'
                                                         ? 'bg-white dark:bg-zinc-800 border-primary shadow-sm'
                                                         : 'bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-500'
                                                         } `}

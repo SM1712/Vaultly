@@ -26,18 +26,16 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
                     OR we rely on the fact that Layout passes isOpen for that specific case.
                     However, Dock replaces Desktop View.
                 */}
-                <div className="hidden lg:block">
-                    <SidebarDock onOpenSettings={onOpenSettings} />
-                </div>
-                {/* Mobile Fallback: Standard Sidebar */}
-                <div className={isOpen ? "block lg:hidden" : "hidden"}>
-                    <SidebarVertical
-                        isOpen={isOpen}
-                        onClose={onClose}
-                        onOpenSettings={onOpenSettings}
-                        position="left"
-                    />
-                </div>
+                {/* Dock is now visible on all screens for 'floating' mode */}
+                <SidebarDock onOpenSettings={onOpenSettings} />
+
+                {/* We hide the standard mobile sidebar when Dock is active, 
+                    OR we could keep it as a drawer. But usually Dock replaces it.
+                    Let's hide the standard mobile sidebar fallback for now to avoid duplication,
+                    unless 'isOpen' is strictly for the drawer.
+                    If the User wants the Dock (which is always visible usually), 
+                    then isOpen might not apply to Dock visibility (Dock is persistent).
+                */}
             </>
         );
     }

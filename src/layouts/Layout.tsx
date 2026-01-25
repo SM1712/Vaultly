@@ -72,6 +72,9 @@ const Layout = () => {
     if (!isOverlayMode) {
         if (sidebarPosition === 'top') mainStyles.paddingTop = '4rem';
         if (sidebarPosition === 'bottom') mainStyles.paddingBottom = '4rem';
+    } else if (isFloating) {
+        // Add padding for Dock
+        mainStyles.paddingBottom = '6rem'; // Enough space for dock + fab
     }
 
     return (
@@ -84,12 +87,14 @@ const Layout = () => {
                         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 shrink-0 z-30">
                             <LogoCombined />
                             <div className="flex gap-2">
-                                <button
-                                    className="p-2 -mr-2 text-zinc-600 dark:text-zinc-400 active:bg-zinc-100 dark:active:bg-zinc-900 rounded-lg"
-                                    onClick={() => setIsMobileMenuOpen(true)}
-                                >
-                                    <Menu size={24} />
-                                </button>
+                                {!isFloating && (
+                                    <button
+                                        className="p-2 -mr-2 text-zinc-600 dark:text-zinc-400 active:bg-zinc-100 dark:active:bg-zinc-900 rounded-lg"
+                                        onClick={() => setIsMobileMenuOpen(true)}
+                                    >
+                                        <Menu size={24} />
+                                    </button>
+                                )}
                             </div>
                         </header>
 
@@ -103,7 +108,7 @@ const Layout = () => {
 
                         {/* Sidebar Wrapper */}
                         <div className={clsx(
-                            "z-[60] lg:z-40 h-full", // Added h-full
+                            "z-[60] lg:z-40 lg:h-full", // Mobile: h-auto to prevent pushing content. Desktop: h-full.
                             isMobileMenuOpen ? "fixed inset-0 pointer-events-none" : "",
                             !isFloating && isVertical && "flex-shrink-0"
                         )}>
