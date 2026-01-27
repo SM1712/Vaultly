@@ -126,7 +126,10 @@ export const SidebarHorizontal = ({ onOpenSettings, position }: SidebarHorizonta
 
                 {/* Launcher Dropdown */}
                 {isLauncherOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-[70] p-2 grid grid-cols-1 gap-1 max-h-[60vh] overflow-y-auto">
+                    <div className={clsx(
+                        "absolute left-0 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-[70] p-2 grid grid-cols-1 gap-1 max-h-[60vh] overflow-y-auto",
+                        position === 'top' ? "top-full mt-2" : "bottom-full mb-2"
+                    )}>
                         <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Aplicaciones</div>
                         {allItems.filter(item => !openTabs.includes(item.to)).map(item => (
                             <button
