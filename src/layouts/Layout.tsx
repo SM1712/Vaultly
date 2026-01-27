@@ -108,7 +108,8 @@ const Layout = () => {
 
                         {/* Sidebar Wrapper */}
                         <div className={clsx(
-                            "z-[60] lg:z-40 lg:h-full", // Mobile: h-auto to prevent pushing content. Desktop: h-full.
+                            "z-[60] lg:z-40",
+                            isVertical && "lg:h-full", // Only full height for vertical sidebars
                             isMobileMenuOpen ? "fixed inset-0 pointer-events-none" : "",
                             !isFloating && isVertical && "flex-shrink-0"
                         )}>
@@ -126,22 +127,7 @@ const Layout = () => {
                             )}
                             style={mainStyles}
                         >
-                            {/* Desktop: Show Trigger when sidebar is collapsed (Only for Vertical Pinned) */}
-                            {isSidebarCollapsed && isVertical && !isFloating && sidebarVisibility === 'pinned' && (
-                                <div className={clsx(
-                                    "hidden lg:flex z-40",
-                                    isFullWidthPage ? "absolute top-4 left-4" : "mb-4",
-                                    sidebarPosition === 'right' && "justify-end"
-                                )}>
-                                    <button
-                                        onClick={toggleSidebarCollapsed}
-                                        className="p-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-white dark:hover:bg-zinc-900 transition-all"
-                                        title="Mostrar menú lateral"
-                                    >
-                                        <PanelLeftOpen size={20} className={sidebarPosition === 'right' ? "rotate-180" : ""} />
-                                    </button>
-                                </div>
-                            )}
+                            {/* Desktop Trigger removed - handled internally by Sidebar */}
 
                             <Outlet />
                         </main>

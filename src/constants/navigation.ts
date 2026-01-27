@@ -16,6 +16,7 @@ export interface NavItem {
     icon: any;
     label: string;
     id: string; // Unique identifier for settings persistence
+    subItems?: NavItem[]; // Generic recursive structure
 }
 
 export interface NavSection {
@@ -28,25 +29,52 @@ export const NAV_SECTIONS: NavSection[] = [
         title: undefined,
         items: [
             { to: '/', icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
-            { to: '/calendar', icon: Calendar, label: 'Calendario', id: 'calendar' },
-        ]
-    },
-    {
-        title: 'Finanzas',
-        items: [
-            { to: '/expenses', icon: Wallet, label: 'Gastos', id: 'expenses' },
-            { to: '/income', icon: Receipt, label: 'Ingresos', id: 'income' },
-            { to: '/goals', icon: Target, label: 'Metas', id: 'goals' },
-            { to: '/funds', icon: PiggyBank, label: 'Fondos', id: 'funds' },
-            { to: '/credits', icon: Landmark, label: 'Créditos', id: 'credits' },
         ]
     },
     {
         title: 'Gestión',
         items: [
-            { to: '/projects', icon: FolderKanban, label: 'Proyectos', id: 'projects' },
-            { to: '/projections', icon: Calculator, label: 'Proyecciones', id: 'projections' },
-            { to: '/reports', icon: BarChart3, label: 'Reportes', id: 'reports' },
+            {
+                to: '/finance', // Virtual path or redirect
+                icon: Wallet,
+                label: 'Finanzas',
+                id: 'finance_group',
+                subItems: [
+                    { to: '/expenses', icon: Wallet, label: 'Gastos', id: 'expenses' },
+                    { to: '/income', icon: Receipt, label: 'Ingresos', id: 'income' },
+                    { to: '/funds', icon: PiggyBank, label: 'Fondos', id: 'funds' },
+                ]
+            },
+            {
+                to: '/planning',
+                icon: Target,
+                label: 'Planificación',
+                id: 'planning_group',
+                subItems: [
+                    { to: '/goals', icon: Target, label: 'Metas', id: 'goals' },
+                    { to: '/calendar', icon: Calendar, label: 'Calendario', id: 'calendar' },
+                    { to: '/projections', icon: Calculator, label: 'Proyecciones', id: 'projections' },
+                ]
+            },
+            {
+                to: '/analysis',
+                icon: BarChart3,
+                label: 'Análisis',
+                id: 'analysis_group',
+                subItems: [
+                    { to: '/reports', icon: BarChart3, label: 'Reportes', id: 'reports' },
+                    { to: '/credits', icon: Landmark, label: 'Créditos', id: 'credits' },
+                ]
+            },
+            {
+                to: '/tools',
+                icon: FolderKanban,
+                label: 'Herramientas',
+                id: 'tools_group',
+                subItems: [
+                    { to: '/projects', icon: FolderKanban, label: 'Proyectos', id: 'projects' },
+                ]
+            }
         ]
     }
 ];

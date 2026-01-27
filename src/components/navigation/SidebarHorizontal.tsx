@@ -1,6 +1,6 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+
 
 import { LogoCombined } from '../ui/Logo';
 import { useNavigation } from '../../hooks/useNavigation';
@@ -20,8 +20,17 @@ export const SidebarHorizontal = ({ onOpenSettings, position }: SidebarHorizonta
     const location = useLocation();
     const [isLauncherOpen, setIsLauncherOpen] = useState(false);
 
-    // Flatten items for horizontal view to avoid nested menus
-    const allItems = sections.flatMap(s => s.items);
+    // Flatten items recursively to allow horizontal tab view of deep pages
+    const flattenItems = (items: any[]): any[] => {
+        return items.flatMap(item => {
+            if (item.subItems && item.subItems.length > 0) {
+                return flattenItems(item.subItems);
+            }
+            return item;
+        });
+    };
+
+    const allItems = sections.flatMap(s => flattenItems(s.items));
 
     // Auto-add current route to tabs logic moved to Layout or here?
     // Let's do it here for now as this component is mounting.
@@ -103,40 +112,40 @@ export const SidebarHorizontal = ({ onOpenSettings, position }: SidebarHorizonta
                         </button>
                     </div>
                 ))}
-
-                {/* New Tab Button */}
-                <div className="relative">
-                    <button
-                        onClick={() => setIsLauncherOpen(!isLauncherOpen)}
-                        className="p-2 ml-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                        title="Nueva Pestaña"
-                    >
-                        {isLauncherOpen ? <ChevronDown size={18} /> : <Plus size={18} />}
-                    </button>
-
-                    {/* Launcher Dropdown */}
-                    {isLauncherOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-50 p-2 grid grid-cols-1 gap-1 max-h-[60vh] overflow-y-auto">
-                            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Aplicaciones</div>
-                            {allItems.filter(item => !openTabs.includes(item.to)).map(item => (
-                                <button
-                                    key={item.to}
-                                    onClick={() => handleAddTab(item.to)}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 text-left text-sm text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                                >
-                                    <item.icon size={16} />
-                                    <span>{item.label}</span>
-                                </button>
-                            ))}
-                            {allItems.filter(item => !openTabs.includes(item.to)).length === 0 && (
-                                <div className="px-3 py-4 text-center text-xs text-zinc-400 italic">
-                                    Todas las apps están abiertas
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
             </nav>
+
+            {/* New Tab Button (Outside Scroll Area to prevent clipping) */}
+            <div className="relative flex-shrink-0 ml-1">
+                <button
+                    onClick={() => setIsLauncherOpen(!isLauncherOpen)}
+                    className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                    title="Nueva Pestaña"
+                >
+                    {isLauncherOpen ? <ChevronDown size={18} /> : <Plus size={18} />}
+                </button>
+
+                {/* Launcher Dropdown */}
+                {isLauncherOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl z-[70] p-2 grid grid-cols-1 gap-1 max-h-[60vh] overflow-y-auto">
+                        <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Aplicaciones</div>
+                        {allItems.filter(item => !openTabs.includes(item.to)).map(item => (
+                            <button
+                                key={item.to}
+                                onClick={() => handleAddTab(item.to)}
+                                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 text-left text-sm text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                            >
+                                <item.icon size={16} />
+                                <span>{item.label}</span>
+                            </button>
+                        ))}
+                        {allItems.filter(item => !openTabs.includes(item.to)).length === 0 && (
+                            <div className="px-3 py-4 text-center text-xs text-zinc-400 italic">
+                                Todas las apps están abiertas
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
 
             {/* Actions Area */}
             <div className="flex-shrink-0 flex items-center gap-2 ml-4 pl-4 border-l border-zinc-100 dark:border-zinc-800 h-8">
