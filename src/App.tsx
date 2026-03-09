@@ -1,6 +1,7 @@
 import { Component, useState, useEffect, lazy, Suspense } from 'react';
 import type { ReactNode } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider, useData } from './context/DataContext';
@@ -59,27 +60,43 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 const ProtectedRoute = () => {
   const { user, loading: authLoading } = useAuth();
   const { isLoading: dataLoading } = useData();
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-
   const { profile, loadingProfile, profileSkipped } = useCollaboration();
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   useEffect(() => {
     // Reduced splash screen time for better optimization
     const timer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 500); // Changed from 2500ms to 500ms
+    }, 500);
     return () => clearTimeout(timer);
   }, []);
 
-  if (authLoading || dataLoading || !minTimeElapsed || loadingProfile) {
-    return <LoadingScreen message={authLoading ? 'AUTENTICANDO...' : loadingProfile ? 'VERIFICANDO IDENTIDAD...' : 'CARGANDO DATOS...'} />;
-  }
+  const isAppLoading = authLoading || dataLoading || loadingProfile || !minTimeElapsed;
 
-  if (!user) return <Navigate to="/login" replace />;
-
-  if (!profile && !profileSkipped) return <NicknameSetupModal />;
-
-  return <Outlet />;
+  return (
+    <AnimatePresence mode="wait">
+      {isAppLoading ? (
+        <LoadingScreen
+          key="loading"
+          message={authLoading ? 'AUTENTICANDO...' : loadingProfile ? 'VERIFICANDO IDENTIDAD...' : 'CARGANDO DATOS...'}
+        />
+      ) : !user ? (
+        <Navigate key="login" to="/login" replace />
+      ) : (!profile && !profileSkipped) ? (
+        <NicknameSetupModal key="setup" />
+      ) : (
+        <motion.div
+          key="app-content"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="w-full h-full"
+        >
+          <Outlet />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 };
 
 function App() {

@@ -76,7 +76,7 @@ const Layout = () => {
 
     // Determine the main flex container direction
     const layoutClasses = clsx(
-        "flex h-screen overflow-hidden bg-transparent transition-colors duration-300 animate-enter-app",
+        "flex h-screen overflow-hidden bg-transparent transition-colors duration-300",
         !isOverlayMode && sidebarPosition === 'left' && "flex-col lg:flex-row",
         !isOverlayMode && sidebarPosition === 'right' && "flex-col lg:flex-row-reverse",
         !isOverlayMode && sidebarPosition === 'top' && "flex-col",
