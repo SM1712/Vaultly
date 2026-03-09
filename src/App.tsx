@@ -1,5 +1,6 @@
+import { Component, useState, useEffect, lazy, Suspense } from 'react';
+import type { ReactNode } from 'react';
 import { HashRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-// import { ThemeProvider } from './context/ThemeContext'; // Moved to main.tsx
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider, useData } from './context/DataContext';
@@ -8,23 +9,23 @@ import { GamificationProvider } from './context/GamificationContext';
 import { CollaborationProvider, useCollaboration } from './context/CollaborationContext';
 import NicknameSetupModal from './components/onboarding/NicknameSetupModal';
 import Layout from './layouts/Layout';
-import Dashboard from './pages/Dashboard';
-import Expenses from './pages/Expenses';
-import Income from './pages/Income';
-import Goals from './pages/Goals';
-import Projects from './pages/Projects';
-import Funds from './pages/Funds';
-import Credits from './pages/Credits';
-import Projections from './pages/Projections';
-import Login from './pages/Login';
-import OnboardingPage from './pages/OnboardingPage';
-import Calendar from './pages/Calendar';
-import Reports from './pages/Reports';
-import DownloadPage from './pages/Download';
-import { Component, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import Login from './pages/Login'; // Keep Login synchronous for fast initial paint
+
+// Lazy loaded pages to reduce initial bundle size
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const Income = lazy(() => import('./pages/Income'));
+const Goals = lazy(() => import('./pages/Goals'));
+const Projects = lazy(() => import('./pages/Projects'));
+const Funds = lazy(() => import('./pages/Funds'));
+const Credits = lazy(() => import('./pages/Credits'));
+const Projections = lazy(() => import('./pages/Projections'));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const Reports = lazy(() => import('./pages/Reports'));
 import { Toaster } from 'sonner';
 import LoadingScreen from './components/ui/LoadingScreen';
+import RouteLoader from './components/ui/RouteLoader';
 import { ViewTransitionHandler } from './components/ui/ViewTransitionHandler';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -63,10 +64,10 @@ const ProtectedRoute = () => {
   const { profile, loadingProfile, profileSkipped } = useCollaboration();
 
   useEffect(() => {
-    // Ensure splash screen is visible for at least 2.5s to show full animation
+    // Reduced splash screen time for better optimization
     const timer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 2500);
+    }, 500); // Changed from 2500ms to 500ms
     return () => clearTimeout(timer);
   }, []);
 
@@ -91,11 +92,29 @@ function App() {
               <CollaborationProvider>
                 <HashRouter>
                   <ViewTransitionHandler>
-                    <Routes>
-                      <Route path="/login" element={<Login />} />
+                    <Suspense fallback={<RouteLoader />}>
+                      <Routes>
+                        <Route path="/login" element={<Login />} />
 
-                      <Route element={<ProtectedRoute />}>
-                        <Route path="/" element={<Layout />}>
+                        <Route element={<ProtectedRoute />}>
+                          <Route path="/" element={<Layout />}>
+                            <Route index element={<Dashboard />} />
+                            <Route path="expenses" element={<Expenses />} />
+                            <Route path="income" element={<Income />} />
+                            <Route path="goals" element={<Goals />} />
+                            <Route path="funds" element={<Funds />} />
+                            <Route path="credits" element={<Credits />} />
+                            <Route path="projections" element={<Projections />} />
+                            <Route path="projects" element={<Projects />} />
+                            <Route path="calendar" element={<Calendar />} />
+                            <Route path="reports" element={<Reports />} />
+                            {/* Redirección por defecto */}
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                          </Route>
+                        </Route>
+
+                        {/* Onboarding / Simulation Routes - Isolated Environment */}
+                        <Route path="/onboarding" element={<OnboardingPage />}>
                           <Route index element={<Dashboard />} />
                           <Route path="expenses" element={<Expenses />} />
                           <Route path="income" element={<Income />} />
@@ -106,27 +125,10 @@ function App() {
                           <Route path="projects" element={<Projects />} />
                           <Route path="calendar" element={<Calendar />} />
                           <Route path="reports" element={<Reports />} />
-                          <Route path="download" element={<DownloadPage />} />
-                          {/* Redirección por defecto */}
-                          <Route path="*" element={<Navigate to="/" replace />} />
+                          <Route path="*" element={<Navigate to="/onboarding" replace />} />
                         </Route>
-                      </Route>
-
-                      {/* Onboarding / Simulation Routes - Isolated Environment */}
-                      <Route path="/onboarding" element={<OnboardingPage />}>
-                        <Route index element={<Dashboard />} />
-                        <Route path="expenses" element={<Expenses />} />
-                        <Route path="income" element={<Income />} />
-                        <Route path="goals" element={<Goals />} />
-                        <Route path="funds" element={<Funds />} />
-                        <Route path="credits" element={<Credits />} />
-                        <Route path="projections" element={<Projections />} />
-                        <Route path="projects" element={<Projects />} />
-                        <Route path="calendar" element={<Calendar />} />
-                        <Route path="reports" element={<Reports />} />
-                        <Route path="*" element={<Navigate to="/onboarding" replace />} />
-                      </Route>
-                    </Routes>
+                      </Routes>
+                    </Suspense>
                     <Toaster richColors position="top-center" />
                     {/* <DebugFooter /> Removed per user request */}
                   </ViewTransitionHandler>

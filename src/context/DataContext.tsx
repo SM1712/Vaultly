@@ -81,12 +81,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             },
             (error) => {
                 console.error("[DataContext] Sync/Connection Error:", error);
-                // If we have local backup, we are fine, just offline/error mode
-                if (localBackup) {
-                    toast("Modo Offline: Usando datos locales");
-                } else {
-                    toast.error("Error de conexión y sin datos locales.");
-                }
                 setIsLoading(false);
                 // We keep needsSync state as is, or assume we might need sync later
             }
@@ -133,10 +127,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         if (isOnline && needsSync && user) {
             console.log("[DataContext] Back Online! Syncing pending changes...");
-            toast.info("Conexión restaurada. Sincronizando...");
             triggerSave(data); // Try saving current state to cloud
         }
-    }, [isOnline, needsSync, user, data]);
+    }, [isOnline, needsSync, user]); // Removed data from deps to avoid infinite re-triggering
 
     const updateData = (updates: Partial<AppData>) => {
         setData(prev => {

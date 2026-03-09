@@ -2,6 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    body {
+        /* Default base background */
+        background-color: var(--color-app-50);
+        color: var(--color-zinc-900);
+        transition: background-color 0.3s ease, color 0.3s ease;
+        min-height: 100vh;
+        overflow-x: hidden;
+        position: relative;
+    }
+
+    .dark body {
+        background-color: #000000;
+        /* Deepest black base */
+        color: var(--color-zinc-50);
+        /* Ambient Aurora Effect */
+        background-image:
+            radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-primary), transparent 85%) 0%, transparent 60%),
+            radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--color-primary), transparent 90%) 0%, transparent 50%),
+            radial-gradient(circle at 0% 20%, color-mix(in srgb, var(--color-primary), transparent 95%) 0%, transparent 50%);
+        background-attachment: fixed;
+    }
+
+    /* Reading Mode Overlay */
+    :root[data-reading-mode='true'] body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-color: #f59e0b;
+        /* Amber-500 */
+        mix-blend-mode: multiply;
+        opacity: 0.15;
+        pointer-events: none;
+        z-index: 99999;
+        /* Topmost filter */
+    }
+
+    /* In Dark Mode, we might want a different blend or opacity */
+    .dark:root[data-reading-mode='true'] body::after {
+        background-color: #d97706;
+        /* Amber-600 */
+        mix-blend-mode: overlay;
+        opacity: 0.25;
+    }
+}
+
 @layer utilities {
     .no-scrollbar::-webkit-scrollbar {
         display: none;
@@ -15,14 +61,17 @@
     }
 }
 
-@layer base {
-    body {
-        overflow-x: hidden;
-    }
-}
-
+/* =========================================
+   1. CORE VARIABLES & MAPPINGS
+   ========================================= */
 :root {
-    /* Map Zinc to our Dynamic App Variables */
+    /* Default Styling Values */
+    --radius-theme: 0.75rem;
+    /* 12px default */
+    --texture-intensity: 0.2;
+    /* 20% default */
+
+    /* Map Tailwind palettes to Dynamic App Colors */
     --color-zinc-50: var(--color-app-50);
     --color-zinc-100: var(--color-app-100);
     --color-zinc-200: var(--color-app-200);
@@ -35,7 +84,6 @@
     --color-zinc-900: var(--color-app-900);
     --color-zinc-950: var(--color-app-950);
 
-    /* Map Gray to App Variables too */
     --color-gray-50: var(--color-app-50);
     --color-gray-100: var(--color-app-100);
     --color-gray-200: var(--color-app-200);
@@ -47,291 +95,8 @@
     --color-gray-800: var(--color-app-800);
     --color-gray-900: var(--color-app-900);
     --color-gray-950: var(--color-app-950);
-}
 
-/* Default Theme (Classic - Stone/Warm - Now 'Sand' essence) */
-:root {
-    --color-app-50: #fafaf9;
-    --color-app-100: #f5f5f4;
-    --color-app-200: #e7e5e4;
-    --color-app-300: #d6d3d1;
-    --color-app-400: #a8a29e;
-    --color-app-500: #78716c;
-    --color-app-600: #57534e;
-    --color-app-700: #44403c;
-    --color-app-800: #292524;
-    --color-app-900: #1c1917;
-    --color-app-950: #0c0a09;
-    --color-primary: #57534e;
-    /* Stone 600 */
-}
-
-/* Sepia -> 'Clay' (Soft Terracotta) */
-:root[data-theme='clay'] {
-    --color-app-50: #fff8f1;
-    --color-app-100: #ffe8d1;
-    --color-app-200: #fed0a0;
-    --color-app-300: #fdb072;
-    --color-app-400: #fb8c45;
-    --color-app-500: #f96d20;
-    --color-app-600: #ea500c;
-    --color-app-700: #c23a0c;
-    --color-app-800: #9a2b12;
-    --color-app-900: #7c2412;
-    --color-app-950: #431007;
-    --color-primary: #ea500c;
-}
-
-/* Ocean -> 'Mist' (Soft Blue Grey) */
-:root[data-theme='mist'] {
-    --color-app-50: #f8fafc;
-    --color-app-100: #f1f5f9;
-    --color-app-200: #e2e8f0;
-    --color-app-300: #cbd5e1;
-    --color-app-400: #94a3b8;
-    --color-app-500: #64748b;
-    --color-app-600: #475569;
-    --color-app-700: #334155;
-    --color-app-800: #1e293b;
-    --color-app-900: #0f172a;
-    --color-app-950: #020617;
-    --color-primary: #475569;
-}
-
-/* Midnight -> 'Royal' (Soft Lavender/Pastel Indigo - FIXED: Much softer) */
-:root[data-theme='royal'] {
-    --color-app-50: #faf9ff;
-    --color-app-100: #f3f0ff;
-    --color-app-200: #e9e5ff;
-    --color-app-300: #d8d1ff;
-    --color-app-400: #c0b3ff;
-    --color-app-500: #a594ff;
-    --color-app-600: #8b75ff;
-    /* Soft Indigo */
-    --color-app-700: #7457e8;
-    --color-app-800: #5f42c1;
-    --color-app-900: #4e3599;
-    --color-app-950: #2d1b5e;
-    --color-primary: #8b75ff;
-}
-
-/* Bloom -> 'Bloom' (Soft Pastel Pink) */
-:root[data-theme='bloom'] {
-    --color-app-50: #fff5f6;
-    --color-app-100: #ffe9ec;
-    --color-app-200: #ffcfd6;
-    --color-app-300: #fda4b3;
-    --color-app-400: #fa748d;
-    --color-app-500: #f43f63;
-    --color-app-600: #e11d4d;
-    --color-app-700: #be123e;
-    --color-app-800: #9f1239;
-    --color-app-900: #881337;
-    --color-app-950: #4c0519;
-    --color-primary: #e11d4d;
-}
-
-/* NEW: Sage (Soft Natural Green) */
-:root[data-theme='sage'] {
-    --color-app-50: #f6fbf7;
-    --color-app-100: #eaf7ed;
-    --color-app-200: #cfead6;
-    --color-app-300: #a7d6b3;
-    --color-app-400: #7bc08d;
-    --color-app-500: #53a36c;
-    --color-app-600: #3d8556;
-    --color-app-700: #336a46;
-    --color-app-800: #2b543a;
-    --color-app-900: #244531;
-    --color-app-950: #112218;
-    --color-primary: #53a36c;
-}
-
-/* NEW: Sand (Soft Warm Beige) */
-:root[data-theme='sand'] {
-    --color-app-50: #fdfcfa;
-    --color-app-100: #fbf9f4;
-    --color-app-200: #f3efe6;
-    --color-app-300: #e5ded0;
-    --color-app-400: #d1c4ae;
-    --color-app-500: #b5a489;
-    --color-app-600: #968469;
-    --color-app-700: #786854;
-    --color-app-800: #625546;
-    --color-app-900: #50463b;
-    --color-app-950: #2b251f;
-    --color-primary: #968469;
-}
-
-/* NEW: Coffee (Soft Mocha) */
-:root[data-theme='coffee'] {
-    --color-app-50: #fdfafd;
-    --color-app-100: #f9f4f1;
-    --color-app-200: #eee4de;
-    --color-app-300: #dec9bd;
-    --color-app-400: #c4a492;
-    --color-app-500: #a68470;
-    --color-app-600: #8a6a58;
-    --color-app-700: #715546;
-    --color-app-800: #5c473b;
-    --color-app-900: #4b3b33;
-    --color-app-950: #29201b;
-    --color-primary: #8a6a58;
-}
-
-/* NEW: Nordic (Soft Ice Blue) */
-:root[data-theme='nordic'] {
-    --color-app-50: #f4f7fb;
-    --color-app-100: #e6ecf6;
-    --color-app-200: #cddbe9;
-    --color-app-300: #a5c2de;
-    --color-app-400: #76a0cc;
-    --color-app-500: #5181b8;
-    --color-app-600: #3b6699;
-    --color-app-700: #31527a;
-    --color-app-800: #2a4463;
-    --color-app-900: #263a53;
-    --color-app-950: #1a2736;
-    --color-primary: #5181b8;
-}
-
-/* NEW: Electric Pop (Ben-Day Dots Style) */
-:root[data-theme='pop'] {
-    --color-app-50: #eff6ff;
-    --color-app-100: #dbeafe;
-    --color-app-200: #bfdbfe;
-    --color-app-300: #93c5fd;
-    --color-app-400: #60a5fa;
-    --color-app-500: #3b82f6;
-    /* Electric Blue Base */
-    --color-app-600: #2563eb;
-    --color-app-700: #1d4ed8;
-    --color-app-800: #1e40af;
-    --color-app-900: #1e3a8a;
-    --color-app-950: #172554;
-    --color-primary: #3b82f6;
-}
-
-/* Global Pop Styles */
-:root[data-theme='pop'] body {
-    background-color: #3b82f6;
-    background-image: radial-gradient(#ffffff 20%, transparent 20%);
-    background-size: 20px 20px;
-    /* Big visible dots */
-    background-attachment: fixed;
-}
-
-/* Cleanup any Artastic overlays */
-:root[data-theme='pop'] body::after {
-    content: none;
-}
-
-/* Pop Cards: White with high contrast shadow to pop against the blue */
-:root[data-theme='pop'] .bg-white,
-:root[data-theme='pop'] .bg-zinc-50,
-:root[data-theme='pop'] .dark .bg-zinc-900 {
-    background-color: #ffffff !important;
-    border: 2px solid #1e3a8a !important;
-    /* Deep Blue Border */
-    box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 0.2) !important;
-    opacity: 1 !important;
-    /* No transparency here */
-}
-
-/* Force Light text on dark bg if needed, or rely on ThemeContext */
-:root[data-theme='pop'] {
-    color-scheme: light;
-}
-
-/* NEW: Comic Pop (Retro Yellow & Dark Coffee) */
-:root[data-theme='comic'] {
-    --color-app-50: #fffbeb;
-    /* Stronger Yellow Tint */
-    --color-app-100: #fef3c7;
-    /* Visible Yellow Background */
-    --color-app-200: #fde047;
-    /* Vibrant Yellow Accent */
-    --color-app-300: #fcd34d;
-    --color-app-400: #fbbf24;
-    --color-app-500: #f59e0b;
-    --color-app-600: #d97706;
-    --color-app-700: #b45309;
-    --color-app-800: #78350f;
-    --color-app-900: #451a03;
-    --color-app-950: #290e03;
-    --color-primary: #78350f;
-}
-
-/* Global Comic Styles Override */
-:root[data-theme='comic'] * {
-    --color-primary: #78350f;
-}
-
-/* Apply borders to common containers in Comic Mode */
-:root[data-theme='comic'] .bg-white,
-:root[data-theme='comic'] .bg-zinc-50,
-:root[data-theme='comic'] .dark .bg-zinc-900,
-:root[data-theme='comic'] .dark .bg-zinc-950,
-:root[data-theme='comic'] .bg-emerald-50,
-:root[data-theme='comic'] .bg-rose-50,
-:root[data-theme='comic'] input,
-:root[data-theme='comic'] select,
-:root[data-theme='comic'] textarea {
-    border: 2px solid #290e03 !important;
-    box-shadow: 4px 4px 0px 0px #290e03 !important;
-}
-
-/* Specific button overrides */
-:root[data-theme='comic'] button {
-    border: 2px solid #290e03 !important;
-    box-shadow: 3px 3px 0px 0px #290e03 !important;
-    transform: translate(-2px, -2px);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-:root[data-theme='comic'] button:active {
-    transform: translate(0px, 0px) !important;
-    box-shadow: none !important;
-}
-
-:root[data-theme='comic'] button.border-transparent {
-    border: 2px solid transparent !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-
-:root[data-theme='comic'] button.border-transparent:hover {
-    border: 2px solid #290e03 !important;
-    background-color: #fde047 !important;
-    box-shadow: 3px 3px 0px 0px #290e03 !important;
-    transform: translate(-2px, -2px) !important;
-    color: #290e03 !important;
-}
-
-:root[data-theme='comic'] .rounded-3xl,
-:root[data-theme='comic'] .rounded-2xl,
-:root[data-theme='comic'] .rounded-xl,
-:root[data-theme='comic'] .rounded-lg {
-    border-radius: 8px !important;
-}
-
-/* Scrollbar Override for Comic Mode */
-:root[data-theme='comic'] ::-webkit-scrollbar-thumb {
-    background-color: #fde047 !important;
-    border: 2px solid #290e03 !important;
-}
-
-:root[data-theme='comic'] ::-webkit-scrollbar-track {
-    background-color: #fffbeb !important;
-    border-left: 2px solid #290e03 !important;
-}
-
-/* Force class-based dark mode */
-@custom-variant dark (&:where(.dark, .dark *));
-
-:root {
+    /* Fonts & Scheme */
     font-family: 'Outfit', sans-serif;
     color-scheme: light;
 }
@@ -340,66 +105,208 @@
     color-scheme: dark;
 }
 
-/* Global Selection Style (Highlight) */
-::selection {
-    background-color: var(--color-app-200);
-    color: var(--color-app-900);
+/* =========================================
+   2. RADIUS SYSTEM
+   Tailwind config reads var(--radius-theme), we just update the var.
+   ========================================= */
+:root[data-radius='none'] {
+    --radius-theme: 0px;
 }
 
-/* Utility to hide scrollbar but keep functionality */
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
+:root[data-radius='sm'] {
+    --radius-theme: 0.25rem;
 }
 
-.no-scrollbar {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
+/* 4px */
+:root[data-radius='md'] {
+    --radius-theme: 0.75rem;
 }
 
-/* Global Smooth Scrolling */
-html {
-    scroll-behavior: smooth;
+/* 12px */
+:root[data-radius='lg'] {
+    --radius-theme: 1.25rem;
 }
 
-/* Custom Scrollbar Styling - Global */
-@layer base {
-
-    /* Webkit (Chrome, Safari, Edge) */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: transparent;
-        margin-block: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background-color: var(--color-app-200);
-        /* Lighter default */
-        border: 2px solid transparent;
-        /* Creates padding around thumb */
-        background-clip: content-box;
-        border-radius: 99px;
-        transition: background-color 0.2s;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background-color: var(--color-app-400);
-        /* Darker on hover */
-    }
-
-    /* Firefox */
-    * {
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-app-300) transparent;
-    }
+/* 20px */
+:root[data-radius='full'] {
+    --radius-theme: 9999px;
 }
 
-/* Colortly Dynamic Utilities */
+
+/* =========================================
+   3. TEXTURE "ATMOSPHERE" ENGINE
+   Supports targeting: [data-texture-target='bg|card|both']
+   ========================================= */
+
+/* --- NOISE --- */
+/* Base Noise (High Res) */
+:root[data-texture='noise']:where([data-texture-target='bg'], [data-texture-target='both']) body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    /* Lower than Dock (100) and Modals (top layer) but above base content */
+    /* High freq noise for digital grain look - UPDATED for HD */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 110px 110px;
+    /* Smaller tile size for crisper look */
+    opacity: var(--texture-intensity);
+    mix-blend-mode: overlay;
+}
+
+/* --- DOTS --- */
+:root[data-texture='dots']:where([data-texture-target='bg'], [data-texture-target='both']) body {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-app-300), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px,
+            transparent 1px);
+    background-size: 20px 20px;
+    background-attachment: fixed;
+}
+
+/* Dots on Cards */
+:root[data-texture='dots']:where([data-texture-target='card'], [data-texture-target='both']) .bg-white,
+:root[data-texture='dots']:where([data-texture-target='card'], [data-texture-target='both']) .bg-zinc-50 {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px,
+            transparent 1px);
+    background-size: 16px 16px;
+    border: 1px solid var(--color-app-200);
+}
+
+:root[data-texture='dots']:where([data-texture-target='card'], [data-texture-target='both']) .dark .bg-zinc-900 {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-app-700), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px,
+            transparent 1px);
+    background-size: 16px 16px;
+    /* Dark Mode Fix: Subtle Border + Inner Light */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+
+/* --- GRID --- */
+:root[data-texture='grid']:where([data-texture-target='bg'], [data-texture-target='both']) body {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-attachment: fixed;
+}
+
+/* Grid on Cards */
+:root[data-texture='grid']:where([data-texture-target='card'], [data-texture-target='both']) .bg-white,
+:root[data-texture='grid']:where([data-texture-target='card'], [data-texture-target='both']) .bg-zinc-50 {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--color-app-100), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-app-100), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
+    background-size: 16px 16px;
+    background-color: var(--color-zinc-50);
+    border: 1px solid var(--color-app-200);
+}
+
+:root[data-texture='grid']:where([data-texture-target='card'], [data-texture-target='both']) .dark .bg-zinc-900 {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--color-app-800), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-app-800), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
+    background-size: 16px 16px;
+    background-color: var(--color-zinc-900);
+    /* Dark Mode Fix: Subtle Border + Inner Light */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+
+/* --- GLASS --- */
+:root[data-texture='glass'] .bg-white,
+:root[data-texture='glass'] .bg-zinc-50 {
+    background: rgba(255, 255, 255, calc(0.1 + (var(--texture-intensity) * 0.7))) !important;
+    backdrop-filter: blur(calc(var(--texture-intensity) * 20px + 4px)) saturate(150%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-texture='glass'] .dark .bg-zinc-900 {
+    /* More sophisticated dark glass */
+    background: rgba(10, 10, 15, calc(0.4 + (var(--texture-intensity) * 0.6))) !important;
+    backdrop-filter: blur(calc(var(--texture-intensity) * 20px + 4px)) saturate(110%) !important;
+    /* Soft top light border */
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+    /* Inner flow */
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* Subtle bg gradient for glass to blur */
+:root[data-texture='glass'] body {
+    background: radial-gradient(circle at 50% 0%, var(--color-primary), transparent 50%), var(--color-app-50);
+    background-attachment: fixed;
+}
+
+.dark:root[data-texture='glass'] body {
+    background: radial-gradient(circle at 50% 0%, var(--color-primary), transparent 50%), var(--color-app-950);
+    background-attachment: fixed;
+}
+
+
+/* =========================================
+   4. BORDER STYLE ENGINE
+   Modes: Clean (Def), Contrast, Shadow
+   ========================================= */
+
+/* --- CONTRAST --- */
+/* Target specific Tailwind classes to override them cleanly */
+:root[data-border-style='contrast'] .border,
+:root[data-border-style='contrast'] .border-2 {
+    /* Make borders darker */
+    border-color: var(--color-app-900) !important;
+}
+
+:root[data-border-style='contrast'] .dark .border,
+:root[data-border-style='contrast'] .dark .border-2 {
+    /* In dark mode, contrast means lighter than bg, but not WHITE */
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+:root[data-border-style='contrast'] .border {
+    /* Make thin borders slightly thicker */
+    border-width: 2px !important;
+}
+
+/* Add border to cards that might not have one */
+:root[data-border-style='contrast'] .bg-white,
+:root[data-border-style='contrast'] .bg-zinc-50 {
+    border: 2px solid var(--color-app-900);
+}
+
+:root[data-border-style='contrast'] .dark .bg-zinc-900 {
+    border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+/* --- SHADOW --- */
+:root[data-border-style='shadow'] .bg-white,
+:root[data-border-style='shadow'] .bg-zinc-50,
+:root[data-border-style='shadow'] .dark .bg-zinc-900,
+:root[data-border-style='shadow'] .card {
+    border: 1px solid var(--color-app-100);
+    /* Very light border definition */
+    /* Soft, modern double-layer shadow */
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.05),
+        0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Ensure clean mode removes these if switched back */
+:root[data-border-style='clean'] .bg-white {
+    box-shadow: none;
+    /* Or default tailwind shadow if class present, but this resets our override */
+}
+
+
+/* =========================================
+   5. UTILS & EXTRAS
+   ========================================= */
+/* Colortly Dynamic Utils */
 .text-primary {
     color: var(--color-primary);
 }
@@ -412,62 +319,32 @@ html {
     border-color: var(--color-primary);
 }
 
-/* Manual Animations (since tailwindcss-animate is missing) */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Selection Override */
+::selection {
+    background-color: var(--color-app-200);
+    color: var(--color-app-900);
 }
 
-.animate-enter-app {
-    animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-/* View Transitions API Animations */
-@keyframes fade-in {
-    from {
-        opacity: 0;
+/* Default Scrollbar (can be overridden by OS/Browser, but providing style) */
+@layer base {
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
     }
-}
 
-@keyframes fade-out {
-    to {
-        opacity: 0;
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--color-app-200);
+        border-radius: 99px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--color-app-400);
     }
 }
 
-@keyframes slide-from-right {
-    from {
-        transform: translateX(30px);
-    }
-}
-
-@keyframes slide-to-left {
-    to {
-        transform: translateX(-30px);
-    }
-}
-
-/* Base View Transition State */
-::view-transition-old(root),
-::view-transition-new(root) {
-    animation-duration: 0.3s;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Cross Fade + Slide Effect */
-::view-transition-old(root) {
-    animation: 90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
-        300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
-}
-
-::view-transition-new(root) {
-    animation: 210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
-        300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
-}
+/* Force class-based dark mode helper */
+@custom-variant dark (&:where(.dark, .dark *));

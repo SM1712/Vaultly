@@ -4,7 +4,7 @@ import { clsx } from 'clsx';
 
 import { LogoCombined } from '../ui/Logo';
 import { useNavigation } from '../../hooks/useNavigation';
-import { Settings, Download, X, Plus, ChevronDown } from 'lucide-react';
+import { Settings, X, Plus, ChevronDown } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useState, useEffect } from 'react';
 
@@ -152,13 +152,7 @@ export const SidebarHorizontal = ({ onOpenSettings, position }: SidebarHorizonta
 
             {/* Actions Area */}
             <div className="flex-shrink-0 flex items-center gap-2 ml-4 pl-4 border-l border-zinc-100 dark:border-zinc-800 h-8">
-                <NavLink
-                    to="/download"
-                    className="p-2 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                    title="Descargar App"
-                >
-                    <Download size={18} />
-                </NavLink>
+
                 <button
                     onClick={onOpenSettings}
                     className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"

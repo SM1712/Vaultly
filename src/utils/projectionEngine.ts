@@ -41,7 +41,7 @@ export const calculateMonthlyProjection = ({
 }: ProjectionCalculationParams) => {
     const start = startOfMonth(targetMonth);
     const end = endOfMonth(targetMonth);
-    let items: Omit<ProjectionItem, 'balanceAfter' | 'isExcluded'>[] = [];
+    const items: Omit<ProjectionItem, 'balanceAfter' | 'isExcluded'>[] = [];
 
     // 1. Scheduled
     scheduled.forEach(sch => {
@@ -105,7 +105,7 @@ export const calculateMonthlyProjection = ({
         if (!fund.autoSaveConfig?.enabled) return;
         const day = fund.autoSaveConfig.dayOfMonth || 1;
         const targetDate = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), Math.min(day, end.getDate()));
-        let amount = fund.autoSaveConfig.type === 'fixed' ? fund.autoSaveConfig.amount : (initialBalance * fund.autoSaveConfig.amount) / 100;
+        const amount = fund.autoSaveConfig.type === 'fixed' ? fund.autoSaveConfig.amount : (initialBalance * fund.autoSaveConfig.amount) / 100;
         items.push({ id: fund.id, source: 'fund', date: format(targetDate, 'yyyy-MM-dd'), name: `Fondo: ${fund.name}`, amount: amount, type: 'expense', originalObject: fund });
     });
 

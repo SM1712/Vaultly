@@ -8,6 +8,10 @@ export interface Transaction {
     date: string;
     isRecurring?: boolean;
     description: string;
+    relatedTo?: {
+        type: 'credit' | 'project' | 'goal' | 'fund';
+        id: string;
+    };
 }
 
 export interface Goal {

@@ -218,7 +218,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
 
                 {/* 1. BALANCE HERO (Span 2 on Desktop) */}
-                <div className="md:col-span-2 relative overflow-hidden bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-zinc-900/10 dark:shadow-none group">
+                <div className="md:col-span-2 relative overflow-hidden bg-zinc-900 dark:bg-zinc-950 text-white dark:text-zinc-100 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-zinc-900/10 dark:shadow-none group">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-zinc-800 dark:bg-zinc-200 rounded-full blur-3xl opacity-20 -mr-16 -mt-16 transition-opacity group-hover:opacity-30"></div>
 
                     <div className="relative z-10 flex flex-col h-full justify-between">

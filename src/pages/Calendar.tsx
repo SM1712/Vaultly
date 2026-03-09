@@ -53,7 +53,7 @@ const Calendar = () => {
     };
 
     const getFirstDayOfMonth = (date: Date) => {
-        let day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+        const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
         return day === 0 ? 6 : day - 1; // Mon-Sun (0-6)
     };
 

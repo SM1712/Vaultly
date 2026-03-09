@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
-import { Moon, Sun, X, Settings, Download, PanelLeftClose, ChevronDown } from 'lucide-react';
+import { Moon, Sun, X, Settings, PanelLeftClose, ChevronDown } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { SyncStatus } from '../SyncStatus';
@@ -62,7 +62,11 @@ export const SidebarVertical = ({ isOpen, onClose, onOpenSettings, position }: S
     return (
         <aside className={clsx(
             "fixed inset-y-0 z-[60] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] pointer-events-auto",
-            "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-2xl lg:shadow-none",
+            // Explicitly handle theme backgrounds to prevent overrides
+            theme === 'dark'
+                ? "bg-zinc-950/40 backdrop-blur-xl border-white/5"
+                : "bg-white border-zinc-200",
+            "shadow-2xl lg:shadow-none border-r", // Added border-r globally here instead of position logic if needed, but keeping position logic below
             !isAuto && "lg:static lg:h-full",
 
             // Width Logic
@@ -70,7 +74,13 @@ export const SidebarVertical = ({ isOpen, onClose, onOpenSettings, position }: S
 
             // Auto Mode & Position Logic
             isAuto && (position === 'left' ? "-translate-x-[calc(100%_-_12px)] hover:translate-x-0" : "translate-x-[calc(100%_-_12px)] hover:translate-x-0"),
-            position === 'right' ? "right-0 border-l" : "left-0 border-r", // Position
+            position === 'right' ? "right-0 border-l" : "left-0", // Removed border-r here as it might conflict or double up, relying on explicit border classes above if possible. 
+            // Actually, let's keep it specific:
+            // position === 'right' ? "right-0 border-l" : "left-0 border-r" // Reverting to original logic but managed carefully
+            // Actually, simply relying on previous logic is safer if I didn't add border-r above.
+            // I added border-r above? No wait.
+            // Let's stick to the previous conditional but ensure border color usage.
+            position === 'right' ? "right-0 border-l" : "left-0 border-r",
 
             // Mobile Visibility
             isOpen
@@ -200,24 +210,6 @@ export const SidebarVertical = ({ isOpen, onClose, onOpenSettings, position }: S
                 "mb-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2 flex-shrink-0",
                 isCollapsed ? "p-2 mx-0" : "p-4 mx-2"
             )}>
-                <NavLink
-                    to="/download"
-                    className={({ isActive }) =>
-                        twMerge(
-                            clsx(
-                                "flex items-center rounded-xl transition-all duration-200 group font-medium text-sm",
-                                isCollapsed ? "justify-center p-3" : "gap-3 px-4 py-3.5",
-                                "hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 stroke-2",
-                                isActive ? "bg-indigo-50 dark:bg-indigo-900/30" : ""
-                            )
-                        )
-                    }
-                    title={isCollapsed ? "Descargar App" : undefined}
-                >
-                    <Download size={18} />
-                    {!isCollapsed && <span>Descargar App</span>}
-                </NavLink>
-
                 <button
                     onClick={() => {
                         onOpenSettings();

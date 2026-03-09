@@ -177,7 +177,7 @@ export const useGoals = () => {
         // LINEAR / LEGACY LOGIC
         const yearsDiff = deadlineDate.getFullYear() - today.getFullYear();
         const monthsDiff = deadlineDate.getMonth() - today.getMonth();
-        let monthsRemaining = Math.max(1, (yearsDiff * 12) + monthsDiff);
+        const monthsRemaining = Math.max(1, (yearsDiff * 12) + monthsDiff);
 
         // STRATEGY: SPREAD (Default)
         if (goal.recoveryStrategy === 'spread' || !goal.recoveryStrategy) {

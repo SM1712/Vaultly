@@ -99,6 +99,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, label, 
                     {/* Month Nav */}
                     <div className="flex items-center justify-between mb-4">
                         <button
+                            type="button"
                             onClick={handlePrevMonth}
                             className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition-colors"
                         >
@@ -108,6 +109,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, label, 
                             {format(currentMonth, 'MMMM yyyy', { locale: es })}
                         </span>
                         <button
+                            type="button"
                             onClick={handleNextMonth}
                             className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 transition-colors"
                         >

@@ -1,22 +1,24 @@
 import { useRef, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { NAV_SECTIONS } from '../../constants/navigation';
 import { clsx } from 'clsx';
-import { X, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Receipt, Tag, Users, Wallet, Target, Settings, LogOut, ChevronRight, Calculator, CheckCircle2, Box, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export const MobileMoreMenu = () => {
+export default function MobileMoreMenu() {
     const { isMobileMenuOpen, setIsMobileMenuOpen, setMobileNavStyle, mobileNavStyle, setIsSettingsOpen } = useTheme();
     const { logout } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate(); // Added navigate
 
     // Close on navigation
     useEffect(() => {
         setIsMobileMenuOpen(false);
     }, [location.pathname, setIsMobileMenuOpen]);
 
-    if (!isMobileMenuOpen || mobileNavStyle === 'sidebar') return null;
+    // Add missing option to prevent typescript overlap failure
+    if (!isMobileMenuOpen || (mobileNavStyle as 'dock' | 'drawer' | 'sidebar') === 'sidebar') return null;
 
     return (
         <div className="fixed inset-0 z-[100] flex flex-col pointer-events-none lg:hidden">
@@ -57,18 +59,24 @@ export const MobileMoreMenu = () => {
                                     isActive ? "opacity-100" : "opacity-70 hover:opacity-100"
                                 )}
                             >
-                                <div className={clsx(
-                                    "w-14 h-14 rounded-[1.25rem] flex items-center justify-center shadow-sm text-2xl mb-1",
-                                    ({ isActive }: any) => isActive
-                                        ? "bg-primary text-white shadow-primary/30"
-                                        : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-800"
-                                )}>
-                                    {/* Handle Lucide icons passed as components */}
-                                    <item.icon size={26} strokeWidth={1.5} />
-                                </div>
-                                <span className="text-[11px] font-medium text-center leading-tight text-zinc-600 dark:text-zinc-300">
-                                    {item.label}
-                                </span>
+                                {({ isActive }) => (
+                                    <>
+                                        <div className={clsx(
+                                            "w-14 h-14 rounded-[1.25rem] flex items-center justify-center shadow-sm text-2xl mb-1",
+                                            isActive
+                                                ? "bg-primary text-white shadow-primary/30"
+                                                : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-100 dark:border-zinc-800"
+                                        )}>
+                                            <item.icon size={26} strokeWidth={1.5} />
+                                        </div>
+                                        <span className={clsx(
+                                            "text-[11px] font-medium text-center leading-tight",
+                                            isActive ? "text-primary dark:text-primary" : "text-zinc-600 dark:text-zinc-300"
+                                        )}>
+                                            {item.label}
+                                        </span>
+                                    </>
+                                )}
                             </NavLink>
                         ))}
                     </div>
@@ -77,10 +85,10 @@ export const MobileMoreMenu = () => {
                     <div className="bg-white dark:bg-zinc-900 rounded-3xl p-2 border border-zinc-100 dark:border-zinc-800/50 mb-6">
                         <button
                             onClick={() => {
-                                setIsSettingsOpen(true);
-                                setIsMobileMenuOpen(false); // Close menu when opening settings
+                                setIsMobileMenuOpen(false);
+                                if (setIsSettingsOpen) setIsSettingsOpen(true);
                             }}
-                            className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-2xl transition-colors group"
+                            className="flex items-center justify-between w-full p-4 mb-2 bg-white rounded-xl active:scale-[0.98] transition-all shadow-sm border border-slate-100 dark:bg-slate-800 dark:border-slate-700/50 transition-colors group"
                         >
                             <div className="flex items-center gap-4">
                                 <div className="p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">

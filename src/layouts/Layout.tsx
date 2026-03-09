@@ -8,7 +8,7 @@ import { LogoCombined } from '../components/ui/Logo';
 import { FinanceProvider } from '../context/FinanceContext';
 import { SettingsProvider } from '../context/SettingsContext';
 import { ProjectsProvider } from '../context/ProjectsContext';
-import { Menu, PanelLeftOpen } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { clsx } from 'clsx';
 import LevelUpModal from '../components/gamification/LevelUpModal';
@@ -16,6 +16,7 @@ import { useGamification } from '../context/GamificationContext';
 
 import { useFunds } from '../hooks/useFunds';
 import { useBalance } from '../hooks/useBalance';
+import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 
 const AutoDepositManager = () => {
     const { checkAutoDeposits } = useFunds();
@@ -26,6 +27,18 @@ const AutoDepositManager = () => {
             checkAutoDeposits(currentBalance);
         }
     }, [checkAutoDeposits, currentBalance]);
+
+    return null;
+};
+
+const AutoScheduledManager = () => {
+    const { processScheduledTransactions } = useScheduledTransactions();
+
+    useEffect(() => {
+        if (typeof processScheduledTransactions === 'function') {
+            processScheduledTransactions();
+        }
+    }, [processScheduledTransactions]);
 
     return null;
 };
@@ -43,10 +56,14 @@ const GlobalLevelUpManager = () => {
 };
 
 const Layout = () => {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const location = useLocation();
-    const { isSidebarCollapsed, toggleSidebarCollapsed, sidebarPosition, sidebarVisibility } = useTheme();
+    const {
+        sidebarPosition,
+        sidebarVisibility,
+        isMobileMenuOpen,
+        setIsMobileMenuOpen
+    } = useTheme();
 
     // Projections needs full width without padding
     const isFullWidthPage = location.pathname === '/projections';
@@ -59,7 +76,7 @@ const Layout = () => {
 
     // Determine the main flex container direction
     const layoutClasses = clsx(
-        "flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300 animate-enter-app",
+        "flex h-screen overflow-hidden bg-transparent transition-colors duration-300 animate-enter-app",
         !isOverlayMode && sidebarPosition === 'left' && "flex-col lg:flex-row",
         !isOverlayMode && sidebarPosition === 'right' && "flex-col lg:flex-row-reverse",
         !isOverlayMode && sidebarPosition === 'top' && "flex-col",
@@ -82,6 +99,7 @@ const Layout = () => {
             <SettingsProvider>
                 <ProjectsProvider>
                     <AutoDepositManager />
+                    <AutoScheduledManager />
                     <div className={layoutClasses}>
                         {/* Mobile Header */}
                         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 shrink-0 z-30">

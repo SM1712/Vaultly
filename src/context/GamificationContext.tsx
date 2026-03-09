@@ -52,11 +52,16 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
     const [levelUpState, setLevelUpState] = useState({ isOpen: false, level: 0, title: '' });
     const [isLoading, setIsLoading] = useState(true);
 
-    // Ref to access current profile in stable functions without re-creating them
     const profileRef = useRef(profile);
-    useEffect(() => {
-        profileRef.current = profile;
-    }, [profile]);
+
+    // Helper to safely update both state and ref synchronously
+    const syncProfile = useCallback((updater: UserProfile | ((prev: UserProfile) => UserProfile)) => {
+        setProfile(prev => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            profileRef.current = next;
+            return next;
+        });
+    }, []);
 
     // 1. Listen to Firestore changes (Source of Truth)
     useEffect(() => {
@@ -71,7 +76,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             if (doc.exists()) {
                 const data = doc.data();
                 if (data.gamification) {
-                    setProfile(prev => ({ ...prev, ...data.gamification }));
+                    syncProfile(prev => ({ ...prev, ...data.gamification }));
                 } else {
                     // Migration: If no cloud data -> Try migrate local -> Else Init
                     migrateLocalToCloud(user.uid);
@@ -108,19 +113,7 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const saveProfile = async (newProfile: UserProfile) => {
-        // Optimistic Update
-        setProfile(newProfile);
 
-        if (user) {
-            try {
-                await setDoc(doc(db, 'users', user.uid), { gamification: newProfile }, { merge: true });
-            } catch (e) {
-                console.error("Failed to save gamification to cloud", e);
-                // toast.error("Error guardando progreso");
-            }
-        }
-    };
 
     const addXp = useCallback((amount: number) => {
         if (isLoading) return;
@@ -151,10 +144,14 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             currentTitle: newTitle
         };
 
-        // Update Ref immediately
-        profileRef.current = updatedProfile;
-        saveProfile(updatedProfile);
-    }, [notifyLevelUp, isLoading]);
+        // Update Ref immediately using syncProfile
+        syncProfile(updatedProfile);
+
+        // Save to cloud (this will use the newest ref internally anyways, but we pass it)
+        if (user) {
+            setDoc(doc(db, 'users', user.uid), { gamification: updatedProfile }, { merge: true }).catch(console.error);
+        }
+    }, [notifyLevelUp, isLoading, user, syncProfile]);
     // Actually saveProfile depends on user. Let's add it to dep array or ignore if we trust it. 
     // Best practice: depend on it.
 
@@ -176,8 +173,11 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             unlockedAchievements: [...currentProfile.unlockedAchievements, newUnlock]
         };
 
-        profileRef.current = updatedProfile;
-        saveProfile(updatedProfile);
+        syncProfile(updatedProfile);
+
+        if (user) {
+            setDoc(doc(db, 'users', user.uid), { gamification: updatedProfile }, { merge: true }).catch(console.error);
+        }
 
         notifyAchievement(achievement.title, achievement.xpReward);
         addXp(achievement.xpReward);
@@ -222,10 +222,12 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
 
         if (statsChanged) {
             const updatedProfile = { ...currentProfile, stats: currentStats };
-            profileRef.current = updatedProfile;
-            saveProfile(updatedProfile);
+            syncProfile(updatedProfile);
+            if (user) {
+                setDoc(doc(db, 'users', user.uid), { gamification: updatedProfile }, { merge: true }).catch(console.error);
+            }
         }
-    }, [unlockAchievement, isLoading]);
+    }, [unlockAchievement, isLoading, user, syncProfile]);
 
     const recalculateLevel = useCallback(() => {
         if (!appData) {
@@ -287,16 +289,23 @@ export const GamificationProvider = ({ children }: { children: ReactNode }) => {
             stats: fixedStats
         };
 
-        saveProfile(newProfile);
+        syncProfile(newProfile);
+        if (user) {
+            setDoc(doc(db, 'users', user.uid), { gamification: newProfile }, { merge: true }).catch(console.error);
+        }
         toast.success(`Nivel corregido: ${newLevel}`);
-    }, [appData]);
+    }, [appData, user, syncProfile]);
 
 
     const updateProfile = useCallback((updates: Partial<UserProfile>) => {
-        const newProfile = { ...profileRef.current, ...updates };
-        profileRef.current = newProfile;
-        saveProfile(newProfile);
-    }, []);
+        syncProfile(prev => {
+            const newProfile = { ...prev, ...updates };
+            if (user) {
+                setDoc(doc(db, 'users', user.uid), { gamification: newProfile }, { merge: true }).catch(console.error);
+            }
+            return newProfile;
+        });
+    }, [user, syncProfile]);
 
     return (
         <GamificationContext.Provider value={{

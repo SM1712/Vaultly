@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { Colortly } from '../systems/Colortly';
 import type { ReactNode } from 'react';
 
 type Theme = 'dark' | 'light';
@@ -10,6 +11,7 @@ export type SidebarVisibility = 'pinned' | 'auto' | 'floating';
 interface ThemeContextType {
     theme: Theme;
     themeStyle: ThemeStyle;
+    activeThemeType: 'preset' | 'custom';
     toggleTheme: () => void;
     setThemeStyle: (style: ThemeStyle) => void;
 
@@ -33,7 +35,43 @@ interface ThemeContextType {
     setNavigationMode: (mode: 'normal' | 'simple' | 'essential' | 'custom') => void;
     customModeItems: string[];
     toggleCustomModeItem: (itemId: string) => void;
+
+    // Custom Theme Config (Colortly Studio Persistence)
+    customTheme: CustomThemeConfig;
+    updateCustomTheme: (updates: Partial<CustomThemeConfig>) => void;
+
+    // Reading Mode
+    readingMode: boolean;
+    toggleReadingMode: () => void;
+
+    // Mobile Menu State
+    isMobileMenuOpen: boolean;
+    setIsMobileMenuOpen: (isOpen: boolean) => void;
+    mobileNavStyle?: 'dock' | 'drawer';
+    setMobileNavStyle?: (style: 'dock' | 'drawer') => void;
+    isSettingsOpen?: boolean;
+    setIsSettingsOpen?: (isOpen: boolean) => void;
 }
+
+export interface CustomThemeConfig {
+    hue: number;
+    saturation: number;
+    texture: 'none' | 'noise' | 'glass' | 'dots' | 'grid';
+    textureTarget: 'bg' | 'card' | 'both';
+    textureIntensity: number;
+    radius: 'none' | 'sm' | 'md' | 'lg' | 'full';
+    borderStyle: 'clean' | 'contrast' | 'shadow';
+}
+
+const DEFAULT_CUSTOM_THEME: CustomThemeConfig = {
+    hue: 220,
+    saturation: 90,
+    texture: 'none',
+    textureTarget: 'bg',
+    textureIntensity: 20,
+    radius: 'md',
+    borderStyle: 'clean'
+};
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -41,6 +79,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     // Mode (Light/Dark)
     const [theme, setTheme] = useState<Theme>(() => {
         return (localStorage.getItem('vault_theme') as Theme) || 'light';
+    });
+
+    // Active Theme Engine Type
+    const [activeThemeType, setActiveThemeType] = useState<'preset' | 'custom'>(() => {
+        return (localStorage.getItem('vault_active_theme_type') as 'preset' | 'custom') || 'preset';
     });
 
     // Style (Color Palette)
@@ -56,16 +99,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('vault_theme', theme);
     }, [theme]);
 
-    // Apply Style
+    // Apply Style (Managed by Colortly Brain for Presets)
     useEffect(() => {
-        const root = window.document.documentElement;
-        if (themeStyle === 'classic') {
-            root.removeAttribute('data-theme');
-        } else {
-            root.setAttribute('data-theme', themeStyle);
+        if (activeThemeType === 'preset') {
+            Colortly.applyTheme(themeStyle, theme);
+            localStorage.setItem('vault_theme_style', themeStyle);
         }
-        localStorage.setItem('vault_theme_style', themeStyle);
-    }, [themeStyle]);
+    }, [themeStyle, theme, activeThemeType]);
 
     // New Navigation Configuration
     const [sidebarPosition, setSidebarPositionState] = useState<SidebarPosition>(() => {
@@ -151,18 +191,94 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
+    // Custom Theme State
+    const [customTheme, setCustomTheme] = useState<CustomThemeConfig>(() => {
+        const saved = localStorage.getItem('vault_custom_theme_config');
+        return saved ? { ...DEFAULT_CUSTOM_THEME, ...JSON.parse(saved) } : DEFAULT_CUSTOM_THEME;
+    });
+
+    const updateCustomTheme = (updates: Partial<CustomThemeConfig>) => {
+        setCustomTheme(prev => {
+            const newState = { ...prev, ...updates };
+            localStorage.setItem('vault_custom_theme_config', JSON.stringify(newState));
+            return newState;
+        });
+        setActiveThemeType('custom');
+        localStorage.setItem('vault_active_theme_type', 'custom');
+    };
+
+    // Apply Custom Theme (Persisted)
+    useEffect(() => {
+        if (activeThemeType !== 'custom') return;
+
+        const root = document.documentElement;
+        // Radius
+        const radiusMap: Record<string, string> = { 'none': '0px', 'sm': '0.25rem', 'md': '0.75rem', 'lg': '1.25rem', 'full': '9999px' };
+        root.style.setProperty('--radius-theme', radiusMap[customTheme.radius]);
+        root.setAttribute('data-radius', customTheme.radius);
+
+        // Texture
+        root.setAttribute('data-texture', customTheme.texture);
+        root.setAttribute('data-texture-target', customTheme.textureTarget);
+        root.style.setProperty('--texture-intensity', (customTheme.textureIntensity / 100).toString());
+
+        // Border Style
+        root.setAttribute('data-border-style', customTheme.borderStyle);
+
+        // Colors
+        const h = customTheme.hue;
+        const s = customTheme.saturation;
+        root.style.setProperty('--color-primary', `hsl(${h}, ${s}%, 50%)`);
+        const lightnessMap: Record<number, number> = {
+            50: 98, 100: 95, 200: 90, 300: 82, 400: 64,
+            500: 50, 600: 40, 700: 30, 800: 20, 900: 12, 950: 6
+        };
+        Object.entries(lightnessMap).forEach(([stop, l]) => {
+            root.style.setProperty(`--color-app-${stop}`, `hsl(${h}, ${s}%, ${l}%)`);
+        });
+    }, [customTheme, activeThemeType, theme]); // Re-run custom theme if mode changes but type is custom
+
+
     const toggleTheme = () => {
         setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
     };
 
     const setThemeStyle = (style: ThemeStyle) => {
         setThemeStyleState(style);
+        setActiveThemeType('preset');
+        localStorage.setItem('vault_active_theme_type', 'preset');
     };
+
+    // Reading Mode State
+    const [readingMode, setReadingMode] = useState<boolean>(() => {
+        return localStorage.getItem('vault_reading_mode') === 'true';
+    });
+
+    const toggleReadingMode = () => {
+        setReadingMode(prev => {
+            const newValue = !prev;
+            localStorage.setItem('vault_reading_mode', String(newValue));
+            return newValue;
+        });
+    };
+
+    // Mobile Menu State
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+    // Apply Reading Mode (Side effect)
+    useEffect(() => {
+        if (readingMode) {
+            document.documentElement.setAttribute('data-reading-mode', 'true');
+        } else {
+            document.documentElement.removeAttribute('data-reading-mode');
+        }
+    }, [readingMode]);
 
     return (
         <ThemeContext.Provider value={{
             theme,
             themeStyle,
+            activeThemeType,
             toggleTheme,
             setThemeStyle,
             isSidebarCollapsed,
@@ -177,7 +293,13 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
             toggleCustomModeItem,
             openTabs,
             addTab,
-            closeTab
+            closeTab,
+            customTheme,
+            updateCustomTheme,
+            readingMode,
+            toggleReadingMode,
+            isMobileMenuOpen,
+            setIsMobileMenuOpen
         }}>
             {children}
         </ThemeContext.Provider>
@@ -191,3 +313,4 @@ export const useTheme = () => {
     }
     return context;
 };
+

@@ -123,29 +123,37 @@ const Funds = () => {
 
     return (
         <div className="space-y-8">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-black text-zinc-900 dark:text-zinc-100">Fondos de Ahorro</h1>
-                    <p className="text-zinc-500 text-sm mt-1">Espacios personalizados para tu dinero</p>
+            {/* Header Premium */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="space-y-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-widest mb-2">
+                        <Wallet size={14} /> Bóvedas
+                    </div>
+                    <h1 className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">Mis Fondos</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-base max-w-md">Administra tu liquidez en espacios dedicados y protegidos.</p>
                 </div>
                 <button
                     onClick={openCreate}
-                    className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-5 py-2.5 rounded-xl font-bold hover:scale-105 active:scale-95 transition-all shadow-lg shadow-zinc-200 dark:shadow-zinc-900/50"
+                    className="group relative flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-6 py-3 rounded-2xl font-bold transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:translate-y-0 overflow-hidden"
                 >
-                    <Plus size={20} /> Nuevo Fondo
+                    <div className="absolute inset-0 bg-white/20 dark:bg-black/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                    <Plus size={20} className="relative z-10 group-hover:rotate-90 transition-transform duration-300" />
+                    <span className="relative z-10">Nuevo Fondo</span>
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
                 {funds.length === 0 ? (
-                    <div className="col-span-full py-16 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/20">
-                        <div className="inline-flex p-4 bg-white dark:bg-zinc-900 rounded-full text-zinc-400 mb-4 shadow-sm">
-                            <PiggyBank size={32} />
+                    <div className="col-span-full py-20 flex flex-col items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800/60 rounded-[2rem] bg-gradient-to-b from-zinc-50/50 to-white dark:from-zinc-900/20 dark:to-zinc-950/20">
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full animate-pulse" />
+                            <div className="relative p-5 bg-white dark:bg-zinc-900 rounded-3xl text-zinc-400 shadow-xl border border-zinc-100 dark:border-zinc-800 rotate-3 transition-transform hover:rotate-6">
+                                <PiggyBank size={40} strokeWidth={1.5} />
+                            </div>
                         </div>
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Sin Fondos</h3>
-                        <p className="text-zinc-500 dark:text-zinc-500 text-sm mt-1 max-w-sm mx-auto">
-                            Crea tu primer fondo para guardar dinero para regalos, emergencias o gustos personales.
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Aún no tienes bóvedas</h3>
+                        <p className="text-zinc-500 dark:text-zinc-400 text-center max-w-sm">
+                            Crea tu primer fondo para organizar tus ahorros por categorías: emergencias, viajes, impuestos o gustos.
                         </p>
                     </div>
                 ) : (
@@ -153,52 +161,77 @@ const Funds = () => {
                         const colorClass = COLORS.find(c => c.id === fund.color)?.class || COLORS[0].class;
 
                         return (
-                            <div key={fund.id} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm dark:shadow-none hover:shadow-md transition-shadow relative group">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className={clsx("p-3 rounded-xl transition-colors", colorClass)}>
+                            <div key={fund.id} className="group relative flex flex-col bg-white dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-[2rem] p-6 sm:p-8 shadow-sm hover:shadow-2xl hover:shadow-zinc-200/50 dark:hover:shadow-black/50 transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+                                {/* Decorator Gradient Sphere */}
+                                <div className={clsx(
+                                    "absolute -right-20 -top-20 w-48 h-48 rounded-full blur-[60px] opacity-20 transition-opacity duration-500 group-hover:opacity-40",
+                                    COLORS.find(c => c.id === fund.color)?.solidClass || 'bg-zinc-500'
+                                )} />
+
+                                {/* Header Card */}
+                                <div className="relative flex justify-between items-start mb-8">
+                                    <div className={clsx(
+                                        "p-4 rounded-2xl shadow-inner transition-transform duration-500 group-hover:scale-110",
+                                        colorClass
+                                    )}>
                                         {getIcon(fund.icon)}
                                     </div>
-                                    <div className="flex gap-1">
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-2 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                                         <button
                                             onClick={() => openEdit(fund)}
-                                            className="text-zinc-300 hover:text-blue-500 transition-colors opacity-0 group-hover:opacity-100 p-1"
-                                            title="Editar"
+                                            className="p-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl transition-colors shadow-sm"
+                                            title="Editar Fondo"
                                         >
                                             <Pencil size={18} />
                                         </button>
                                         <button
                                             onClick={() => deleteFund(fund.id)}
-                                            className="text-zinc-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100 p-1"
-                                            title="Eliminar"
+                                            className="p-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl transition-colors shadow-sm"
+                                            title="Eliminar Fondo"
                                         >
                                             <Trash2 size={18} />
                                         </button>
                                     </div>
                                 </div>
 
-                                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-1">{fund.name}</h3>
-                                {fund.description && <p className="text-sm text-zinc-500 mb-4 line-clamp-1">{fund.description}</p>}
-
-                                <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Saldo Actual</p>
-                                    <p className="text-2xl font-mono font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                                        {currency}{fund.currentAmount.toLocaleString()}
-                                    </p>
+                                {/* Body */}
+                                <div className="relative flex-1">
+                                    <h3 className="text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-none mb-2">{fund.name}</h3>
+                                    {fund.description ? (
+                                        <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2">{fund.description}</p>
+                                    ) : (
+                                        <p className="text-sm text-zinc-400 dark:text-zinc-600 italic">Sin descripción</p>
+                                    )}
                                 </div>
 
-                                <div className="flex gap-2 mt-6">
-                                    <button
-                                        onClick={() => openTxModal('deposit', fund.id)}
-                                        className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 py-2 rounded-lg text-sm font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors flex items-center justify-center gap-1"
-                                    >
-                                        <ArrowDownLeft size={16} /> Ingresar
-                                    </button>
-                                    <button
-                                        onClick={() => openTxModal('withdraw', fund.id)}
-                                        className="flex-1 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 py-2 rounded-lg text-sm font-bold hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors flex items-center justify-center gap-1"
-                                    >
-                                        <ArrowUpRight size={16} /> Retirar
-                                    </button>
+                                {/* Balance & Actions */}
+                                <div className="relative mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800/60 flex flex-col gap-6">
+                                    <div>
+                                        <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Balance Disponible</p>
+                                        <p className="text-4xl font-mono font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
+                                            <span className="text-xl text-zinc-400 font-sans mr-1">{currency}</span>
+                                            {fund.currentAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => openTxModal('deposit', fund.id)}
+                                            className="group/btn relative overflow-hidden bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 py-3.5 rounded-xl text-sm font-bold transition-transform active:scale-95 flex items-center justify-center gap-2 shadow-md"
+                                        >
+                                            <div className="absolute inset-0 bg-white/20 dark:bg-black/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                                            <ArrowDownLeft size={18} className="relative z-10" />
+                                            <span className="relative z-10">Ingresar</span>
+                                        </button>
+                                        <button
+                                            onClick={() => openTxModal('withdraw', fund.id)}
+                                            className="group/btn relative bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 py-3.5 rounded-xl text-sm font-bold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors active:scale-95 flex items-center justify-center gap-2"
+                                        >
+                                            <ArrowUpRight size={18} /> Retirar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );

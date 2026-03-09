@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../hooks/useProjects';
 import { useSettings } from '../context/SettingsContext';
 import { FolderKanban, Plus, Pencil, Trash2, Loader2, AlertTriangle } from 'lucide-react';
@@ -77,46 +78,7 @@ const Projects = () => {
         }
     };
 
-    // ... (rest of file until modal)
 
-    {/* Delete Confirmation Modal */ }
-    <Modal
-        isOpen={!!projectToDelete}
-        onClose={() => !isDeleting && setProjectToDelete(null)}
-        title="Eliminar Proyecto"
-        maxWidth="max-w-sm"
-    >
-        <div className="flex flex-col items-center text-center space-y-4">
-            <div className="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full">
-                <AlertTriangle size={32} />
-            </div>
-            <div>
-                <p className="text-zinc-600 dark:text-zinc-300">
-                    ¿Estás seguro de que quieres eliminar este proyecto?
-                </p>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                    Esta acción no se puede deshacer y borrará todas las transacciones asociadas.
-                </p>
-            </div>
-            <div className="flex gap-3 w-full pt-2">
-                <button
-                    onClick={() => setProjectToDelete(null)}
-                    disabled={isDeleting}
-                    className="flex-1 px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors disabled:opacity-50"
-                >
-                    Cancelar
-                </button>
-                <button
-                    onClick={confirmDelete}
-                    disabled={isDeleting}
-                    className="flex-1 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-bold transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-70 flex items-center justify-center gap-2"
-                >
-                    {isDeleting ? <Loader2 size={16} className="animate-spin" /> : null}
-                    {isDeleting ? 'Eliminando...' : 'Eliminar'}
-                </button>
-            </div>
-        </div>
-    </Modal>
 
     const getStatusColor = (status: Project['status']) => {
         switch (status) {
@@ -219,98 +181,123 @@ const Projects = () => {
             </Modal>
 
             {/* Projects Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {projects.map(project => {
-                    const stats = getProjectStats(project);
+            <motion.div
+                initial="hidden"
+                animate="show"
+                variants={{
+                    hidden: { opacity: 0 },
+                    show: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.05 }
+                    }
+                }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+                <AnimatePresence mode="popLayout">
+                    {projects.map(project => {
+                        const stats = getProjectStats(project);
 
-                    return (
-                        <div
-                            key={project.id}
-                            onClick={() => setSelectedProject(project)}
-                            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm dark:shadow-none transition-all hover:border-emerald-500/50 hover:shadow-md cursor-pointer group relative overflow-hidden"
-                        >
-                            {/* Card Content */}
-                            <div className="relative z-10">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 dark:group-hover:bg-emerald-900/30 dark:group-hover:text-emerald-400 transition-colors">
-                                            <FolderKanban size={20} />
+                        return (
+                            <motion.div
+                                layout
+                                variants={{
+                                    hidden: { opacity: 0, y: 20 },
+                                    show: { opacity: 1, y: 0 }
+                                }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                                key={project.id}
+                                onClick={() => setSelectedProject(project)}
+                                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm dark:shadow-none transition-all hover:border-emerald-500/50 hover:shadow-md cursor-pointer group relative overflow-hidden"
+                            >
+                                {/* Card Content */}
+                                <div className="relative z-10">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 dark:group-hover:bg-emerald-900/30 dark:group-hover:text-emerald-400 transition-colors">
+                                                <FolderKanban size={20} />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-lg leading-tight">{project.name}</h3>
+                                                <span
+                                                    onClick={(e) => cycleStatus(e, project)}
+                                                    className={clsx("text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border mt-1 inline-block cursor-pointer hover:opacity-80 transition-opacity select-none", getStatusColor(project.status))}
+                                                    title="Clic para cambiar estado"
+                                                >
+                                                    {project.status === 'planning' ? 'Planificación' :
+                                                        project.status === 'active' ? 'En Curso' :
+                                                            project.status === 'completed' ? 'Completado' :
+                                                                project.status === 'paused' ? 'Pausado' : 'Cancelado'}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-lg leading-tight">{project.name}</h3>
-                                            <span
-                                                onClick={(e) => cycleStatus(e, project)}
-                                                className={clsx("text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border mt-1 inline-block cursor-pointer hover:opacity-80 transition-opacity select-none", getStatusColor(project.status))}
-                                                title="Clic para cambiar estado"
+                                        <div className="flex gap-1">
+                                            <button
+                                                onClick={(e) => handleEdit(e, project)}
+                                                className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                title="Editar"
                                             >
-                                                {project.status === 'planning' ? 'Planificación' :
-                                                    project.status === 'active' ? 'En Curso' :
-                                                        project.status === 'completed' ? 'Completado' :
-                                                            project.status === 'paused' ? 'Pausado' : 'Cancelado'}
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDelete(e, project.id)}
+                                                className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4 py-2">
+                                        <div>
+                                            <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Balance</p>
+                                            <p className={clsx("font-mono font-bold text-lg", stats.currentBalance >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                                                {currency}{stats.currentBalance.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Ejecutado</p>
+                                            <p className="font-mono font-bold text-zinc-500 text-lg">{currency}{stats.totalExpenses.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Progress Bar */}
+                                    <div>
+                                        <div className="flex justify-between text-xs mb-1.5">
+                                            <span className="text-zinc-500">
+                                                {stats.totalExpenses > 0 ? 'Presupuesto Ejecutado' : 'Fondos vs Objetivo'}
+                                            </span>
+                                            <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">
+                                                {stats.totalExpenses > 0 ? stats.percentConsumed.toFixed(0) : stats.percentFunded.toFixed(0)}%
                                             </span>
                                         </div>
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <button
-                                            onClick={(e) => handleEdit(e, project)}
-                                            className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                            title="Editar"
-                                        >
-                                            <Pencil size={18} />
-                                        </button>
-                                        <button
-                                            onClick={(e) => handleDelete(e, project.id)}
-                                            className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
-                                            title="Eliminar"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
+                                        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                            <div
+                                                className={clsx("h-full transition-all duration-500",
+                                                    (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 100 ? "bg-rose-500" :
+                                                        (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 80 ? "bg-emerald-500" : "bg-emerald-500"
+                                                )}
+                                                style={{ width: `${Math.min((stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded), 100)}%` }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
+                        );
+                    })}
 
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4 py-2">
-                                    <div>
-                                        <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Balance</p>
-                                        <p className={clsx("font-mono font-bold text-lg", stats.currentBalance >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                                            {currency}{stats.currentBalance.toLocaleString()}
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Ejecutado</p>
-                                        <p className="font-mono font-bold text-zinc-500 text-lg">{currency}{stats.totalExpenses.toLocaleString()}</p>
-                                    </div>
-                                </div>
-
-                                {/* Progress Bar */}
-                                <div>
-                                    <div className="flex justify-between text-xs mb-1.5">
-                                        <span className="text-zinc-500">
-                                            {stats.totalExpenses > 0 ? 'Presupuesto Ejecutado' : 'Fondos vs Objetivo'}
-                                        </span>
-                                        <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">
-                                            {stats.totalExpenses > 0 ? stats.percentConsumed.toFixed(0) : stats.percentFunded.toFixed(0)}%
-                                        </span>
-                                    </div>
-                                    <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                        <div
-                                            className={clsx("h-full transition-all duration-500",
-                                                (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 100 ? "bg-rose-500" :
-                                                    (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 80 ? "bg-emerald-500" : "bg-emerald-500"
-                                            )}
-                                            style={{ width: `${Math.min((stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded), 100)}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+                </AnimatePresence>
 
                 {/* Empty State */}
                 {projects.length === 0 && !showForm && (
-                    <div className="col-span-full py-16 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/20">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="col-span-full py-16 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/20"
+                    >
                         <div className="inline-flex p-4 bg-white dark:bg-zinc-900 rounded-full text-zinc-400 mb-4 shadow-sm">
                             <FolderKanban size={32} />
                         </div>
@@ -318,24 +305,26 @@ const Projects = () => {
                         <p className="text-zinc-500 dark:text-zinc-500 text-sm mt-1 max-w-sm mx-auto">
                             Comienza creando tu primer proyecto para llevar un control financiero detallado y separado de tu flujo principal.
                         </p>
-                    </div>
+                    </motion.div>
                 )}
-            </div>
+            </motion.div>
 
             {/* Project Details Modal */}
-            {
-                selectedProject && (
-                    <ProjectDetails
-                        project={projects.find(p => p.id === selectedProject.id) || selectedProject}
-                        onClose={() => setSelectedProject(null)}
-                    />
-                )
-            }
+            <AnimatePresence>
+                {
+                    selectedProject && (
+                        <ProjectDetails
+                            project={projects.find(p => p.id === selectedProject.id) || selectedProject}
+                            onClose={() => setSelectedProject(null)}
+                        />
+                    )
+                }
+            </AnimatePresence>
 
             {/* Delete Confirmation Modal */}
             <Modal
                 isOpen={!!projectToDelete}
-                onClose={() => setProjectToDelete(null)}
+                onClose={() => !isDeleting && setProjectToDelete(null)}
                 title="Eliminar Proyecto"
                 maxWidth="max-w-sm"
             >
@@ -354,15 +343,18 @@ const Projects = () => {
                     <div className="flex gap-3 w-full pt-2">
                         <button
                             onClick={() => setProjectToDelete(null)}
-                            className="flex-1 px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors"
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors disabled:opacity-50"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={confirmDelete}
-                            className="flex-1 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-bold transition-colors shadow-lg shadow-rose-500/20"
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-bold transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-70 flex items-center justify-center gap-2"
                         >
-                            Eliminar
+                            {isDeleting ? <Loader2 size={16} className="animate-spin" /> : null}
+                            {isDeleting ? 'Eliminando...' : 'Eliminar'}
                         </button>
                     </div>
                 </div>

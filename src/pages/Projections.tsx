@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { useSettings } from '../context/SettingsContext';
 import { useScheduledTransactions } from '../hooks/useScheduledTransactions';
 import { useProjections } from '../hooks/useProjections';
@@ -239,24 +240,23 @@ export default function Projections() {
 
                         {/* Animated Segmented Tabs */}
                         <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-2xl relative border border-zinc-200 dark:border-zinc-700/50 w-full md:w-auto overflow-hidden">
-                            {/* Animated Background Pill */}
-                            <div
-                                className={clsx(
-                                    "absolute top-1 bottom-1 rounded-xl bg-white dark:bg-zinc-700 shadow-sm transition-all duration-300 ease-out z-0",
-                                    activeTab === 'structure' ? "left-1 right-[66.66%]" :
-                                        activeTab === 'scenarios' ? "left-[33.33%] right-[33.33%]" :
-                                            "left-[66.66%] right-1"
+                            <button onClick={() => setStoreActiveView('structure')} className={clsx("relative flex-1 md:flex-none md:w-32 py-2 text-[11px] font-black uppercase tracking-wide text-center transition-colors duration-300 flex items-center justify-center gap-2", activeTab === 'structure' ? "text-indigo-600 dark:text-indigo-300" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400")}>
+                                {activeTab === 'structure' && (
+                                    <motion.div layoutId="projectionTabPill" className="absolute inset-0 bg-white dark:bg-zinc-700 rounded-xl shadow-sm z-0" transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }} />
                                 )}
-                            />
-
-                            <button onClick={() => setStoreActiveView('structure')} className={clsx("relative z-10 flex-1 md:flex-none md:w-32 py-2 text-[11px] font-black uppercase tracking-wide text-center transition-colors duration-300 flex items-center justify-center gap-2", activeTab === 'structure' ? "text-indigo-600 dark:text-indigo-300" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400")}>
-                                <LayoutList size={14} strokeWidth={2.5} /> Base
+                                <span className="relative z-10 flex items-center gap-2"><LayoutList size={14} strokeWidth={2.5} /> Base</span>
                             </button>
-                            <button onClick={() => setStoreActiveView('scenarios')} className={clsx("relative z-10 flex-1 md:flex-none md:w-32 py-2 text-[11px] font-black uppercase tracking-wide text-center transition-colors duration-300 flex items-center justify-center gap-2", activeTab === 'scenarios' ? "text-indigo-600 dark:text-indigo-300" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400")}>
-                                <Layers size={14} strokeWidth={2.5} /> Simulación
+                            <button onClick={() => setStoreActiveView('scenarios')} className={clsx("relative flex-1 md:flex-none md:w-32 py-2 text-[11px] font-black uppercase tracking-wide text-center transition-colors duration-300 flex items-center justify-center gap-2", activeTab === 'scenarios' ? "text-indigo-600 dark:text-indigo-300" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400")}>
+                                {activeTab === 'scenarios' && (
+                                    <motion.div layoutId="projectionTabPill" className="absolute inset-0 bg-white dark:bg-zinc-700 rounded-xl shadow-sm z-0" transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }} />
+                                )}
+                                <span className="relative z-10 flex items-center gap-2"><Layers size={14} strokeWidth={2.5} /> Simulación</span>
                             </button>
-                            <button onClick={() => setStoreActiveView('vision')} className={clsx("relative z-10 flex-1 md:flex-none md:w-32 py-2 text-[11px] font-black uppercase tracking-wide text-center transition-colors duration-300 flex items-center justify-center gap-2", activeTab === 'vision' ? "text-fuchsia-600 dark:text-fuchsia-300" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400")}>
-                                <Telescope size={14} strokeWidth={2.5} /> Visión
+                            <button onClick={() => setStoreActiveView('vision')} className={clsx("relative flex-1 md:flex-none md:w-32 py-2 text-[11px] font-black uppercase tracking-wide text-center transition-colors duration-300 flex items-center justify-center gap-2", activeTab === 'vision' ? "text-fuchsia-600 dark:text-fuchsia-300" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400")}>
+                                {activeTab === 'vision' && (
+                                    <motion.div layoutId="projectionTabPill" className="absolute inset-0 bg-white dark:bg-zinc-700 rounded-xl shadow-sm z-0" transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }} />
+                                )}
+                                <span className="relative z-10 flex items-center gap-2"><Telescope size={14} strokeWidth={2.5} /> Visión</span>
                             </button>
                         </div>
                     </div>

@@ -4,6 +4,7 @@ import Modal from '../../components/ui/Modal'; // Asegurarse que la ruta es corr
 import {
     Palette, LayoutGrid, ChevronRight, Moon, Sun
 } from 'lucide-react';
+import { Colortly } from '../../systems/Colortly';
 
 interface PlanivioSettingsModalProps {
     isOpen: boolean;
@@ -17,20 +18,14 @@ const PlanivioSettingsModal = ({ isOpen, onClose }: PlanivioSettingsModalProps) 
     const [activeTab, setActiveTab] = useState<'general' | 'appearance'>('appearance');
     const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
 
+
+
     // Theme Definitions (Reutilizado de SettingsMenu)
-    const themes = [
-        { id: 'classic', name: 'Soft Stone', color: 'bg-[#a8a29e]' }, // stone-400
-        { id: 'clay', name: 'Soft Clay', color: 'bg-[#fb923c]' }, // orange-400
-        { id: 'sand', name: 'Soft Sand', color: 'bg-[#d6b885]' }, // custom sand
-        { id: 'coffee', name: 'Soft Coffee', color: 'bg-[#b97f6a]' }, // custom coffee
-        { id: 'sage', name: 'Soft Sage', color: 'bg-[#64ad84]' }, // custom sage
-        { id: 'nordic', name: 'Soft Nordic', color: 'bg-[#0ea5e9]' }, // sky-500
-        { id: 'mist', name: 'Soft Mist', color: 'bg-[#94a3b8]' }, // slate-400
-        { id: 'royal', name: 'Soft Royal', color: 'bg-[#a78bfa]' }, // violet-400
-        { id: 'bloom', name: 'Soft Bloom', color: 'bg-[#fb7185]' }, // rose-400
-        { id: 'comic', name: 'Comic Pop', color: 'bg-[#fde047] border-2 border-[#451a03]' }, // amber-300
-        { id: 'pop', name: 'Electric Pop', color: 'bg-[#3b82f6] border-2 border-white' }, // blue-500
-    ];
+    const themes = Colortly.getAllThemes().map(t => ({
+        id: t.id,
+        name: t.name,
+        color: t.displayColor
+    }));
 
     // Groups Definition
     const menuGroups = [

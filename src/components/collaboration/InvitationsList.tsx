@@ -1,8 +1,16 @@
+import { useState } from 'react';
 import { useCollaboration } from '../../context/CollaborationContext';
-import { Check, X, Mail } from 'lucide-react';
+import { Check, X, Mail, Loader2 } from 'lucide-react';
 
 const InvitationsList = () => {
     const { invitations, respondToInvitation } = useCollaboration();
+    const [processingItem, setProcessingItem] = useState<string | null>(null);
+
+    const handleRespond = async (id: string, accept: boolean) => {
+        setProcessingItem(id);
+        await respondToInvitation(id, accept);
+        setProcessingItem(null);
+    };
 
     if (invitations.length === 0) return null;
 
@@ -24,16 +32,20 @@ const InvitationsList = () => {
 
                         <div className="flex gap-2 mt-4">
                             <button
-                                onClick={() => respondToInvitation(invite.id, true)}
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+                                onClick={() => handleRespond(invite.id, true)}
+                                disabled={processingItem === invite.id}
+                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                             >
-                                <Check size={16} /> Aceptar
+                                {processingItem === invite.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                                Aceptar
                             </button>
                             <button
-                                onClick={() => respondToInvitation(invite.id, false)}
-                                className="flex-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+                                onClick={() => handleRespond(invite.id, false)}
+                                disabled={processingItem === invite.id}
+                                className="flex-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                             >
-                                <X size={16} /> Rechazar
+                                {processingItem === invite.id ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
+                                Rechazar
                             </button>
                         </div>
                     </div>

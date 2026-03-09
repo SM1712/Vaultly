@@ -5,6 +5,8 @@ import type { Transaction } from '../types';
 import { useFinance } from '../context/FinanceContext';
 import { useSettings } from '../context/SettingsContext';
 import { useGamification } from '../context/GamificationContext';
+import { useProjects } from '../hooks/useProjects';
+import { useFunds } from '../hooks/useFunds';
 import TransactionForm from '../components/finance/TransactionForm';
 import TransactionList from '../components/finance/TransactionList';
 import CategorySummary from '../components/finance/CategorySummary';
@@ -13,6 +15,9 @@ import MonthSelector from '../components/MonthSelector';
 const Income = () => {
     const { transactions, addTransaction, deleteTransaction, updateTransaction } = useTransactions('income');
     const { categories, addCategory } = useCategories('income');
+    const { projects, addProjectTransaction } = useProjects();
+    const { funds, addTransaction: addFundTx } = useFunds();
+
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const { selectedDate } = useFinance();
     const { currency } = useSettings();
@@ -43,6 +48,24 @@ const Income = () => {
             setEditingTransaction(null);
         } else {
             addTransaction(data);
+
+            // Relational Hooks processing
+            if (data.relatedTo) {
+                if (data.relatedTo.type === 'project') {
+                    addProjectTransaction(data.relatedTo.id, {
+                        amount: data.amount,
+                        date: data.date,
+                        description: data.description || 'Ingreso desde Bóveda',
+                        type: 'income',
+                        fundingSource: 'internal'
+                    });
+                } else if (data.relatedTo.type === 'fund') {
+                    // Si se registra un ingreso hacia un fondo (Ej. retiro del fondo a billetera principal) 
+                    // se interpreta como un Retiro del fondo.
+                    addFundTx(data.relatedTo.id, data.amount, 'withdraw', data.description || 'Retirado hacia Bóveda');
+                }
+            }
+
             // Gamification Triggers
             addXp(10); // Base XP for adding income
             checkAchievement('TRANSACTION_ADDED');
@@ -87,6 +110,8 @@ const Income = () => {
                             categories={categories}
                             onAddCategory={addCategory}
                             initialData={editingTransaction || undefined}
+                            projects={projects}
+                            funds={funds}
                         />
                     </section>
 

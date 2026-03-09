@@ -5,6 +5,9 @@ import type { Transaction } from '../types';
 import { useFinance } from '../context/FinanceContext';
 import { useSettings } from '../context/SettingsContext';
 import { useGamification } from '../context/GamificationContext';
+import { useCredits } from '../hooks/useCredits';
+import { useGoals } from '../hooks/useGoals';
+import { useFunds } from '../hooks/useFunds';
 import TransactionForm from '../components/finance/TransactionForm';
 import TransactionList from '../components/finance/TransactionList';
 import CategorySummary from '../components/finance/CategorySummary';
@@ -13,6 +16,10 @@ import MonthSelector from '../components/MonthSelector';
 const Expenses = () => {
     const { transactions, addTransaction, deleteTransaction, updateTransaction } = useTransactions('expense');
     const { categories, addCategory } = useCategories('expense');
+    const { credits, addPayment } = useCredits();
+    const { goals, addContribution, getMonthlyQuota, isGoalPaidThisMonth } = useGoals();
+    const { funds, addTransaction: addFundTx } = useFunds();
+
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const { selectedDate } = useFinance();
     const { currency } = useSettings();
@@ -43,6 +50,18 @@ const Expenses = () => {
             setEditingTransaction(null);
         } else {
             addTransaction(data);
+
+            // Relational Hooks processing
+            if (data.relatedTo) {
+                if (data.relatedTo.type === 'credit') {
+                    addPayment(data.relatedTo.id, data.amount, data.description || 'Desde Gastos');
+                } else if (data.relatedTo.type === 'goal') {
+                    addContribution(data.relatedTo.id, data.amount, data.description || 'Aporte desde Gastos');
+                } else if (data.relatedTo.type === 'fund') {
+                    addFundTx(data.relatedTo.id, data.amount, 'deposit', data.description || 'Aporte desde Gastos');
+                }
+            }
+
             // Gamification Triggers
             addXp(5); // Base XP for tracking expense
             checkAchievement('TRANSACTION_ADDED');
@@ -87,6 +106,11 @@ const Expenses = () => {
                             categories={categories}
                             onAddCategory={addCategory}
                             initialData={editingTransaction || undefined}
+                            credits={credits}
+                            goals={goals}
+                            funds={funds}
+                            getGoalMonthlyQuota={getMonthlyQuota}
+                            isGoalPaidThisMonth={isGoalPaidThisMonth}
                         />
                     </section>
 

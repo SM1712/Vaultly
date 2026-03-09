@@ -1,12 +1,14 @@
+import { useCallback } from 'react';
 import { useData } from '../context/DataContext';
 import type { ScheduledTransaction } from '../types';
-import { useTransactions } from './useTransactions';
 import { toast } from 'sonner';
+import { useNotifications } from '../context/NotificationContext';
 
 export const useScheduledTransactions = () => {
     const { data, updateData } = useData();
+    const { notify } = useNotifications();
     const scheduled = data.scheduledTransactions || [];
-    const { addTransaction } = useTransactions();
+    const transactions = data.transactions || [];
 
     const addScheduled = (scheduledData: Omit<ScheduledTransaction, 'id' | 'createdAt' | 'active'>) => {
         const newItem: ScheduledTransaction = {
@@ -30,10 +32,15 @@ export const useScheduledTransactions = () => {
         toast.success(currentState ? 'Programación pausada' : 'Programación reactivada');
     };
 
-    const processScheduledTransactions = () => {
+    const processScheduledTransactions = useCallback(() => {
         const today = new Date();
         const currentDay = today.getDate();
         let transactionsCreated = 0;
+        const newTransactions: any[] = []; // We will accumulate them here
+
+        // Use crypto.randomUUID for IDs since we removed uuid dependency here to simplify
+        // In case crypto isn't available, we could use a fallback, but in modern browsers it is.
+        // Actually uuid is imported in useTransactions. Let's just use crypto.randomUUID().
 
         const updatedScheduled = scheduled.map(item => {
             if (!item.active) return item;
@@ -43,25 +50,18 @@ export const useScheduledTransactions = () => {
                 lastProcessed.getMonth() === today.getMonth() &&
                 lastProcessed.getFullYear() === today.getFullYear();
 
+            // Also check if today is matching the day of month, or if we passed it and didn't process
             if (currentDay >= item.dayOfMonth && !alreadyProcessedThisMonth) {
-                // Add actual transaction
-                // Note: This calls updateData internally inside addTransaction, which might cause a race condition
-                // if we don't handle it carefully. However, since we are returning a new list here, 
-                // we should probably batch the updates or update scheduled AFTER transactions.
-                // ideally addTransaction would return the new transaction object instead of setting state directly.
-                // For now, let's just trigger the side effect.
 
-                // CRITICAL: We cannot call addTransaction here if it depends on the SAME state we are updating!
-                // Actually useTransactions reads from useData too.
-                // We will queue the transaction addition.
-
-                addTransaction({
+                newTransactions.push({
+                    id: crypto.randomUUID(),
                     type: item.type,
                     amount: item.amount,
                     category: item.category,
                     date: today.toISOString().split('T')[0],
                     description: `(Recurrente) ${item.description}`
                 });
+
                 transactionsCreated++;
 
                 return {
@@ -70,16 +70,21 @@ export const useScheduledTransactions = () => {
                 };
             }
 
-            // Alerts logic removed by user request.
-
             return item;
         });
 
         if (transactionsCreated > 0) {
-            updateData({ scheduledTransactions: updatedScheduled });
-            toast.info(`${transactionsCreated} transacciones recurrentes procesadas`);
+            updateData({
+                scheduledTransactions: updatedScheduled,
+                transactions: [...transactions, ...newTransactions]
+            });
+            toast.success(`${transactionsCreated} transacciones recurrentes procesadas`, { duration: 10000, icon: '🔄' });
+            notify('Vaultly: Pagos Automáticos', {
+                body: `Se han procesado ${transactionsCreated} transacciones recurrentes.`,
+                tag: 'recurring_tx',
+            });
         }
-    };
+    }, [scheduled, transactions, updateData, notify]);
 
     return {
         scheduled,

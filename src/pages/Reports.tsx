@@ -5,14 +5,18 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
     PieChart, Pie, Cell
 } from 'recharts';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, PiggyBank, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, PiggyBank, Calendar, Download, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { toast } from 'sonner';
 
 
 const Reports = () => {
     const { transactions } = useTransactions();
     const { currency } = useSettings();
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [isExporting, setIsExporting] = useState(false);
 
     // --- Data Processing ---
 
@@ -83,6 +87,132 @@ const Reports = () => {
         return { income, expense, savings, savingsRate };
     }, [monthlyData]);
 
+    // --- PDF Export Logic ---
+    const handleDownloadPDF = () => {
+        try {
+            setIsExporting(true);
+            const doc = new jsPDF();
+
+            // Colores del tema base oscuro/minimal
+            const primaryColor: [number, number, number] = [39, 39, 42]; // zinc-800
+            const emeraldColor: [number, number, number] = [16, 185, 129];
+            const roseColor: [number, number, number] = [244, 63, 94];
+
+            // PÁGINA 1: RESUMEN Y KPIs
+
+            // Header
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Informe Financiero Anual`, 15, 25);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Año: ${selectedYear} | Moneda Base: ${currency}`, 15, 33);
+
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+
+            // KPIs Section
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Resumen de Rendimiento YTD`, 15, 55);
+
+            // KPI Boxes (Simulated with simple text for clean PDF)
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Ingresos Totales:', 15, 65);
+            doc.text('Gastos Totales:', 75, 65);
+            doc.text('Ahorro Neto:', 135, 65);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...emeraldColor);
+            doc.text(`${currency}${ytdTotals.income.toLocaleString()}`, 15, 72);
+            doc.setTextColor(...roseColor);
+            doc.text(`${currency}${ytdTotals.expense.toLocaleString()}`, 75, 72);
+            doc.setTextColor(ytdTotals.savings >= 0 ? emeraldColor[0] : roseColor[0], ytdTotals.savings >= 0 ? emeraldColor[1] : roseColor[1], ytdTotals.savings >= 0 ? emeraldColor[2] : roseColor[2]);
+            doc.text(`${currency}${ytdTotals.savings.toLocaleString()} (${ytdTotals.savingsRate.toFixed(1)}%)`, 135, 72);
+
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+
+            // Categories Table
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Desglose de Gastos por Categoría`, 15, 90);
+
+            const categoryTableData = categoryData.map(c => [
+                c.name,
+                `${currency}${c.value.toLocaleString()}`,
+                `${((c.value / (ytdTotals.expense || 1)) * 100).toFixed(1)}%`
+            ]);
+
+            autoTable(doc, {
+                startY: 95,
+                head: [['Categoría', 'Total Gastado', '% del Gasto Total']],
+                body: categoryTableData.length > 0 ? categoryTableData : [['Sin gastos', '-', '-']],
+                theme: 'striped',
+                headStyles: { fillColor: primaryColor },
+                styles: { font: 'helvetica', fontSize: 10 },
+            });
+
+            // PÁGINA 2: HISTORIAL MENSUAL
+            doc.addPage();
+
+            // Header for Page 2
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, 0, 210, 20, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Desempeño Mensual Detallado - ${selectedYear}`, 15, 13);
+
+            const monthlyTableData = monthlyData.map(m => [
+                m.fullMonthName.charAt(0).toUpperCase() + m.fullMonthName.slice(1),
+                `${currency}${m.income.toLocaleString()}`,
+                `${currency}${m.expense.toLocaleString()}`,
+                `${currency}${m.savings.toLocaleString()}`
+            ]);
+
+            autoTable(doc, {
+                startY: 30,
+                head: [['Mes', 'Ingresos', 'Gastos', 'Ahorro / Balance']],
+                body: monthlyTableData,
+                theme: 'grid',
+                headStyles: { fillColor: primaryColor },
+                styles: { font: 'helvetica', fontSize: 10 },
+                didParseCell: function (data) {
+                    if (data.section === 'body' && data.column.index === 3) {
+                        // Apply green/red color based on savings string
+                        const val = data.cell.raw as string;
+                        // Avoid coloring if savings is exactly 0
+                        if (val.includes('-')) {
+                            data.cell.styles.textColor = roseColor;
+                        } else if (val !== `${currency}0`) {
+                            data.cell.styles.textColor = emeraldColor;
+                        }
+                    }
+                }
+            });
+
+            // Watermark / Footer
+            const pageCount = doc.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(`Generado vía Vaultly App - Página ${i} de ${pageCount}`, 15, 290);
+            }
+
+            doc.save(`Vaultly_Informe_Anual_${selectedYear}.pdf`);
+            toast.success('Informe PDF generado correctamente.');
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al generar el PDF.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
 
     // --- Colors for Charts ---
     const COLORS = [
@@ -132,6 +262,18 @@ const Reports = () => {
                         className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl disabled:opacity-30 transition-colors"
                     >
                         <ChevronRight size={20} />
+                    </button>
+
+                    {/* Divider */}
+                    <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
+
+                    <button
+                        onClick={handleDownloadPDF}
+                        disabled={isExporting}
+                        className="p-2 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400 rounded-xl text-zinc-500 transition-colors disabled:opacity-50"
+                        title="Descargar Informe PDF"
+                    >
+                        {isExporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
                     </button>
                 </div>
             </div>

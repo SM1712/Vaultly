@@ -1,13 +1,26 @@
 import { NavLink } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { Sun, Moon, Settings } from 'lucide-react';
-import { NAV_SECTIONS } from '../../constants/navigation';
+import { Sun, Moon, Settings, Menu } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { NAV_SECTIONS } from '../../constants/navigation';
+import type { NavItem } from '../../constants/navigation';
 
-export const MobileDockNav = () => {
-    const { theme, toggleTheme, setIsSettingsOpen } = useTheme();
+interface MobileDockNavProps {
+    onOpenSettings: () => void;
+}
 
-    const items = NAV_SECTIONS.flatMap(section => section.items);
+export const MobileDockNav = ({ onOpenSettings }: MobileDockNavProps) => {
+    const { theme, toggleTheme, setIsMobileMenuOpen } = useTheme();
+
+    const allItems: NavItem[] = NAV_SECTIONS.flatMap(section => section.items).reduce((acc: NavItem[], item) => {
+        if (item.subItems) {
+            return [...acc, ...item.subItems];
+        }
+        if (item.to) {
+            return [...acc, item];
+        }
+        return acc;
+    }, []);
 
     return (
         <nav className="fixed bottom-4 inset-x-0 z-50 flex justify-center pointer-events-none">
@@ -18,7 +31,7 @@ export const MobileDockNav = () => {
                 "shadow-lg shadow-zinc-900/10 dark:shadow-black/40",
                 "rounded-full pointer-events-auto overflow-x-auto no-scrollbar max-w-[90vw]"
             )}>
-                {items.map((item) => {
+                {allItems.slice(0, 4).map((item) => {
                     const Icon = item.icon;
                     return (
                         <NavLink
@@ -39,19 +52,12 @@ export const MobileDockNav = () => {
                 {/* Separator */}
                 <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-700 mx-1 shrink-0" />
 
-                {/* Functional Buttons */}
+                {/* More / Menu Button */}
                 <button
-                    onClick={toggleTheme}
+                    onClick={() => setIsMobileMenuOpen(true)}
                     className="relative flex flex-col items-center justify-center min-w-[2.75rem] h-10 rounded-full transition-all duration-300 shrink-0 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105"
                 >
-                    {theme === 'dark' ? <Moon size={18} strokeWidth={2.5} /> : <Sun size={18} strokeWidth={2.5} />}
-                </button>
-
-                <button
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="relative flex flex-col items-center justify-center min-w-[2.75rem] h-10 rounded-full transition-all duration-300 shrink-0 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105"
-                >
-                    <Settings size={18} strokeWidth={2.5} />
+                    <Menu size={18} strokeWidth={2.5} />
                 </button>
             </div>
         </nav>

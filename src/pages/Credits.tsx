@@ -42,6 +42,7 @@ const Credits = () => {
     const [paymentAmount, setPaymentAmount] = useState('');
 
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; creditId: string | null }>({ isOpen: false, creditId: null });
+    const [showPaid, setShowPaid] = useState(false);
 
     // --- Helpers ---
 
@@ -231,8 +232,13 @@ const Credits = () => {
 
         setPaymentModal({ open: false, creditId: '' });
         setPaymentAmount('');
+        setPaymentAmount('');
         toast.success('Pago registrado');
     };
+
+    const creditsWithStatus = credits.map(credit => ({ credit, status: getCreditStatus(credit) }));
+    const activeCredits = creditsWithStatus.filter(({ status }) => status.remainingBalance > 0);
+    const displayedCredits = showPaid ? creditsWithStatus : activeCredits;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -243,29 +249,36 @@ const Credits = () => {
                         Controla tus compromisos financieros.
                     </p>
                 </div>
-                <button
-                    onClick={openCreate}
-                    className="flex items-center justify-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-5 py-3 rounded-xl font-bold hover:scale-105 transition-transform shadow-lg shadow-zinc-900/10 dark:shadow-none"
-                >
-                    <Plus size={18} />
-                    <span>Nuevo Crédito</span>
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowPaid(!showPaid)}
+                        className={`text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors border ${showPaid ? 'bg-zinc-900 border-zinc-900 text-white dark:bg-white dark:border-white dark:text-zinc-900 shadow-md' : 'bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800'}`}
+                    >
+                        {showPaid ? 'Ocultar Pagados' : 'Mostrar Pagados'}
+                    </button>
+                    <button
+                        onClick={openCreate}
+                        className="flex items-center justify-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-4 py-2.5 rounded-xl font-bold hover:scale-105 transition-transform shadow-lg shadow-zinc-900/10 dark:shadow-none"
+                    >
+                        <Plus size={18} />
+                        <span className="hidden sm:inline">Nuevo Crédito</span>
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {credits.length === 0 ? (
+                {displayedCredits.length === 0 ? (
                     <div className="col-span-full py-20 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl bg-zinc-50/50 dark:bg-zinc-900/20 flex flex-col items-center">
                         <div className="p-6 bg-white dark:bg-zinc-900 rounded-full text-zinc-300 dark:text-zinc-700 mb-6 shadow-sm">
                             <Landmark size={48} strokeWidth={1.5} />
                         </div>
-                        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Sin Créditos Activos</h3>
+                        <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">{showPaid ? "No tienes ningún crédito" : "Sin Créditos Activos"}</h3>
                         <p className="text-zinc-500 max-w-md mx-auto">
                             Registra préstamos personales, hipotecas o compras a cuotas para no perder de vista ningún pago.
                         </p>
                     </div>
                 ) : (
-                    credits.map((credit: Credit) => {
-                        const status = getCreditStatus(credit);
+                    displayedCredits.map(({ credit, status }) => {
                         const progress = Math.min((status.totalPaid / status.totalToPay) * 100, 100);
                         const nextPaymentDate = new Date(credit.startDate + 'T12:00:00');
                         nextPaymentDate.setMonth(nextPaymentDate.getMonth() + (credit.payments?.length || 0) + 1);
@@ -289,7 +302,7 @@ const Credits = () => {
                                 <div className="mb-6">
                                     <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-1 truncate" title={credit.name}>{credit.name}</h3>
                                     <div className="flex flex-wrap gap-y-2 gap-x-4 text-xs font-medium text-zinc-500 uppercase tracking-wide">
-                                        <span className="flex items-center gap-1"><DollarSign size={12} /> {currency}{credit.principal.toLocaleString()}</span>
+                                        <span className="flex items-center gap-1"><DollarSign size={12} /> {currency}{credit.principal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                         <span className="flex items-center gap-1"><Percent size={12} /> {credit.interestRate.toFixed(1)}%</span>
                                         <span className="flex items-center gap-1"><Calendar size={12} /> {credit.term} Meses</span>
                                     </div>
@@ -298,7 +311,7 @@ const Credits = () => {
                                 <div className="space-y-3 mb-6">
                                     <div className="flex justify-between items-end">
                                         <span className="text-sm text-zinc-500">Saldo Pendiente</span>
-                                        <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">{currency}{status.remainingBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                        <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">{currency}{status.remainingBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
 
                                     <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-3 rounded-full overflow-hidden">
@@ -310,7 +323,7 @@ const Credits = () => {
 
                                     <div className="flex justify-between text-xs text-zinc-400 font-mono">
                                         <span>Pagado: {Math.round(progress)}%</span>
-                                        <span>Total: {currency}{status.totalToPay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                        <span>Total: {currency}{status.totalToPay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                     </div>
                                 </div>
 
@@ -319,7 +332,7 @@ const Credits = () => {
                                         <div className="flex justify-between items-center mb-3">
                                             <div>
                                                 <p className="text-[10px] uppercase font-bold text-zinc-400">Cuota Mensual</p>
-                                                <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{currency}{status.quota.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                                                <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100">{currency}{status.quota.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-[10px] uppercase font-bold text-zinc-400">Vence</p>
@@ -502,12 +515,12 @@ const Credits = () => {
                         <div className="grid grid-cols-2 gap-4 text-center">
                             <div>
                                 <p className="text-xs uppercase text-zinc-400 font-bold mb-1">Total a Devolver</p>
-                                <p className="text-lg font-bold text-zinc-900 dark:text-white">{currency}{previewTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                <p className="text-lg font-bold text-zinc-900 dark:text-white">{currency}{previewTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                             </div>
                             <div>
                                 <p className="text-xs uppercase text-zinc-400 font-bold mb-1">Interés Total</p>
                                 <p className={`text-lg font-bold ${previewTotal - previewPrincipal > 0 ? 'text-rose-500' : 'text-zinc-500'}`}>
-                                    {currency}{(previewTotal - previewPrincipal).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                    {currency}{(previewTotal - previewPrincipal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                             </div>
                             <div className="col-span-2 border-t border-zinc-200 dark:border-zinc-700 pt-3 mt-1">

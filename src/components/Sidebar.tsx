@@ -1,6 +1,7 @@
 import { SidebarVertical } from './navigation/SidebarVertical';
 import { SidebarHorizontal } from './navigation/SidebarHorizontal';
 import { SidebarDock } from './navigation/SidebarDock';
+import { MobileDockNav } from './navigation/MobileDockNav';
 import { useTheme } from '../context/ThemeContext';
 
 interface SidebarProps {
@@ -22,20 +23,26 @@ const Sidebar = ({ isOpen, onClose, onOpenSettings }: SidebarProps) => {
     if (sidebarVisibility === 'floating') {
         return (
             <>
-                {/* We still render SidebarVertical for Mobile "Hamburger" menu if isOpen is true, 
-                    OR we rely on the fact that Layout passes isOpen for that specific case.
-                    However, Dock replaces Desktop View.
-                */}
-                {/* Dock is now visible on all screens for 'floating' mode */}
-                <SidebarDock onOpenSettings={onOpenSettings} />
+                {/* Desktop: Floating Dock */}
+                <div className="hidden lg:block">
+                    <SidebarDock onOpenSettings={onOpenSettings} />
+                </div>
 
-                {/* We hide the standard mobile sidebar when Dock is active, 
-                    OR we could keep it as a drawer. But usually Dock replaces it.
-                    Let's hide the standard mobile sidebar fallback for now to avoid duplication,
-                    unless 'isOpen' is strictly for the drawer.
-                    If the User wants the Dock (which is always visible usually), 
-                    then isOpen might not apply to Dock visibility (Dock is persistent).
-                */}
+                {/* Mobile: Floating Dock */}
+                <div className="lg:hidden">
+                    <MobileDockNav onOpenSettings={onOpenSettings} />
+                </div>
+
+                {/* Mobile Drawer (Hidden by default, toggled via Context/Props) */}
+                {/* This allows the 'More' button in MobileNavBar to open the full menu */}
+                <div className={isOpen ? "block lg:hidden" : "hidden"}>
+                    <SidebarVertical
+                        isOpen={isOpen}
+                        onClose={onClose}
+                        onOpenSettings={onOpenSettings}
+                        position="left"
+                    />
+                </div>
             </>
         );
     }

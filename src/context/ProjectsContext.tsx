@@ -56,15 +56,25 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
         const unsub = onSnapshot(q, (snapshot) => {
             const loadedProjects: Project[] = [];
             snapshot.forEach(doc => {
-                loadedProjects.push({ id: doc.id, ...doc.data() } as Project);
+                const data = doc.data();
+                loadedProjects.push({
+                    ...data,
+                    id: doc.id,
+                    transactions: data.transactions || [],
+                    tasks: data.tasks || [],
+                    budgetLines: data.budgetLines || [],
+                    milestones: data.milestones || [],
+                    members: data.members || [],
+                    membersIds: data.membersIds || []
+                } as unknown as Project);
             });
             // Sort by createdAt or name? Let's just keep them as is or sort by name
             loadedProjects.sort((a, b) => a.name.localeCompare(b.name));
             setProjects(loadedProjects);
         }, (error) => {
             console.error("Error fetching projects:", error);
+            setProjects([]);
             // toast.error("Error cargando proyectos colaborativos");
-
         });
 
         return () => unsub();

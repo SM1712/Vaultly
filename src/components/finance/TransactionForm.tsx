@@ -18,9 +18,27 @@ interface TransactionFormProps {
         date: string;
         id?: string;
     };
+    credits?: any[]; // Reusing `any` to avoid excessive type imports inside component, or we could import Credit, Project types
+    projects?: any[];
+    goals?: any[];
+    funds?: any[];
+    getGoalMonthlyQuota?: (goal: any) => number;
+    isGoalPaidThisMonth?: (goal: any) => boolean;
 }
 
-const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialData }: TransactionFormProps) => {
+const TransactionForm = ({
+    type,
+    onSubmit,
+    categories,
+    onAddCategory,
+    initialData,
+    credits = [],
+    projects = [],
+    goals = [],
+    funds = [],
+    getGoalMonthlyQuota,
+    isGoalPaidThisMonth
+}: TransactionFormProps) => {
     const { currency } = useSettings();
     const { addScheduled } = useScheduledTransactions();
 
@@ -29,6 +47,65 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialDat
     const [description, setDescription] = useState(initialData?.description || '');
     const [date, setDate] = useState(initialData?.date || new Date().toISOString().split('T')[0]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Relational States
+    type RelationalTab = 'regular' | 'credit' | 'goal' | 'project' | 'fund';
+    const [activeTab, setActiveTab] = useState<RelationalTab>('regular');
+    const [selectedRelationId, setSelectedRelationId] = useState<string>('');
+
+    // Pre-filter active credits
+    const activeCredits = credits?.filter(c => c.status !== 'paid') || [];
+
+    // Auto-populate Amount when a relation is selected
+    useEffect(() => {
+        if (!selectedRelationId) return;
+
+        if (activeTab === 'credit' && activeCredits.length > 0) {
+            const credit = activeCredits.find(c => c.id === selectedRelationId);
+            if (credit) {
+                // Simplified Quota Suggestion for UI
+                const monthlyRate = credit.interestRate / 100 / 12;
+                let quota = 0;
+                if (credit.interestRate === 0) {
+                    quota = credit.principal / credit.term;
+                } else {
+                    const p = Number(credit.principal);
+                    const t = Number(credit.term);
+                    const denom = Math.pow(1 + monthlyRate, t) - 1;
+                    quota = denom === 0 ? p / t : (p * monthlyRate * Math.pow(1 + monthlyRate, t)) / denom;
+                }
+
+                // Set description implicitly
+                if (!description) setDescription(`Cuota de Crédito: ${credit.name}`);
+                setAmount(quota.toFixed(2));
+            }
+        } else if (activeTab === 'goal' && goals && goals.length > 0) {
+            const goal = goals.find(g => g.id === selectedRelationId);
+            if (goal) {
+                let suggested = 0;
+                const remaining = Math.max(0, goal.targetAmount - (goal.currentAmount || 0));
+
+                if (isGoalPaidThisMonth && getGoalMonthlyQuota) {
+                    const isPaid = isGoalPaidThisMonth(goal);
+                    if (!isPaid) {
+                        // Not paid yet this month, suggest the exact quota
+                        const quota = getGoalMonthlyQuota(goal);
+                        // Make sure we dont suggest more than remaining
+                        suggested = Math.min(quota, remaining);
+                    } else {
+                        // Already paid, fallback to small suggestion if user wants to add more
+                        suggested = remaining < 100 ? remaining : (goal.targetAmount * 0.05);
+                    }
+                } else {
+                    // Fallback if functions not provided
+                    suggested = remaining < 100 ? remaining : (goal.targetAmount * 0.1);
+                }
+
+                if (!description) setDescription(`Aporte a Meta: ${goal.name}`);
+                setAmount(suggested.toFixed(2));
+            }
+        }
+    }, [selectedRelationId, activeTab, isGoalPaidThisMonth, getGoalMonthlyQuota]);
 
     // Update state if initialData changes
     useEffect(() => {
@@ -58,18 +135,27 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialDat
             addScheduled({
                 type,
                 amount: Number(amount),
-                category,
+                category: activeTab === 'regular' ? category : `Relacional: ${activeTab}`,
                 description,
                 dayOfMonth: Number(recurrenceDay),
             });
         } else {
-            onSubmit({
+            const payload: any = {
                 amount: Number(amount),
                 type,
-                category,
+                category: activeTab === 'regular' ? category : `🏦 Movimiento: ${activeTab}`, // Fallback category for list view
                 description,
                 date,
-            });
+            };
+
+            if (activeTab !== 'regular' && selectedRelationId) {
+                payload.relatedTo = {
+                    type: activeTab,
+                    id: selectedRelationId
+                };
+            }
+
+            onSubmit(payload);
         }
 
         setIsSubmitting(false);
@@ -106,6 +192,84 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialDat
                 "absolute top-0 left-0 w-full h-1 bg-gradient-to-r",
                 isExpense ? "from-rose-500 to-orange-500" : "from-emerald-500 to-teal-500"
             )} />
+
+            {/* Type/Relational Tabs */}
+            {!initialData && (
+                <div className="flex flex-wrap gap-2 pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                    <button
+                        type="button"
+                        onClick={() => { setActiveTab('regular'); setSelectedRelationId(''); }}
+                        className={clsx(
+                            "px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                            activeTab === 'regular'
+                                ? (isExpense ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400")
+                                : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        )}
+                    >
+                        {isExpense ? 'Gasto Común' : 'Ingreso Común'}
+                    </button>
+
+                    {isExpense && activeCredits.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab('credit'); setSelectedRelationId(activeCredits[0]?.id || ''); }}
+                            className={clsx(
+                                "px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                                activeTab === 'credit'
+                                    ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"
+                                    : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            )}
+                        >
+                            Pagar Crédito
+                        </button>
+                    )}
+
+                    {isExpense && goals && goals.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab('goal'); setSelectedRelationId(goals[0]?.id || ''); }}
+                            className={clsx(
+                                "px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                                activeTab === 'goal'
+                                    ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"
+                                    : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            )}
+                        >
+                            Aportar a Meta
+                        </button>
+                    )}
+
+                    {!isExpense && projects && projects.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab('project'); setSelectedRelationId(projects[0]?.id || ''); }}
+                            className={clsx(
+                                "px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                                activeTab === 'project'
+                                    ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                                    : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            )}
+                        >
+                            Ingreso de Proyecto
+                        </button>
+                    )}
+
+                    {funds && funds.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab('fund'); setSelectedRelationId(funds[0]?.id || ''); }}
+                            className={clsx(
+                                "px-4 py-2 rounded-xl text-sm font-bold transition-all",
+                                activeTab === 'fund'
+                                    ? (isExpense ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400")
+                                    : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            )}
+                        >
+                            {isExpense ? 'Aportar a Fondo' : 'Retiro de Fondo'}
+                        </button>
+                    )}
+                </div>
+            )}
 
             <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold flex items-center gap-3 text-zinc-800 dark:text-zinc-100">
@@ -239,66 +403,99 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialDat
                     </div>
                 )}
 
-                {/* Category Selection - Pills */}
+                {/* Category Selection / Relational Target */}
                 <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <label className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">Categoría</label>
-                        {!isAddingCategory && (
-                            <button
-                                type="button"
-                                onClick={() => setIsAddingCategory(true)}
-                                className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 font-medium flex items-center gap-1 transition-colors"
-                            >
-                                <Plus size={14} /> Nueva Categoría
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                        {isAddingCategory ? (
-                            <div className="w-full flex gap-2 animate-in fade-in slide-in-from-left-2 items-center">
-                                <input
-                                    type="text"
-                                    autoFocus
-                                    placeholder="Nombre de nueva categoría..."
-                                    className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-400 transition-colors"
-                                    value={newCategory}
-                                    onChange={e => setNewCategory(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleAddCategory}
-                                    className="bg-black dark:bg-white text-white dark:text-black p-3 rounded-xl hover:opacity-90 transition-opacity"
-                                >
-                                    <Plus size={20} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAddingCategory(false)}
-                                    className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 p-3 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                                >
-                                    ✕
-                                </button>
+                    {activeTab === 'regular' ? (
+                        <>
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">Categoría</label>
+                                {!isAddingCategory && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsAddingCategory(true)}
+                                        className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 font-medium flex items-center gap-1 transition-colors"
+                                    >
+                                        <Plus size={14} /> Nueva Categoría
+                                    </button>
+                                )}
                             </div>
-                        ) : (
-                            categories.map(cat => (
-                                <button
-                                    key={cat}
-                                    type="button"
-                                    onClick={() => setCategory(cat)}
-                                    className={clsx(
-                                        "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border",
-                                        category === cat
-                                            ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 shadow-lg shadow-zinc-200 dark:shadow-none transform -translate-y-0.5"
-                                            : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                                    )}
-                                >
-                                    {cat}
-                                </button>
-                            ))
-                        )}
-                    </div>
+
+                            <div className="flex flex-wrap gap-2">
+                                {isAddingCategory ? (
+                                    <div className="w-full flex gap-2 animate-in fade-in slide-in-from-left-2 items-center">
+                                        <input
+                                            type="text"
+                                            autoFocus
+                                            placeholder="Nombre de nueva categoría..."
+                                            className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-400 transition-colors"
+                                            value={newCategory}
+                                            onChange={e => setNewCategory(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleAddCategory}
+                                            className="bg-black dark:bg-white text-white dark:text-black p-3 rounded-xl hover:opacity-90 transition-opacity"
+                                        >
+                                            <Plus size={20} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddingCategory(false)}
+                                            className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 p-3 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ) : (
+                                    categories.map(cat => (
+                                        <button
+                                            key={cat}
+                                            type="button"
+                                            onClick={() => setCategory(cat)}
+                                            className={clsx(
+                                                "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border",
+                                                category === cat
+                                                    ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 shadow-lg shadow-zinc-200 dark:shadow-none transform -translate-y-0.5"
+                                                    : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                            )}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">
+                                {activeTab === 'credit' && 'Selecciona un Crédito'}
+                                {activeTab === 'goal' && 'Selecciona una Meta'}
+                                {activeTab === 'project' && 'Selecciona un Proyecto'}
+                                {activeTab === 'fund' && 'Selecciona un Fondo'}
+                            </label>
+
+                            {/* Entity Select dropdown */}
+                            <select
+                                className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-600 font-medium"
+                                value={selectedRelationId}
+                                onChange={(e) => setSelectedRelationId(e.target.value)}
+                            >
+                                {activeTab === 'credit' && activeCredits.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name} (Préstamo)</option>
+                                ))}
+                                {activeTab === 'goal' && goals?.map(g => (
+                                    <option key={g.id} value={g.id}>{g.name} (Meta de Ahorro)</option>
+                                ))}
+                                {activeTab === 'project' && projects?.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name} (Proyecto)</option>
+                                ))}
+                                {activeTab === 'fund' && funds?.map(f => (
+                                    <option key={f.id} value={f.id}>{f.name} (Fondo Específico)</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
 
                 {/* Description */}
@@ -316,7 +513,7 @@ const TransactionForm = ({ type, onSubmit, categories, onAddCategory, initialDat
             <button
                 id="add-btn"
                 type="submit"
-                disabled={isSubmitting || !amount || !category}
+                disabled={isSubmitting || !amount || (activeTab === 'regular' ? !category : !selectedRelationId)}
                 className={twMerge(
                     "w-full py-4 rounded-xl font-bold text-white transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none",
                     buttonBg

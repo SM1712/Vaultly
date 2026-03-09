@@ -34,6 +34,18 @@ export default {
                     900: 'var(--color-app-900)',
                     950: 'var(--color-app-950)',
                 }
+            },
+            borderRadius: {
+                // Dynamic Radius System
+                'none': '0',
+                'sm': 'calc(var(--radius-theme) * 0.5)',
+                DEFAULT: 'var(--radius-theme)',
+                'md': 'var(--radius-theme)',
+                'lg': 'calc(var(--radius-theme) * 1.5)',
+                'xl': 'calc(var(--radius-theme) * 2.0)',
+                '2xl': 'calc(var(--radius-theme) * 2.5)',
+                '3xl': 'calc(var(--radius-theme) * 3.0)',
+                'full': '9999px',
             }
         },
     },
