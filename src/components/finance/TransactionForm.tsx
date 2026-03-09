@@ -181,116 +181,112 @@ const TransactionForm = ({
     const isExpense = type === 'expense';
     const activeColorClass = isExpense ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400";
     const bgActiveOne = isExpense ? "bg-rose-50 dark:bg-rose-900/20" : "bg-emerald-50 dark:bg-emerald-900/20";
-    const borderActive = isExpense ? "focus-within:border-rose-300 dark:focus-within:border-rose-800" : "focus-within:border-emerald-300 dark:focus-within:border-emerald-800";
     const buttonBg = isExpense ? "bg-rose-600 hover:bg-rose-700 shadow-rose-500/20" : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20";
 
     return (
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 rounded-3xl shadow-xl shadow-zinc-200/50 dark:shadow-black/20 space-y-8 relative overflow-hidden">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-950 rounded-[2.5rem] p-6 sm:p-10 shadow-2xl shadow-zinc-200/40 dark:shadow-black/40 border border-zinc-100 dark:border-zinc-800/80 flex flex-col gap-10">
 
-            {/* Ambient Background Glow */}
-            <div className={clsx(
-                "absolute top-0 left-0 w-full h-1 bg-gradient-to-r",
-                isExpense ? "from-rose-500 to-orange-500" : "from-emerald-500 to-teal-500"
-            )} />
-
-            {/* Type/Relational Tabs */}
-            {!initialData && (
-                <div className="flex flex-wrap gap-2 pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
-                    <button
-                        type="button"
-                        onClick={() => { setActiveTab('regular'); setSelectedRelationId(''); }}
-                        className={clsx(
-                            "px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                            activeTab === 'regular'
-                                ? (isExpense ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400")
-                                : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                        )}
-                    >
-                        {isExpense ? 'Gasto Común' : 'Ingreso Común'}
-                    </button>
-
-                    {isExpense && activeCredits.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => { setActiveTab('credit'); setSelectedRelationId(activeCredits[0]?.id || ''); }}
-                            className={clsx(
-                                "px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                                activeTab === 'credit'
-                                    ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"
-                                    : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                            )}
-                        >
-                            Pagar Crédito
-                        </button>
-                    )}
-
-                    {isExpense && goals && goals.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => { setActiveTab('goal'); setSelectedRelationId(goals[0]?.id || ''); }}
-                            className={clsx(
-                                "px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                                activeTab === 'goal'
-                                    ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"
-                                    : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                            )}
-                        >
-                            Aportar a Meta
-                        </button>
-                    )}
-
-                    {!isExpense && projects && projects.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => { setActiveTab('project'); setSelectedRelationId(projects[0]?.id || ''); }}
-                            className={clsx(
-                                "px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                                activeTab === 'project'
-                                    ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                                    : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                            )}
-                        >
-                            Ingreso de Proyecto
-                        </button>
-                    )}
-
-                    {funds && funds.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={() => { setActiveTab('fund'); setSelectedRelationId(funds[0]?.id || ''); }}
-                            className={clsx(
-                                "px-4 py-2 rounded-xl text-sm font-bold transition-all",
-                                activeTab === 'fund'
-                                    ? (isExpense ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400")
-                                    : "bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                            )}
-                        >
-                            {isExpense ? 'Aportar a Fondo' : 'Retiro de Fondo'}
-                        </button>
-                    )}
-                </div>
-            )}
-
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold flex items-center gap-3 text-zinc-800 dark:text-zinc-100">
-                    <div className={clsx("p-2 rounded-xl", bgActiveOne, activeColorClass)}>
-                        {initialData ? <Save size={20} /> : <Plus size={20} />}
+            {/* 1. Header & Tabs Area */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 relative">
+                <div className="flex items-center gap-5">
+                    <div className={clsx("w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner", bgActiveOne, activeColorClass)}>
+                        {initialData ? <Save size={28} strokeWidth={2.5} /> : <Plus size={28} strokeWidth={2.5} />}
                     </div>
-                    {initialData ? 'Editar' : (isRecurring ? 'Programar' : 'Nueva')} {type === 'income' ? 'Entrada' : 'Salida'}
-                </h3>
-                {initialData && (
-                    <span className="text-xs bg-zinc-100 dark:bg-zinc-900 px-3 py-1 rounded-full text-zinc-500 font-medium border border-zinc-200 dark:border-zinc-800">
-                        Editando
-                    </span>
+                    <div>
+                        <h3 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                            {initialData ? 'Editar' : 'Nueva'} {type === 'income' ? 'Entrada' : 'Salida'}
+                        </h3>
+                        {initialData && <p className="text-sm font-medium text-zinc-500 mt-1">Editando registro existente</p>}
+                    </div>
+                </div>
+
+                {/* Tabs */}
+                {!initialData && (
+                    <div className="flex bg-zinc-100/80 dark:bg-zinc-900/80 p-1.5 rounded-2xl overflow-x-auto custom-scrollbar ring-1 ring-inset ring-zinc-200/50 dark:ring-zinc-800">
+                        <button
+                            type="button"
+                            onClick={() => { setActiveTab('regular'); setSelectedRelationId(''); }}
+                            className={clsx(
+                                "flex-none px-5 py-2.5 rounded-xl text-sm font-semibold transition-all select-none whitespace-nowrap",
+                                activeTab === 'regular'
+                                    ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/5"
+                                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                            )}
+                        >
+                            {isExpense ? 'Gasto Común' : 'Ingreso Común'}
+                        </button>
+
+                        {isExpense && activeCredits.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab('credit'); setSelectedRelationId(activeCredits[0]?.id || ''); }}
+                                className={clsx(
+                                    "flex-none px-5 py-2.5 rounded-xl text-sm font-semibold transition-all select-none whitespace-nowrap",
+                                    activeTab === 'credit'
+                                        ? "bg-white dark:bg-zinc-800 text-rose-600 dark:text-rose-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Pagar Crédito
+                            </button>
+                        )}
+
+                        {isExpense && goals && goals.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab('goal'); setSelectedRelationId(goals[0]?.id || ''); }}
+                                className={clsx(
+                                    "flex-none px-5 py-2.5 rounded-xl text-sm font-semibold transition-all select-none whitespace-nowrap",
+                                    activeTab === 'goal'
+                                        ? "bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Aportar a Meta
+                            </button>
+                        )}
+
+                        {!isExpense && projects && projects.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab('project'); setSelectedRelationId(projects[0]?.id || ''); }}
+                                className={clsx(
+                                    "flex-none px-5 py-2.5 rounded-xl text-sm font-semibold transition-all select-none whitespace-nowrap",
+                                    activeTab === 'project'
+                                        ? "bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                Ingreso Proyecto
+                            </button>
+                        )}
+
+                        {funds && funds.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => { setActiveTab('fund'); setSelectedRelationId(funds[0]?.id || ''); }}
+                                className={clsx(
+                                    "flex-none px-5 py-2.5 rounded-xl text-sm font-semibold transition-all select-none whitespace-nowrap",
+                                    activeTab === 'fund'
+                                        ? "bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm ring-1 ring-black/5 dark:ring-white/5"
+                                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                )}
+                            >
+                                {isExpense ? 'Aportar a Fondo' : 'Retirar de Fondo'}
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
 
-            <div className="space-y-6">
-                {/* Amount Input - Massive & Center */}
-                <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <span className={clsx("text-2xl font-bold transition-colors group-focus-within:text-zinc-800 dark:group-focus-within:text-zinc-100", activeColorClass)}>{currency}</span>
-                    </div>
+            {/* 2. Amount Hero Section */}
+            <div className={clsx(
+                "w-full rounded-[2rem] p-8 sm:p-14 flex flex-col items-center justify-center relative transition-colors shadow-inner",
+                isExpense ? "bg-rose-50/70 dark:bg-rose-900/10" : "bg-emerald-50/70 dark:bg-emerald-900/10"
+            )}>
+                <label className="text-sm font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-4 z-10">Monto de Operación</label>
+                <div className="flex items-center justify-center gap-3 w-full max-w-sm">
+                    <span className={clsx("text-4xl sm:text-6xl font-black mb-1 sm:mb-2 select-none", activeColorClass)}>{currency}</span>
                     <input
                         type="number"
                         inputMode="decimal"
@@ -299,241 +295,255 @@ const TransactionForm = ({
                         placeholder="0.00"
                         value={amount}
                         onChange={e => setAmount(e.target.value)}
-                        className={twMerge(
-                            "w-full pl-16 pr-6 py-6 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-5xl font-bold text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-700 focus:outline-none focus:ring-4 focus:ring-zinc-100 dark:focus:ring-zinc-800 transition-all text-left tracking-tight",
-                            borderActive
-                        )}
-                    />
-                </div>
-
-                {/* Grid for Date & Recurrence */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Date (Only visible if NOT recurring) */}
-                    {/* Date (Only visible if NOT recurring) */}
-                    <div className={clsx("relative transition-all duration-300", isRecurring ? "opacity-50 pointer-events-none grayscale" : "")}>
-                        <DatePicker
-                            label="Fecha"
-                            value={date}
-                            onChange={setDate}
-                        />
-                    </div>
-
-                    {/* Recurrence Toggle */}
-                    <button
-                        type="button"
-                        onClick={() => setIsRecurring(!isRecurring)}
                         className={clsx(
-                            "flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl border transition-all text-sm font-bold",
-                            isRecurring
-                                ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400"
-                                : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                            "bg-transparent text-6xl sm:text-8xl font-black text-center text-zinc-900 dark:text-white focus:outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-700 w-full min-w-[3ch] transition-opacity",
+                            amount ? "opacity-100" : "opacity-50"
                         )}
-                    >
-                        <RotateCcw size={16} className={isRecurring ? "animate-spin-slow" : ""} />
-                        {isRecurring ? 'Recurrente' : 'Hacer Recurrente'}
-                    </button>
-                </div>
-
-                {/* Recurrence Details */}
-                {isRecurring && (
-                    <div className="animate-in slide-in-from-top-2 fade-in p-5 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 flex flex-col gap-4">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl text-indigo-600 dark:text-indigo-400">
-                                    <CalendarClock size={20} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200">Día de Repetición</p>
-                                    <p className="text-xs text-indigo-600 dark:text-indigo-400">Selecciona qué día del mes se hará el cargo.</p>
-                                </div>
-                            </div>
-
-                            <div className="relative z-20">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowDayPicker(!showDayPicker)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-900 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl text-indigo-700 dark:text-indigo-300 font-bold hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors shadow-sm"
-                                >
-                                    <span>Día {recurrenceDay}</span>
-                                    <Calendar size={14} className="opacity-70" />
-                                </button>
-
-                                {showDayPicker && (
-                                    <>
-                                        {/* Backdrop to close */}
-                                        <div className="fixed inset-0 z-10" onClick={() => setShowDayPicker(false)} />
-
-                                        {/* Picker Grid */}
-                                        <div className="absolute right-0 top-full mt-2 p-3 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl shadow-indigo-900/10 border border-zinc-100 dark:border-zinc-800 w-64 z-20 animate-in fade-in zoom-in-95">
-                                            <p className="text-xs font-bold text-zinc-400 mb-2 px-1 uppercase tracking-wider text-center">Selecciona un día</p>
-                                            <div className="grid grid-cols-7 gap-1">
-                                                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                                                    <button
-                                                        key={day}
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setRecurrenceDay(day);
-                                                            setShowDayPicker(false);
-                                                        }}
-                                                        className={clsx(
-                                                            "h-8 w-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all",
-                                                            recurrenceDay === day
-                                                                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-110 z-10"
-                                                                : "text-zinc-600 dark:text-zinc-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 hover:text-indigo-600 dark:hover:text-indigo-300"
-                                                        )}
-                                                    >
-                                                        {day}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-2 text-xs text-indigo-600 dark:text-indigo-400 bg-white/60 dark:bg-black/20 p-3 rounded-lg border border-indigo-100/50 dark:border-indigo-900/20">
-                            <RotateCcw size={14} className="mt-0.5 shrink-0" />
-                            <p className="leading-relaxed">
-                                Esta transacción se registrará automáticamente el día <strong>{recurrenceDay}</strong> de cada mes.
-                                <span className="block mt-1 opacity-80">Te enviaremos un recordatorio 2 días antes.</span>
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                {/* Category Selection / Relational Target */}
-                <div className="space-y-3">
-                    {activeTab === 'regular' ? (
-                        <>
-                            <div className="flex items-center justify-between">
-                                <label className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">Categoría</label>
-                                {!isAddingCategory && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsAddingCategory(true)}
-                                        className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 font-medium flex items-center gap-1 transition-colors"
-                                    >
-                                        <Plus size={14} /> Nueva Categoría
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                                {isAddingCategory ? (
-                                    <div className="w-full flex gap-2 animate-in fade-in slide-in-from-left-2 items-center">
-                                        <input
-                                            type="text"
-                                            autoFocus
-                                            placeholder="Nombre de nueva categoría..."
-                                            className="flex-1 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-zinc-400 transition-colors"
-                                            value={newCategory}
-                                            onChange={e => setNewCategory(e.target.value)}
-                                            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleAddCategory}
-                                            className="bg-black dark:bg-white text-white dark:text-black p-3 rounded-xl hover:opacity-90 transition-opacity"
-                                        >
-                                            <Plus size={20} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsAddingCategory(false)}
-                                            className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 p-3 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ) : (
-                                    categories.map(cat => (
-                                        <button
-                                            key={cat}
-                                            type="button"
-                                            onClick={() => setCategory(cat)}
-                                            className={clsx(
-                                                "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border",
-                                                category === cat
-                                                    ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100 shadow-lg shadow-zinc-200 dark:shadow-none transform -translate-y-0.5"
-                                                    : "bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                                            )}
-                                        >
-                                            {cat}
-                                        </button>
-                                    ))
-                                )}
-                            </div>
-                        </>
-                    ) : (
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xs text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">
-                                {activeTab === 'credit' && 'Selecciona un Crédito'}
-                                {activeTab === 'goal' && 'Selecciona una Meta'}
-                                {activeTab === 'project' && 'Selecciona un Proyecto'}
-                                {activeTab === 'fund' && 'Selecciona un Fondo'}
-                            </label>
-
-                            {/* Entity Select dropdown */}
-                            <select
-                                className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-600 font-medium"
-                                value={selectedRelationId}
-                                onChange={(e) => setSelectedRelationId(e.target.value)}
-                            >
-                                {activeTab === 'credit' && activeCredits.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name} (Préstamo)</option>
-                                ))}
-                                {activeTab === 'goal' && goals?.map(g => (
-                                    <option key={g.id} value={g.id}>{g.name} (Meta de Ahorro)</option>
-                                ))}
-                                {activeTab === 'project' && projects?.map(p => (
-                                    <option key={p.id} value={p.id}>{p.name} (Proyecto)</option>
-                                ))}
-                                {activeTab === 'fund' && funds?.map(f => (
-                                    <option key={f.id} value={f.id}>{f.name} (Fondo Específico)</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                </div>
-
-                {/* Description */}
-                <div className="relative group">
-                    <AlignLeft className="absolute left-4 top-4 text-zinc-400 group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-300 transition-colors" size={20} />
-                    <textarea
-                        placeholder="Nota o descripción (opcional)"
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-colors resize-none h-24 text-sm leading-relaxed"
+                        style={{ fieldSizing: "content" }}
                     />
                 </div>
             </div>
 
-            <button
-                id="add-btn"
-                type="submit"
-                disabled={isSubmitting || !amount || (activeTab === 'regular' ? !category : !selectedRelationId)}
-                className={twMerge(
-                    "w-full py-4 rounded-xl font-bold text-white transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none",
-                    buttonBg
-                )}
-            >
-                {isSubmitting ? (
-                    <>
-                        <Loader2 size={20} className="animate-spin" />
-                        <span>Guardando...</span>
-                    </>
+            {/* 3. Detailed Data Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Description */}
+                <div className="space-y-2 group">
+                    <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1 block">Título / Concepto</label>
+                    <div className="relative">
+                        <AlignLeft className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 transition-colors group-focus-within:text-zinc-600 dark:group-focus-within:text-zinc-200" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Ej: Pago de luz, Compras..."
+                            value={description}
+                            onChange={e => setDescription(e.target.value)}
+                            className="w-full pl-12 pr-6 py-4 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 transition-all font-medium text-base shadow-sm"
+                        />
+                    </div>
+                </div>
+
+                {/* Date */}
+                <div className={clsx("space-y-2 transition-all duration-300", isRecurring ? "opacity-40 grayscale pointer-events-none" : "")}>
+                    <DatePicker
+                        label="Fecha"
+                        value={date}
+                        onChange={setDate}
+                    />
+                </div>
+            </div>
+
+            {/* 4. Categorization Layout */}
+            <div className="space-y-8">
+                {activeTab === 'regular' ? (
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between ml-1">
+                            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 block">Etiqueta de Categoría</label>
+                            {!isAddingCategory && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddingCategory(true)}
+                                    className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1.5 transition-colors"
+                                >
+                                    <Plus size={18} strokeWidth={2.5} /> Añadir Nueva
+                                </button>
+                            )}
+                        </div>
+
+                        {isAddingCategory ? (
+                            <div className="flex gap-3 animate-in fade-in slide-in-from-right-2 items-center w-full md:w-1/2">
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    placeholder="Nombre de categoría..."
+                                    className="flex-1 min-w-0 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-5 py-3 text-base focus:outline-none focus:border-zinc-400 transition-colors font-medium shadow-sm"
+                                    value={newCategory}
+                                    onChange={e => setNewCategory(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleAddCategory}
+                                    className="bg-black dark:bg-white text-white dark:text-black p-3 rounded-2xl hover:opacity-90 transition-opacity shrink-0 shadow-lg"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddingCategory(false)}
+                                    className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 p-3 rounded-2xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors shrink-0"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap gap-2.5 max-h-[180px] overflow-y-auto custom-scrollbar">
+                                {categories.map(cat => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => setCategory(cat)}
+                                        className={clsx(
+                                            "px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent shadow-sm",
+                                            category === cat
+                                                ? (isExpense ? "bg-rose-600 text-white shadow-rose-200 dark:shadow-rose-900 shadow-md transform -translate-y-[1px]" : "bg-emerald-600 text-white shadow-emerald-200 dark:shadow-emerald-900 shadow-md transform -translate-y-[1px]")
+                                                : "bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                        )}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 ) : (
-                    <>
-                        <Save size={20} />
-                        <span>{initialData ? 'Guardar Cambios' : (isRecurring ? 'Programar Recurrencia' : 'Registrar Transacción')}</span>
-                    </>
+                    <div className="space-y-3 md:w-1/2">
+                        <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 ml-1 block">
+                            {activeTab === 'credit' && 'Crédito a Pagar'}
+                            {activeTab === 'goal' && 'Meta a Financiar'}
+                            {activeTab === 'project' && 'Proyecto Asociado'}
+                            {activeTab === 'fund' && 'Fondo Utilizado'}
+                        </label>
+
+                        <select
+                            className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-5 py-4 text-base text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-800 transition-all font-semibold shadow-sm"
+                            value={selectedRelationId}
+                            onChange={(e) => setSelectedRelationId(e.target.value)}
+                        >
+                            {activeTab === 'credit' && activeCredits.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                            {activeTab === 'goal' && goals?.map(g => (
+                                <option key={g.id} value={g.id}>{g.name}</option>
+                            ))}
+                            {activeTab === 'project' && projects?.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                            {activeTab === 'fund' && funds?.map(f => (
+                                <option key={f.id} value={f.id}>{f.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 )}
-            </button>
+            </div>
+
+            {/* 5. Advanced / Recurrence */}
+            <div className="flex flex-col gap-4">
+                <button
+                    type="button"
+                    onClick={() => setIsRecurring(!isRecurring)}
+                    className={clsx(
+                        "group flex items-center justify-between px-6 py-5 rounded-[2rem] border transition-all duration-300 cursor-pointer overflow-hidden relative shadow-sm",
+                        isRecurring
+                            ? "bg-indigo-50/80 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800"
+                            : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700"
+                    )}
+                >
+                    <div className="flex items-center gap-5 z-10 w-full">
+                        <div className={clsx(
+                            "p-3 rounded-2xl transition-colors duration-300",
+                            isRecurring ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                        )}>
+                            <RotateCcw size={22} className={isRecurring ? "animate-spin-slow" : ""} />
+                        </div>
+                        <div className="text-left flex-1">
+                            <p className={clsx("font-bold text-base transition-colors duration-300", isRecurring ? "text-indigo-900 dark:text-indigo-100" : "text-zinc-800 dark:text-zinc-200")}>
+                                Suscripción o Recurrente
+                            </p>
+                            <p className={clsx("text-sm mt-0.5 transition-colors duration-300", isRecurring ? "text-indigo-600/80 dark:text-indigo-300/80" : "text-zinc-500 dark:text-zinc-500")}>
+                                Generar esta transacción cada mes
+                            </p>
+                        </div>
+
+                        {/* iOS Style Switch */}
+                        <div className={clsx("w-14 h-8 rounded-full flex items-center p-1 transition-colors duration-300 shrink-0", isRecurring ? "bg-indigo-500" : "bg-zinc-200 dark:bg-zinc-800")}>
+                            <div className={clsx("w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ease-spring", isRecurring ? "translate-x-6" : "translate-x-0")} />
+                        </div>
+                    </div>
+                </button>
+
+                {/* Recurrence Options Expanded */}
+                {isRecurring && (
+                    <div className="animate-in slide-in-from-top-2 fade-in p-6 bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30 rounded-[1.5rem] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                        <div className="flex items-center gap-4">
+                            <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl text-indigo-600 dark:text-indigo-400">
+                                <CalendarClock size={20} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-indigo-900 dark:text-indigo-200">Día del Cargo</p>
+                                <p className="text-xs text-indigo-600/80 dark:text-indigo-400/80 mt-0.5">Se registrará automáticamente cada mes.</p>
+                            </div>
+                        </div>
+
+                        <div className="relative z-20">
+                            <button
+                                type="button"
+                                onClick={() => setShowDayPicker(!showDayPicker)}
+                                className="flex justify-between items-center gap-2 px-5 py-3 bg-white dark:bg-zinc-900 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl text-indigo-700 dark:text-indigo-300 font-black hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors shadow-sm w-full sm:w-auto"
+                            >
+                                <span>Día {recurrenceDay}</span>
+                                <Calendar size={18} className="opacity-70" />
+                            </button>
+
+                            {showDayPicker && (
+                                <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setShowDayPicker(false)} />
+                                    <div className="absolute right-0 top-full mt-3 p-3 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl shadow-indigo-900/10 border border-zinc-100 dark:border-zinc-800 w-64 z-20 animate-in fade-in zoom-in-95">
+                                        <p className="text-[10px] font-bold text-zinc-400 mb-2 px-1 uppercase tracking-widest text-center">Selecciona un día</p>
+                                        <div className="grid grid-cols-7 gap-1">
+                                            {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                                                <button
+                                                    key={day}
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setRecurrenceDay(day);
+                                                        setShowDayPicker(false);
+                                                    }}
+                                                    className={clsx(
+                                                        "h-8 w-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all duration-200",
+                                                        recurrenceDay === day
+                                                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 scale-110 z-10"
+                                                            : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                                    )}
+                                                >
+                                                    {day}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Submit Button */}
+            <div className="mt-2 text-right w-full flex items-end justify-end">
+                <button
+                    id="add-btn"
+                    type="submit"
+                    disabled={isSubmitting || !amount || (activeTab === 'regular' ? !category : !selectedRelationId)}
+                    className={twMerge(
+                        "w-full md:w-auto md:min-w-[240px] py-5 px-8 rounded-2xl font-black text-lg text-white transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none select-none",
+                        buttonBg
+                    )}
+                >
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 size={24} className="animate-spin" />
+                            <span>Procesando...</span>
+                        </>
+                    ) : (
+                        <>
+                            <Save size={24} strokeWidth={2.5} />
+                            <span>{initialData ? 'Guardar Cambios' : (isRecurring ? 'Programar Operación' : 'Registrar Operación')}</span>
+                        </>
+                    )}
+                </button>
+            </div>
+
         </form>
     );
 };
 
 export default TransactionForm;
-

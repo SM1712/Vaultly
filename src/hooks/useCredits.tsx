@@ -84,7 +84,7 @@ export const useCredits = () => {
         }
     };
 
-    const getCreditStatus = (credit: Credit) => {
+    const getCreditStatus = (credit: Credit, referenceDate: Date = new Date()) => {
         const payments = credit.payments || [];
         const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
 

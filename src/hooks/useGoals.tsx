@@ -137,7 +137,7 @@ export const useGoals = () => {
     const getMonthlyQuota = useCallback((goal: Goal, referenceDate: Date = new Date(), simulatedAdditionalAmount: number = 0): number => {
         if (!goal.deadline) return 0;
 
-        const today = new Date(referenceDate);
+        const dateRef = new Date(referenceDate);
         const deadlineDate = new Date(goal.deadline);
         const startDate = new Date(goal.startDate);
 
@@ -146,43 +146,15 @@ export const useGoals = () => {
 
         if (remainingAmount <= 0) return 0;
 
-        // DYNAMIC NON-LINEAR DISTRIBUTION
-        if (goal.calculationMethod === 'dynamic') {
-            const weights = getGoalMonthlyWeights(goal);
-            const monthsPassed = (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth());
-
-            if (monthsPassed >= weights.length) return remainingAmount;
-
-            const currentIndex = Math.max(0, monthsPassed);
-            let sumRemainingWeights = 0;
-            for (let i = currentIndex; i < weights.length; i++) {
-                sumRemainingWeights += weights[i];
-            }
-
-            if (sumRemainingWeights === 0) return remainingAmount;
-
-            const currentWeight = weights[currentIndex];
-
-            // Contributions check
-            const isCurrentMonth = today.getMonth() === new Date().getMonth() && today.getFullYear() === new Date().getFullYear();
-            const contributionsThisMonth = isCurrentMonth ? getattrContributionsThisMonth(goal, today) : 0;
-            const startOfMonthRemaining = safeAdd(remainingAmount, contributionsThisMonth);
-
-            const allocationShare = currentWeight / sumRemainingWeights;
-            const quotaTotalForMonth = startOfMonthRemaining * allocationShare;
-
-            return Math.ceil(quotaTotalForMonth * 100) / 100;
-        }
-
         // LINEAR / LEGACY LOGIC
-        const yearsDiff = deadlineDate.getFullYear() - today.getFullYear();
-        const monthsDiff = deadlineDate.getMonth() - today.getMonth();
+        const yearsDiff = deadlineDate.getFullYear() - dateRef.getFullYear();
+        const monthsDiff = deadlineDate.getMonth() - dateRef.getMonth();
         const monthsRemaining = Math.max(1, (yearsDiff * 12) + monthsDiff);
 
         // STRATEGY: SPREAD (Default)
         if (goal.recoveryStrategy === 'spread' || !goal.recoveryStrategy) {
-            const isCurrentMonth = today.getMonth() === new Date().getMonth() && today.getFullYear() === new Date().getFullYear();
-            const contributionsThisMonth = isCurrentMonth ? getattrContributionsThisMonth(goal, today) : 0;
+            const isCurrentMonth = dateRef.getMonth() === new Date().getMonth() && dateRef.getFullYear() === new Date().getFullYear();
+            const contributionsThisMonth = isCurrentMonth ? getattrContributionsThisMonth(goal, dateRef) : 0;
             const startOfMonthRemaining = safeAdd(remainingAmount, contributionsThisMonth);
 
             const amount = startOfMonthRemaining / monthsRemaining;
@@ -191,20 +163,20 @@ export const useGoals = () => {
 
         // STRATEGY: CATCH UP
         const totalMonths = Math.max(1, (deadlineDate.getFullYear() - startDate.getFullYear()) * 12 + (deadlineDate.getMonth() - startDate.getMonth()) + 1);
-        const monthsPassed = Math.max(0, (today.getFullYear() - startDate.getFullYear()) * 12 + (today.getMonth() - startDate.getMonth()));
+        const monthsPassed = Math.max(0, (dateRef.getFullYear() - startDate.getFullYear()) * 12 + (dateRef.getMonth() - startDate.getMonth()));
 
         const idealPerMonth = goal.targetAmount / totalMonths;
         const idealCumulative = idealPerMonth * monthsPassed;
 
-        const isCurrentMonth = today.getMonth() === new Date().getMonth() && today.getFullYear() === new Date().getFullYear();
-        const contributionsThisMonth = isCurrentMonth ? getattrContributionsThisMonth(goal, today) : 0;
+        const isCurrentMonth = dateRef.getMonth() === new Date().getMonth() && dateRef.getFullYear() === new Date().getFullYear();
+        const contributionsThisMonth = isCurrentMonth ? getattrContributionsThisMonth(goal, dateRef) : 0;
         const startOfMonthCurrent = safeSub(currentAmount, contributionsThisMonth);
 
         const deficit = Math.max(0, idealCumulative - startOfMonthCurrent);
         const amount = idealPerMonth + deficit;
 
         return Math.ceil(amount * 100) / 100;
-    }, [getattrContributionsThisMonth, getGoalMonthlyWeights]);
+    }, [getattrContributionsThisMonth]);
 
     const isGoalPaidThisMonth = useCallback((goal: Goal) => {
         const nav = new Date();

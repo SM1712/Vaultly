@@ -26,6 +26,12 @@ export const useScheduledTransactions = () => {
         updateData({ scheduledTransactions: newScheduled });
     };
 
+    const updateScheduled = (id: string, updates: Partial<ScheduledTransaction>) => {
+        const newScheduled = scheduled.map(i => i.id === id ? { ...i, ...updates } : i);
+        updateData({ scheduledTransactions: newScheduled });
+        toast.success('Regla recurrente actualizada');
+    };
+
     const toggleActive = (id: string, currentState: boolean) => {
         const newScheduled = scheduled.map(i => i.id === id ? { ...i, active: !currentState } : i);
         updateData({ scheduledTransactions: newScheduled });
@@ -45,7 +51,7 @@ export const useScheduledTransactions = () => {
         const updatedScheduled = scheduled.map(item => {
             if (!item.active) return item;
 
-            const lastProcessed = item.lastProcessedDate ? new Date(item.lastProcessedDate) : null;
+            const lastProcessed = item.lastProcessedDate ? new Date(item.lastProcessedDate + 'T12:00:00') : null;
             const alreadyProcessedThisMonth = lastProcessed &&
                 lastProcessed.getMonth() === today.getMonth() &&
                 lastProcessed.getFullYear() === today.getFullYear();
@@ -90,6 +96,7 @@ export const useScheduledTransactions = () => {
         scheduled,
         addScheduled,
         deleteScheduled,
+        updateScheduled,
         toggleActive,
         processScheduledTransactions
     };

@@ -79,34 +79,54 @@ const Calendar = () => {
 
         scheduled.forEach(item => {
             if (!item.active) return;
+            // The item has a recurring day. Find valid day for the *viewed* month.
             const daysInMonth = getDaysInMonth(currentDate);
             const day = Math.min(item.dayOfMonth, daysInMonth);
             const evtDate = new Date(year, month, day);
+
+            // Check if it was processed for *this* viewed month
+            const lastProcessed = item.lastProcessedDate ? new Date(item.lastProcessedDate) : null;
+            const isProcessedThisViewedMonth = lastProcessed &&
+                lastProcessed.getMonth() === month &&
+                lastProcessed.getFullYear() === year;
+
             evts.push({
-                id: `sched-${item.id}-${month}`,
+                id: `sched-${item.id}-${month}-${year}`,
                 date: evtDate,
                 type: 'scheduled',
                 title: item.description,
                 amount: item.amount,
-                status: 'pending',
+                status: isProcessedThisViewedMonth ? 'completed' : 'pending',
                 details: item
             });
         });
 
         goals.forEach(goal => {
             const d = new Date(goal.deadline);
-            if (d.getMonth() === month && d.getFullYear() === year) {
-                const quota = getMonthlyQuota(goal);
-                evts.push({
-                    id: `goal-${goal.id}`,
-                    date: d,
-                    type: 'goal',
-                    title: `Meta: ${goal.name}`,
-                    amount: quota,
-                    description: 'Cuota sugerida',
-                    status: 'pending',
-                    details: goal
-                });
+            // Show goal payment on the last day of the month for the calendar view
+            const daysInMonth = getDaysInMonth(currentDate);
+            const evtDate = new Date(year, month, daysInMonth);
+
+            // Only show if the goal is active during this month (started before/on, ends after/on)
+            const startDate = new Date(goal.startDate);
+            const isGoalActiveThisMonth =
+                (year > startDate.getFullYear() || (year === startDate.getFullYear() && month >= startDate.getMonth())) &&
+                (year < d.getFullYear() || (year === d.getFullYear() && month <= d.getMonth()));
+
+            if (isGoalActiveThisMonth) {
+                const quota = getMonthlyQuota(goal, currentDate);
+                if (quota > 0) {
+                    evts.push({
+                        id: `goal-${goal.id}-${month}`,
+                        date: evtDate,
+                        type: 'goal',
+                        title: `Meta: ${goal.name}`,
+                        amount: quota,
+                        description: 'Cuota sugerida',
+                        status: 'pending',
+                        details: goal
+                    });
+                }
             }
         });
 
@@ -121,7 +141,7 @@ const Calendar = () => {
                 const startDate = new Date(startStr);
 
                 if (evtDate >= startDate) {
-                    const { quota } = getCreditStatus(credit);
+                    const { quota } = getCreditStatus(credit, currentDate);
                     evts.push({
                         id: `credit-${credit.id}-${month}`,
                         date: evtDate,

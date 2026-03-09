@@ -112,9 +112,10 @@ const Dashboard = () => {
     // Calculate upcoming scheduled transactions
     // Unified Alerts Logic (Scheduled + Credits + Goals)
     const today = new Date();
-    const currentDay = today.getDate();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
+    const currentMonth = selectedDate.getMonth();
+    const currentYear = selectedDate.getFullYear();
+    const isCurrentMonthView = currentMonth === today.getMonth() && currentYear === today.getFullYear();
+    const currentDay = isCurrentMonthView ? today.getDate() : (selectedDate > today ? 0 : 32);
 
     const alerts: any[] = [];
 
@@ -149,7 +150,7 @@ const Dashboard = () => {
         });
 
         if (!paymentsThisMonth) {
-            const status = getCreditStatus(c);
+            const status = getCreditStatus(c, selectedDate);
             alerts.push({
                 id: `credit_${c.id}`,
                 description: `Pago: ${c.name}`,
@@ -164,19 +165,28 @@ const Dashboard = () => {
 
     // 3. Goals (Monthly Savings)
     goals.forEach(g => {
-        if (!isGoalPaidThisMonth(g)) {
-            const quota = getMonthlyQuota(g);
-            const dueDay = new Date(g.deadline).getDate();
+        // Only include if goal is active during this selected month
+        const startDate = new Date(g.startDate);
+        const deadlineDate = new Date(g.deadline);
+        const isGoalActiveThisMonth =
+            (currentYear > startDate.getFullYear() || (currentYear === startDate.getFullYear() && currentMonth >= startDate.getMonth())) &&
+            (currentYear < deadlineDate.getFullYear() || (currentYear === deadlineDate.getFullYear() && currentMonth <= deadlineDate.getMonth()));
 
-            alerts.push({
-                id: `goal_${g.id}`,
-                description: `Ahorro: ${g.name}`,
-                category: 'Meta de Ahorro',
-                amount: quota,
-                type: 'expense',
-                dayOfMonth: dueDay,
-                source: 'goal'
-            });
+        if (isGoalActiveThisMonth && !isGoalPaidThisMonth(g)) {
+            const quota = getMonthlyQuota(g, selectedDate);
+            if (quota > 0) {
+                const dueDay = new Date(g.deadline).getDate();
+
+                alerts.push({
+                    id: `goal_${g.id}`,
+                    description: `Ahorro: ${g.name}`,
+                    category: 'Meta de Ahorro',
+                    amount: quota,
+                    type: 'expense',
+                    dayOfMonth: dueDay,
+                    source: 'goal'
+                });
+            }
         }
     });
 

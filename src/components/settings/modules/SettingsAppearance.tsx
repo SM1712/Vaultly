@@ -4,6 +4,7 @@ import { Colortly } from '../../../systems/Colortly';
 import { useTheme } from '../../../context/ThemeContext';
 import { ColortlyStudio } from './ColortlyStudio';
 import { NAV_SECTIONS } from '../../../constants/navigation';
+import { clsx } from 'clsx';
 
 export const SettingsAppearance = () => {
     const {
@@ -117,7 +118,7 @@ export const SettingsAppearance = () => {
                     <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-6">Estructura de Ventana</h3>
 
                     <div className="space-y-6">
-                        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1 flex gap-1">
+                        <div className="hidden lg:flex flex-row bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1 gap-1">
                             {(['left', 'right', 'top', 'bottom'] as const).map(pos => (
                                 <button
                                     key={pos}
@@ -132,8 +133,14 @@ export const SettingsAppearance = () => {
                         </div>
 
                         <label className="flex items-center gap-4 group cursor-pointer">
-                            <div className={`w-12 h-7 rounded-full transition-colors flex items-center px-1 ${sidebarVisibility === 'floating' ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-700'}`}>
-                                <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${sidebarVisibility === 'floating' ? 'translate-x-5' : 'translate-x-0'}`} />
+                            <div className={clsx(
+                                "w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-300",
+                                sidebarVisibility === 'floating' ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-700'
+                            )}>
+                                <div className={clsx(
+                                    "w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-300",
+                                    sidebarVisibility === 'floating' ? 'translate-x-[20px]' : 'translate-x-0'
+                                )} />
                             </div>
                             <input
                                 type="checkbox"

@@ -13,16 +13,16 @@ export const calculateNextLevelXP = (level: number): number => {
 
 // --- TITLES ---
 export const TITLES: UserTitle[] = [
-    { id: 'novice', label: 'Novato Financiero', minLevel: 1 },
-    { id: 'apprentice', label: 'Aprendiz de la Bóveda', minLevel: 5 },
-    { id: 'saver', label: 'Ahorrador Iniciado', minLevel: 10 },
-    { id: 'planner', label: 'Planificador Táctico', minLevel: 15 },
-    { id: 'strategist', label: 'Estratega de Capital', minLevel: 20 },
-    { id: 'guardian', label: 'Guardián del Saldo', minLevel: 30 },
-    { id: 'baron', label: 'Barón del Presupuesto', minLevel: 40 },
-    { id: 'sovereign', label: 'Soberano de la Riqueza', minLevel: 50 },
-    { id: 'legend', label: 'Leyenda Financiera', minLevel: 75 },
-    { id: 'mythic', label: 'El Oráculo', minLevel: 100 },
+    { id: 'novice', label: 'Iniciado', minLevel: 1 },
+    { id: 'apprentice', label: 'Constante', minLevel: 5 },
+    { id: 'saver', label: 'Analista', minLevel: 10 },
+    { id: 'planner', label: 'Planificador', minLevel: 15 },
+    { id: 'strategist', label: 'Estratega', minLevel: 20 },
+    { id: 'guardian', label: 'Gestor', minLevel: 30 },
+    { id: 'baron', label: 'Visionario', minLevel: 40 },
+    { id: 'sovereign', label: 'Director', minLevel: 50 },
+    { id: 'legend', label: 'Maestro', minLevel: 75 },
+    { id: 'mythic', label: 'Leyenda', minLevel: 100 },
 ];
 
 export const getTitleForLevel = (level: number): string => {
@@ -30,6 +30,7 @@ export const getTitleForLevel = (level: number): string => {
     const title = [...TITLES].reverse().find(t => t.minLevel <= level);
     return title ? title.label : TITLES[0].label;
 };
+
 
 // --- ACHIEVEMENTS ---
 export const ACHIEVEMENTS: Achievement[] = [
@@ -160,10 +161,10 @@ export const ACHIEVEMENTS: Achievement[] = [
 
 // --- AVATARS ---
 export const getDynamicAvatar = (name: string, level: number): string => {
-    // Adventurer style (RPG/Fantasy look) - "Otra cosa" instead of robots
+    // Abstract geometric shapes for a clean, modern fintech look
     const tier = Math.floor(level / 10);
     // Sanitize name for seed to ensure stability
-    const seed = `${name.replace(/[^a-zA-Z0-9]/g, '')}_lvl${tier}`;
-    // Using Adventurer for a more "RPG/Leveling" feel
-    return `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}`;
+    const seed = `${name.replace(/[^a-zA-Z0-9]/g, '')}_tier${tier}`;
+    // Using shapes for a premium, non-gaming feel
+    return `https://api.dicebear.com/9.x/shapes/svg?seed=${seed}&backgroundColor=transparent`;
 };

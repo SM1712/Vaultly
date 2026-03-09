@@ -31,7 +31,7 @@ export const MobileDockNav = ({ onOpenSettings }: MobileDockNavProps) => {
                 "shadow-lg shadow-zinc-900/10 dark:shadow-black/40",
                 "rounded-full pointer-events-auto overflow-x-auto no-scrollbar max-w-[90vw]"
             )}>
-                {allItems.slice(0, 4).map((item) => {
+                {allItems.map((item) => {
                     const Icon = item.icon;
                     return (
                         <NavLink
@@ -49,15 +49,16 @@ export const MobileDockNav = ({ onOpenSettings }: MobileDockNavProps) => {
                     );
                 })}
 
-                {/* Separator */}
-                <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-700 mx-1 shrink-0" />
+                {/* Vertical Divider */}
+                <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-1 shrink-0" />
 
-                {/* More / Menu Button */}
+                {/* Settings Button */}
                 <button
-                    onClick={() => setIsMobileMenuOpen(true)}
+                    onClick={onOpenSettings}
                     className="relative flex flex-col items-center justify-center min-w-[2.75rem] h-10 rounded-full transition-all duration-300 shrink-0 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:scale-105"
+                    title="Configuración"
                 >
-                    <Menu size={18} strokeWidth={2.5} />
+                    <Settings size={18} strokeWidth={2.5} />
                 </button>
             </div>
         </nav>

@@ -114,7 +114,7 @@ const Expenses = () => {
                         />
                     </section>
 
-                    <section className="space-y-4">
+                    <section className="space-y-4 max-w-full overflow-hidden">
                         <div className="flex items-center justify-between px-2">
                             <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-200">Historial Reciente</h3>
                             <span className="text-xs font-medium text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-full">{filteredTransactions.length} registros</span>

@@ -1,27 +1,10 @@
-import { Crown, Star } from 'lucide-react';
+import { Award, ArrowRight } from 'lucide-react';
 
 export const LevelUpModal = () => {
-    // This component would ideally be mounted at the top level and listen to a dedicated state
-    // But for this MVP we might need to expose the "ShowLevelUp" state better.
-    // Re-thinking: Notification handling is "passive", but Level Up needs "Active" Modal.
-    // I missed adding a specific "isLevelUpModalOpen" to the GamificationContext. 
-    // For now, I'll assume I will use this inside the Layout or App via a new Context state or 
-    // simply render it if a local state matches. 
-    // 
-    // CORRECT APPROACH: 
-    // I need to add `levelUpState` to GamificationContext to trigger this. 
-    // Since I cannot edit Context right now without breaking flow, 
-    // I will build this component to accept props, and then I might Refactor Context if needed.
-    // 
-    // WAIT: I already have 'notifyLevelUp' which sends a Notification. 
-    // To make it a proper Modal, I should probably add specific state to the Provider.
-
-    // Let's build it as a standalone functional component required to be controlled from outside 
-    // or context. I will Update Context in next step to support this.
+    // Kept for backward compatibility if ever mounted passively.
     return null;
 };
 
-// ... Wait, let's implement the internal logic of the modal and assume I'll wire it up.
 interface LevelUpModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -33,67 +16,49 @@ const LevelUpModalContent = ({ isOpen, onClose, level, title }: LevelUpModalProp
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="relative w-full max-w-sm">
-                {/* Glow Effect behind */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-amber-500/30 rounded-full blur-[80px] animate-pulse" />
 
-                <div className="relative bg-zinc-900/90 border border-amber-500/30 p-8 rounded-[2rem] shadow-2xl text-center overflow-hidden backdrop-blur-xl transform transition-all animate-in zoom-in-95 duration-300">
+                {/* Modern Glassmorphism Notification Box */}
+                <div className="relative bg-white/90 dark:bg-zinc-900/90 border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl p-6 rounded-3xl overflow-hidden backdrop-blur-xl transform transition-all animate-in slide-in-from-bottom-8 zoom-in-95 duration-500">
 
-                    {/* Decorative Rays */}
-                    <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,_rgba(245,158,11,0.1)_0deg,_transparent_60deg,_transparent_300deg,_rgba(245,158,11,0.1)_360deg)] animate-[spin_8s_linear_infinite]" />
+                    {/* Subtle Top Gradient Line */}
+                    <div className="absolute top-0 left-0 right-0 h-1 flex justify-center">
+                        <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-80" />
+                    </div>
 
-                    <div className="relative z-10 flex flex-col items-center">
+                    <div className="relative z-10 flex flex-col items-center text-center">
 
-                        {/* Level Badge */}
-                        <div className="relative mb-6 group">
-                            <div className="absolute inset-0 bg-gradient-to-tr from-amber-300 to-orange-600 rounded-2xl rotate-6 blur-md opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
-                            <div className="relative bg-gradient-to-br from-zinc-800 to-zinc-950 w-28 h-28 rounded-2xl flex items-center justify-center border-2 border-amber-500/50 shadow-xl group-hover:scale-105 transition-transform duration-300">
-                                <Crown size={48} className="text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+                        {/* Clean Badge */}
+                        <div className="relative mb-5 flex justify-center items-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-zinc-800 dark:to-zinc-800/50 border border-indigo-100 dark:border-zinc-700 shadow-inner">
+                            <Award className="w-10 h-10 text-indigo-500 dark:text-indigo-400" strokeWidth={1.5} />
 
-                                <div className="absolute -top-3 -right-3 bg-gradient-to-br from-amber-400 to-orange-600 text-white font-black text-xl w-10 h-10 rounded-full flex items-center justify-center shadow-lg border-2 border-zinc-900">
-                                    {level}
-                                </div>
+                            {/* Floating Level Bubble */}
+                            <div className="absolute -bottom-2 -right-2 bg-indigo-600 dark:bg-indigo-500 text-white font-black text-sm w-8 h-8 rounded-full flex items-center justify-center shadow-md ring-4 ring-white dark:ring-zinc-900">
+                                {level}
                             </div>
                         </div>
 
                         {/* Text */}
-                        <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 mb-2 tracking-tight drop-shadow-sm animate-pulse">
-                            ¡NIVEL SUBIDO!
+                        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-1 tracking-tight">
+                            ¡Siguiente Nivel Alcanzado!
                         </h2>
 
-                        <div className="flex items-center gap-2 mb-8">
-                            <span className="h-px w-8 bg-zinc-700" />
-                            <p className="text-zinc-400 font-medium uppercase tracking-widest text-xs">Nuevo Rango</p>
-                            <span className="h-px w-8 bg-zinc-700" />
-                        </div>
-
-                        <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-xl py-3 px-6 mb-8 w-full">
-                            <p className="text-2xl font-bold text-white tracking-wide">
-                                {title}
-                            </p>
-                        </div>
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+                            Tu constancia ha rendido frutos. Has desbloqueado el rango de <span className="font-bold text-indigo-600 dark:text-indigo-400 capitalize">{title}</span>.
+                        </p>
 
                         {/* Action Button */}
                         <button
                             onClick={onClose}
-                            className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black text-lg rounded-2xl shadow-[0_0_20px_-5px_rgba(245,158,11,0.5)] transform active:scale-[0.98] transition-all duration-200 uppercase tracking-wide flex items-center justify-center gap-2 group"
+                            className="w-full py-3.5 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 font-bold rounded-2xl shadow-md active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 group"
                         >
-                            <Star size={20} className="fill-white animate-[spin_3s_linear_infinite]" />
                             <span>Continuar</span>
+                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                         </button>
                     </div>
                 </div>
             </div>
-
-            {/* Simple CSS Particles */}
-            <style>{`
-                @keyframes float {
-                    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-                    50% { opacity: 1; }
-                    100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
-                }
-            `}</style>
         </div>
     );
 };
