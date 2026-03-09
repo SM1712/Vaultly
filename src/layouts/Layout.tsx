@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import RouteLoader from '../components/ui/RouteLoader';
 import Sidebar from '../components/Sidebar';
 import SettingsMenu from '../components/settings/SettingsMenu';
 import { useTheme } from '../context/ThemeContext';
@@ -145,9 +146,9 @@ const Layout = () => {
                             )}
                             style={mainStyles}
                         >
-                            {/* Desktop Trigger removed - handled internally by Sidebar */}
-
-                            <Outlet />
+                            <Suspense fallback={<RouteLoader />}>
+                                <Outlet />
+                            </Suspense>
                         </main>
 
                         <MobileQuickAdd />

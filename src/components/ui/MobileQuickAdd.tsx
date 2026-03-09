@@ -90,12 +90,14 @@ const MobileQuickAdd = () => {
                 onClick={() => setIsOpen(true)}
                 id="quick-add-btn"
                 className={clsx(
-                    "md:hidden fixed right-6 w-16 h-16 bg-zinc-900 dark:bg-emerald-600 text-white rounded-full shadow-2xl shadow-zinc-900/40 dark:shadow-emerald-600/40 flex items-center justify-center active:scale-95 transition-transform z-50",
-                    sidebarVisibility === 'floating' ? "bottom-24" : "bottom-6"
+                    "md:hidden fixed w-[3.75rem] h-[3.75rem] flex items-center justify-center rounded-full transition-all duration-300 active:scale-90 z-50",
+                    "bg-primary text-primary-foreground shadow-[0_8px_30px_rgb(0,0,0,0.12)] shadow-primary/30",
+                    "hover:shadow-[0_8px_40px_rgb(0,0,0,0.16)] hover:shadow-primary/40 border border-white/10",
+                    sidebarVisibility === 'floating' ? "bottom-24 right-4" : "bottom-6 right-6"
                 )}
                 aria-label="Agregar transacción"
             >
-                <Plus size={32} strokeWidth={2.5} />
+                <Plus size={30} strokeWidth={2.5} />
             </button>
         );
     }
@@ -107,7 +109,7 @@ const MobileQuickAdd = () => {
             {/* Backdrop */}
             <div
                 className={clsx(
-                    "absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity duration-300",
+                    "absolute inset-0 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity duration-300",
                     isClosing ? "opacity-0" : "opacity-100"
                 )}
                 onClick={handleClose}
@@ -116,7 +118,7 @@ const MobileQuickAdd = () => {
             {/* Bottom Sheet */}
             <div
                 className={clsx(
-                    "w-full bg-white dark:bg-zinc-950 rounded-t-[2.5rem] shadow-2xl pointer-events-auto transform transition-transform duration-300 ease-out border-t border-zinc-100/10 max-h-[90vh] flex flex-col",
+                    "w-full bg-white/95 dark:bg-zinc-950/90 backdrop-blur-2xl rounded-t-[2.5rem] shadow-[0_-8px_40px_-15px_rgba(0,0,0,0.3)] pointer-events-auto transform transition-transform duration-300 ease-out border-t border-zinc-200/50 dark:border-white/10 max-h-[90vh] flex flex-col",
                     isClosing ? "translate-y-full" : "translate-y-0"
                 )}
             >
@@ -176,11 +178,11 @@ const MobileQuickAdd = () => {
                                             handleClose();
                                         }}
                                         className={clsx(
-                                            "flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 rounded-2xl border-2 transition-all snap-start",
-                                            "border-zinc-100 bg-white dark:border-zinc-800 dark:bg-zinc-900 active:scale-95 active:bg-emerald-50 dark:active:bg-emerald-900/20 active:border-emerald-500",
-                                            // Highlight if matching current selection (though less relevant now with instant click)
+                                            "flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 rounded-2xl border transition-all snap-start",
+                                            "border-zinc-200/50 bg-white dark:border-white/5 dark:bg-white/5 shadow-sm active:scale-95 active:bg-zinc-50 dark:active:bg-white/10",
+                                            // Highlight if matching current selection
                                             (category === preset.category && type === preset.type)
-                                                ? "border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+                                                ? "border-primary ring-1 ring-primary/50 bg-primary/5 dark:bg-primary/10"
                                                 : ""
                                         )}
                                     >
@@ -201,28 +203,28 @@ const MobileQuickAdd = () => {
                         </div>
                     )}
                     {/* Segmented Control */}
-                    <div className="flex bg-zinc-100 dark:bg-zinc-900 p-1.5 rounded-2xl mb-8">
+                    <div className="flex bg-zinc-100/80 dark:bg-black/40 p-1.5 rounded-2xl mb-8 border border-zinc-200/50 dark:border-white/5">
                         <button
                             onClick={() => setType('expense')}
                             className={clsx(
-                                "flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all duration-200",
+                                "flex-1 py-3.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all duration-300",
                                 type === 'expense'
-                                    ? "bg-white dark:bg-zinc-800 text-rose-600 shadow-md transform scale-[1.02]"
-                                    : "text-zinc-400 hover:text-zinc-600"
+                                    ? "bg-white dark:bg-zinc-800 text-rose-600 shadow-sm border border-black/5 dark:border-white/5 transform scale-[1.02]"
+                                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                             )}
                         >
-                            <ArrowDownLeft size={20} strokeWidth={2.5} /> Gasto
+                            <ArrowDownLeft size={18} strokeWidth={2.5} /> Gasto
                         </button>
                         <button
                             onClick={() => setType('income')}
                             className={clsx(
-                                "flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all duration-200",
+                                "flex-1 py-3.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all duration-300",
                                 type === 'income'
-                                    ? "bg-white dark:bg-zinc-800 text-emerald-600 shadow-md transform scale-[1.02]"
-                                    : "text-zinc-400 hover:text-zinc-600"
+                                    ? "bg-white dark:bg-zinc-800 text-emerald-600 shadow-sm border border-black/5 dark:border-white/5 transform scale-[1.02]"
+                                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                             )}
                         >
-                            Ingreso <ArrowUpRight size={20} strokeWidth={2.5} />
+                            Ingreso <ArrowUpRight size={18} strokeWidth={2.5} />
                         </button>
                     </div>
 
@@ -253,10 +255,10 @@ const MobileQuickAdd = () => {
                                     key={cat}
                                     onClick={() => setCategory(cat)}
                                     className={clsx(
-                                        "flex-shrink-0 px-5 py-3 rounded-2xl text-sm font-bold border-2 transition-all snap-start whitespace-nowrap",
+                                        "flex-shrink-0 px-5 py-3 rounded-2xl text-sm font-bold border transition-all snap-start whitespace-nowrap",
                                         category === cat
-                                            ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                                            : "border-zinc-100 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+                                            ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                                            : "border-zinc-200/50 bg-white text-zinc-600 dark:border-white/5 dark:bg-white/5 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/10"
                                     )}
                                 >
                                     {cat}
@@ -265,10 +267,10 @@ const MobileQuickAdd = () => {
                             <button
                                 onClick={() => setCategory('Otros')}
                                 className={clsx(
-                                    "flex-shrink-0 px-5 py-3 rounded-2xl text-sm font-bold border-2 transition-all snap-start",
+                                    "flex-shrink-0 px-5 py-3 rounded-2xl text-sm font-bold border transition-all snap-start",
                                     category === 'Otros'
-                                        ? "border-zinc-900 bg-zinc-900 text-white"
-                                        : "border-zinc-100 bg-white text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900"
+                                        ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                                        : "border-zinc-200/50 bg-white text-zinc-600 dark:border-white/5 dark:bg-white/5 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/10"
                                 )}
                             >
                                 Otros
@@ -283,7 +285,7 @@ const MobileQuickAdd = () => {
                             value={description}
                             onChange={e => setDescription(e.target.value)}
                             placeholder={type === 'expense' ? "¿En qué gastaste?" : "¿De dónde provino?"}
-                            className="w-full bg-zinc-50 dark:bg-zinc-900/50 border-none rounded-2xl px-5 py-4 text-base font-medium placeholder:text-zinc-400 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                            className="w-full bg-zinc-100/80 dark:bg-white/5 border border-transparent dark:border-white/5 rounded-2xl px-5 py-4 text-base font-medium placeholder:text-zinc-400 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all dark:text-zinc-100"
                         />
                     </div>
 
@@ -292,10 +294,10 @@ const MobileQuickAdd = () => {
                         onClick={handleSubmit}
                         disabled={!amount}
                         className={clsx(
-                            "w-full py-5 rounded-2xl font-bold text-lg text-white shadow-xl transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]",
+                            "w-full py-[1.15rem] rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 active:scale-[0.98]",
                             amount
-                                ? "bg-zinc-900 dark:bg-emerald-600 shadow-zinc-900/20 dark:shadow-emerald-600/20"
-                                : "bg-zinc-300 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none"
+                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5"
+                                : "bg-zinc-100 dark:bg-white/5 text-zinc-400 dark:text-zinc-600 cursor-not-allowed border border-transparent dark:border-white/5"
                         )}
                     >
                         <Check size={28} strokeWidth={3} />

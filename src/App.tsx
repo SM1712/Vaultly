@@ -12,18 +12,18 @@ import NicknameSetupModal from './components/onboarding/NicknameSetupModal';
 import Layout from './layouts/Layout';
 import Login from './pages/Login'; // Keep Login synchronous for fast initial paint
 
-// Lazy loaded pages to reduce initial bundle size
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Expenses = lazy(() => import('./pages/Expenses'));
-const Income = lazy(() => import('./pages/Income'));
-const Goals = lazy(() => import('./pages/Goals'));
-const Projects = lazy(() => import('./pages/Projects'));
-const Funds = lazy(() => import('./pages/Funds'));
-const Credits = lazy(() => import('./pages/Credits'));
-const Projections = lazy(() => import('./pages/Projections'));
-const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
-const Calendar = lazy(() => import('./pages/Calendar'));
-const Reports = lazy(() => import('./pages/Reports'));
+// Eager loaded pages for instant navigation
+import Dashboard from './pages/Dashboard';
+import Expenses from './pages/Expenses';
+import Income from './pages/Income';
+import Goals from './pages/Goals';
+import Projects from './pages/Projects';
+import Funds from './pages/Funds';
+import Credits from './pages/Credits';
+import Projections from './pages/Projections';
+import OnboardingPage from './pages/OnboardingPage';
+import Calendar from './pages/Calendar';
+import Reports from './pages/Reports';
 import { Toaster } from 'sonner';
 import LoadingScreen from './components/ui/LoadingScreen';
 import RouteLoader from './components/ui/RouteLoader';
