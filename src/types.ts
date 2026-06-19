@@ -26,6 +26,7 @@ export interface Goal {
     isCompletedForMonth?: boolean;
     recoveryStrategy?: 'spread' | 'catch_up';
     calculationMethod?: 'dynamic' | 'static';
+    milestones?: Milestone[]; // Added for Goal 2.0 milestones support
     history?: {
         id: string;
         date: string;
@@ -60,6 +61,7 @@ export interface ProjectTransaction {
     category?: string;
     fundingSource?: 'internal' | 'external'; // internal = Wallet/Main Balance, external = Investor/Client
     budgetLineId?: string; // Optional: Link to a specific BudgetLine (Fund)
+    ledgerTxId?: string; // Optional: Link to a specific transaction in the main ledger
 }
 
 export interface ProjectTask {
@@ -68,6 +70,27 @@ export interface ProjectTask {
     description: string;
     completed: boolean;
     createdAt: string;
+}
+
+export interface ProjectDebt {
+    id: string;
+    projectId: string;
+    name: string;
+    creditor: string; // Nickname of the creditor user (e.g. "@sebastian") or "Banco"
+    debtor: string; // Nickname of the debtor user (e.g. "@todos", or specific member)
+    amount: number; // Current remaining amount
+    principal: number; // Initial amount
+    status: 'active' | 'paid';
+    createdAt: string;
+    interestRate?: number; // Annual interest rate (%)
+    term?: number; // Term in months
+    payments?: {
+        id: string;
+        date: string;
+        amount: number;
+        paidBy: string; // Nickname of the payer
+        note?: string;
+    }[];
 }
 
 export interface Project {
@@ -83,6 +106,8 @@ export interface Project {
     budgetLines: BudgetLine[];
     milestones: Milestone[];
     members?: ProjectMember[]; // Optional for backward compatibility, but should be populated
+    membersIds?: string[]; // Array of member UIDs for rules and queries
+    debts?: ProjectDebt[]; // Collaborative debts array
 }
 
 export interface FundTransaction {
@@ -101,6 +126,7 @@ export interface Fund {
     currentAmount: number;
     description?: string;
     color?: string; // Optional: custom color for the card/icon
+    texture?: 'frost' | 'obsidian' | 'neon'; // Optional: texture style
     history: FundTransaction[];
     autoSaveConfig?: {
         enabled: boolean;
@@ -117,6 +143,16 @@ export interface Payment {
     date: string;
     amount: number;
     note?: string;
+    isPreExisting?: boolean; // Para deudas importadas con cuotas pagadas previamente
+}
+
+export interface CreditAdjustment {
+    id: string;
+    creditId: string;
+    date: string;
+    amount: number;
+    note?: string;
+    type: 'interest' | 'charge'; // Cargo manual o cobro de interés
 }
 
 export interface Credit {
@@ -128,6 +164,8 @@ export interface Credit {
     startDate: string; // YYYY-MM-DD
     status: 'active' | 'paid';
     payments?: Payment[];
+    type?: 'amortized' | 'dynamic'; // amortized (cuota fija) o dynamic (tarjeta/revolvente)
+    adjustments?: CreditAdjustment[]; // cargos e intereses adicionales
 }
 
 export interface ScheduledTransaction {
@@ -187,12 +225,28 @@ export interface Achievement {
     xpReward: number;
     condition?: string; // Human readable condition description
     isHidden?: boolean; // If true, only shows details after unlocking
+    relicLore?: string;
+    pathType?: string;
 }
 
 export interface UserTitle {
     id: string;
     label: string;
     minLevel: number;
+}
+
+export interface Quest {
+    id: string;
+    title: string;
+    description: string;
+    type: 'daily' | 'weekly' | 'saga';
+    target: number;
+    current: number;
+    xpReward: number;
+    xpType: 'saving' | 'discipline' | 'growth';
+    completed: boolean;
+    claimed?: boolean;
+    requirementsDescription?: string;
 }
 
 export interface UserProfile {
@@ -210,6 +264,17 @@ export interface UserProfile {
         savingsStreak: number;
     };
     avatar?: string; // Base64 or URL
+    // Sendas de Gamificación
+    savingLevel?: number;
+    savingXP?: number;
+    disciplineLevel?: number;
+    disciplineXP?: number;
+    growthLevel?: number;
+    growthXP?: number;
+    // Misiones y Sagas activas
+    activeQuests?: Quest[];
+    lastQuestRefresh?: string;
+    lastUpdated?: number;
 }
 
 export interface NotificationSettings {
@@ -218,6 +283,51 @@ export interface NotificationSettings {
     dailyReminder: boolean;
     reminderTime?: string; // "HH:MM"
 }
+
+export interface EmailNotificationSettings {
+    enabled: boolean;
+    onGoalReached: boolean;
+    onBudgetExceeded: boolean;
+    onProjectInvitation: boolean;
+    onWeeklySummary: boolean;
+    onWeeklyBudgetControl?: boolean;
+    frequency: 'instant' | 'daily' | 'weekly';
+    theme?: 'claro' | 'oscuro' | 'indigo';
+}
+
+export interface AccessibilitySettings {
+    fontSize: 'small' | 'medium' | 'large';
+    spacing: 'compact' | 'cozy' | 'standard';
+    highContrast: boolean;
+    soundEffects: boolean;
+}
+
+export interface CategoryBudgetRule {
+    type: 'fixed' | 'percent_global';
+    value: number;
+}
+
+export interface SpendingLimitsSettings {
+    global: {
+        enabled: boolean;
+        amount: number;
+        period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    };
+    rules: Record<string, CategoryBudgetRule>;
+    categories: Record<string, number>;
+}
+
+
+export interface SimulatedEmail {
+    id: string;
+    to: string;
+    subject: string;
+    bodyHtml: string;
+    sentAt: string;
+    status: 'sent' | 'failed' | 'queued';
+    type: 'test' | 'goal_milestone' | 'budget_warning' | 'project_invitation' | 'weekly_summary' | 'weekly_budget_control';
+}
+
 
 // Collaboration Types
 export interface PublicProfile {

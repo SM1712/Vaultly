@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
     isOpen: boolean;
@@ -30,7 +31,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md", noPadd
         };
     }, [isOpen, onClose]);
 
-    return (
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
@@ -50,7 +51,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md", noPadd
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className={`relative bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full ${maxWidth} ${className} border border-zinc-200 dark:border-zinc-800 max-h-[85vh] flex flex-col overflow-hidden`}
+                        className={`relative modal-content-base bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full ${maxWidth} ${className} border border-zinc-200 dark:border-zinc-800 max-h-[85vh] flex flex-col overflow-hidden`}
                     >
                         <div className="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-800/50 flex-shrink-0">
                             <div className="flex items-center gap-3">
@@ -77,7 +78,8 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = "max-w-md", noPadd
                     </motion.div>
                 </div>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 };
 

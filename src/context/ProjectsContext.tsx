@@ -1,17 +1,18 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import type { Project, ProjectTransaction, ProjectTask, BudgetLine, Milestone } from '../types';
+import type { Project, ProjectTransaction, ProjectTask, BudgetLine, Milestone, ProjectDebt } from '../types';
 import { db } from '../lib/firebase';
 import {
     collection, doc, setDoc, deleteDoc, onSnapshot, query, where
 } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
+import { useData } from './DataContext';
 
 interface ProjectsContextType {
     projects: Project[];
     addProject: (projectData: Omit<Project, 'id' | 'transactions' | 'status' | 'startDate' | 'tasks' | 'budgetLines' | 'milestones' | 'members'>) => Promise<boolean>;
     updateProject: (id: string, updates: Partial<Project>) => Promise<boolean>;
-    deleteProject: (id: string) => void;
+    deleteProject: (id: string) => Promise<void>;
     addProjectTransaction: (projectId: string, transaction: Omit<ProjectTransaction, 'id' | 'projectId'>) => void;
     updateProjectTransaction: (projectId: string, txId: string, updates: Partial<ProjectTransaction>) => void;
     deleteProjectTransaction: (projectId: string, txId: string) => void;
@@ -32,14 +33,17 @@ interface ProjectsContextType {
     addMilestone: (projectId: string, milestone: Omit<Milestone, 'id' | 'status'>) => void;
     toggleMilestone: (projectId: string, milestoneId: string) => void;
     deleteMilestone: (projectId: string, milestoneId: string) => void;
+    // Collaborative Debt Methods
+    addProjectDebt: (projectId: string, debt: Omit<ProjectDebt, 'id' | 'status' | 'createdAt' | 'payments' | 'amount' | 'projectId'>) => void;
+    payProjectDebt: (projectId: string, debtId: string, amount: number, paidBy: string, note?: string) => void;
+    deleteProjectDebt: (projectId: string, debtId: string) => void;
 }
 
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
 
 export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
-    // We no longer use useData for projects, but we might want to keep it if we need other data
-    // const { data, updateData } = useData(); 
+    const { data: appData, updateData } = useData();
     const [projects, setProjects] = useState<Project[]>([]);
 
     useEffect(() => {
@@ -65,7 +69,8 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
                     budgetLines: data.budgetLines || [],
                     milestones: data.milestones || [],
                     members: data.members || [],
-                    membersIds: data.membersIds || []
+                    membersIds: data.membersIds || [],
+                    debts: data.debts || []
                 } as unknown as Project);
             });
             // Sort by createdAt or name? Let's just keep them as is or sort by name
@@ -106,11 +111,15 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             await setDoc(newRef, newProject);
-            toast.success("Proyecto colaborativo creado");
+            toast.success("Proyecto Creado", {
+                description: `El proyecto colaborativo "${newProject.name}" se creó con éxito.`
+            });
             return true;
         } catch (e: any) {
             console.error(e);
-            toast.error("Error creando proyecto: " + (e.message || String(e)));
+            toast.error("Error al Crear Proyecto", {
+                description: e.message || String(e)
+            });
             return false;
         }
     };
@@ -122,7 +131,9 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
             return true;
         } catch (e) {
             console.error(e);
-            toast.error("Error actualizando proyecto");
+            toast.error("Error al Actualizar", {
+                description: "No se pudieron guardar los cambios en el proyecto."
+            });
             return false;
         }
     };
@@ -132,10 +143,14 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
 
         try {
             await deleteDoc(doc(db, 'projects', id));
-            toast.success("Proyecto eliminado");
+            toast.success("Proyecto Eliminado", {
+                description: "El proyecto colaborativo ha sido removido con éxito."
+            });
         } catch (e) {
             console.error(e);
-            toast.error("Error eliminando proyecto");
+            toast.error("Error al Eliminar", {
+                description: "Ocurrió un problema al intentar borrar el proyecto."
+            });
         }
     };
 
@@ -198,6 +213,12 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
             transactions: updatedTxs,
             budgetLines: updatedBudgetLines
         });
+
+        // Delete counterpart transaction in main ledger if linked
+        if (txToDelete && txToDelete.ledgerTxId) {
+            const updatedTransactions = (appData.transactions || []).filter(t => t.id !== txToDelete.ledgerTxId);
+            updateData({ transactions: updatedTransactions });
+        }
     };
 
     const getProjectStats = (project: Project) => {
@@ -279,6 +300,69 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
         await updateProject(projectId, { milestones: updatedMilestones });
     };
 
+    // Collaborative Debt Implementations
+    const addProjectDebt = async (projectId: string, debtData: Omit<ProjectDebt, 'id' | 'status' | 'createdAt' | 'payments' | 'amount' | 'projectId'>) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+        const newDebt: ProjectDebt = {
+            id: crypto.randomUUID(),
+            projectId,
+            ...debtData,
+            amount: debtData.principal,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            payments: []
+        };
+        await updateProject(projectId, { debts: [...(project.debts || []), newDebt] });
+        toast.success("Deuda Registrada", {
+            description: `Se registró la deuda "${newDebt.name}" por un valor de ${newDebt.principal.toLocaleString()}.`
+        });
+    };
+
+    const payProjectDebt = async (projectId: string, debtId: string, amount: number, paidBy: string, note?: string) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+
+        const updatedDebts = (project.debts || []).map(d => {
+            if (d.id === debtId) {
+                const newPayments = [
+                    ...(d.payments || []),
+                    {
+                        id: crypto.randomUUID(),
+                        date: new Date().toISOString().split('T')[0],
+                        amount,
+                        paidBy,
+                        note
+                    }
+                ];
+                const totalPaid = newPayments.reduce((acc, p) => acc + p.amount, 0);
+                const remainingAmount = Math.max(0, d.principal - totalPaid);
+                const status = remainingAmount <= 0 ? 'paid' as const : 'active' as const;
+
+                return {
+                    ...d,
+                    amount: remainingAmount,
+                    status,
+                    payments: newPayments
+                };
+            }
+            return d;
+        });
+
+        await updateProject(projectId, { debts: updatedDebts });
+        toast.success("Abono Registrado", {
+            description: `Se abonaron ${amount.toLocaleString()} a la deuda.`
+        });
+    };
+
+    const deleteProjectDebt = async (projectId: string, debtId: string) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+        const updatedDebts = (project.debts || []).filter(d => d.id !== debtId);
+        await updateProject(projectId, { debts: updatedDebts });
+        toast.success("Deuda Eliminada");
+    };
+
     return (
         <ProjectsContext.Provider value={{
             projects,
@@ -296,7 +380,10 @@ export const ProjectsProvider = ({ children }: { children: ReactNode }) => {
             deleteBudgetLine,
             addMilestone,
             toggleMilestone,
-            deleteMilestone
+            deleteMilestone,
+            addProjectDebt,
+            payProjectDebt,
+            deleteProjectDebt
         }}>
             {children}
         </ProjectsContext.Provider>

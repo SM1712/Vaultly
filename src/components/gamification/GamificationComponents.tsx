@@ -1,6 +1,6 @@
 
 import type { AchievementRarity } from '../../types';
-import * as LucideIcons from 'lucide-react';
+import { GAMIFICATION_ICONS } from './GamificationIcons';
 
 // --- XP Bar ---
 interface XPBarProps {
@@ -53,7 +53,7 @@ interface AchievementBadgeProps {
 
 export const AchievementBadge = ({ icon, title, description, rarity, locked = false, size = 'md' }: AchievementBadgeProps) => {
     // Dynamic Icon
-    const IconComponent = (LucideIcons as any)[icon] || LucideIcons.Trophy;
+    const IconComponent = GAMIFICATION_ICONS[icon] || GAMIFICATION_ICONS.Trophy;
 
     const baseClasses = `
         relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-300

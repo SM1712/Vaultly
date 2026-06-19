@@ -47,7 +47,8 @@ const Income = () => {
             updateTransaction(editingTransaction.id, data);
             setEditingTransaction(null);
         } else {
-            addTransaction(data);
+            const txId = addTransaction(data);
+            if (!txId) return;
 
             // Relational Hooks processing
             if (data.relatedTo) {
@@ -57,18 +58,18 @@ const Income = () => {
                         date: data.date,
                         description: data.description || 'Ingreso desde Bóveda',
                         type: 'income',
-                        fundingSource: 'internal'
+                        fundingSource: 'internal',
+                        ledgerTxId: txId
                     });
                 } else if (data.relatedTo.type === 'fund') {
                     // Si se registra un ingreso hacia un fondo (Ej. retiro del fondo a billetera principal) 
                     // se interpreta como un Retiro del fondo.
-                    addFundTx(data.relatedTo.id, data.amount, 'withdraw', data.description || 'Retirado hacia Bóveda');
+                    addFundTx(data.relatedTo.id, data.amount, 'withdraw', data.description || 'Retirado hacia Bóveda', true);
                 }
             }
 
             // Gamification Triggers
-            addXp(10); // Base XP for adding income
-            checkAchievement('TRANSACTION_ADDED');
+            checkAchievement('TRANSACTION_ADDED', data);
         }
     };
 

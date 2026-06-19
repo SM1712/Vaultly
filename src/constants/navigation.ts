@@ -8,7 +8,8 @@ import {
     Landmark,
     Calculator,
     Calendar,
-    BarChart3
+    BarChart3,
+    Compass
 } from 'lucide-react';
 
 export interface NavItem {
@@ -29,6 +30,7 @@ export const NAV_SECTIONS: NavSection[] = [
         title: undefined,
         items: [
             { to: '/', icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
+            { to: '/gamification', icon: Compass, label: 'Senda', id: 'gamification' },
         ]
     },
     {

@@ -52,11 +52,17 @@ const NicknameSetupModal = () => {
                     // Show friendly error
                     const msg = err.message || "Error desconocido";
                     if (msg.includes("permission")) {
-                        toast.error("Error de permisos. Verifica las reglas de Firebase.");
+                        toast.error("Error de Permisos", {
+                            description: "Verifica las reglas de seguridad de Firebase o inicia sesión de nuevo."
+                        });
                     } else if (msg.includes("Timeout")) {
-                        toast.error("La verificación tardó demasiado. Revisa tu conexión.");
+                        toast.error("Tiempo de Espera Agotado", {
+                            description: "La verificación tardó demasiado. Revisa tu conexión a internet."
+                        });
                     } else {
-                        toast.error(`Error verificando: ${msg}`);
+                        toast.error("Error de Verificación", {
+                            description: `Detalle: ${msg}`
+                        });
                     }
                 }
             }
@@ -72,13 +78,17 @@ const NicknameSetupModal = () => {
             await registerNickname(nickname);
             // Modal will unmount automatically as profile is set
         } catch (err: any) {
-            toast.error(err.message || "Error al registrar");
+            toast.error("Error de Registro", {
+                description: err.message || "Hubo un problema al crear tu perfil."
+            });
             setSubmitting(false);
         }
     };
 
     const handleSkip = () => {
-        toast.info("Has omitido la configuración de identidad. Algunas funciones colaborativas no estarán disponibles.");
+        toast.info("Identidad Omitida", {
+            description: "Has omitido la configuración de identidad. Algunas funciones colaborativas no estarán disponibles."
+        });
         skipProfileSetup();
     };
 

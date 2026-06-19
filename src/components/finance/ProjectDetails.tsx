@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import type { Project } from '../../types';
@@ -9,7 +9,7 @@ import { useTransactions } from '../../hooks/useTransactions';
 import {
     X, PieChart, List, Settings,
     ArrowUpRight, ArrowDownRight, Trash2, CheckSquare, PlusCircle, LayoutDashboard, Flag, Users,
-    Search, Loader2, User
+    Search, Loader2, User, Coins, Check
 } from 'lucide-react';
 import { useCollaboration } from '../../context/CollaborationContext';
 import { clsx } from 'clsx';
@@ -24,20 +24,46 @@ interface ProjectDetailsProps {
 const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
     const { currency } = useSettings();
     const {
+        projects,
         updateProject, deleteProject,
         addProjectTransaction, deleteProjectTransaction, getProjectStats,
         addProjectTask, toggleProjectTask, deleteProjectTask,
         addBudgetLine, deleteBudgetLine,
-        addMilestone, toggleMilestone, deleteMilestone
+        addMilestone, toggleMilestone, deleteMilestone,
+        addProjectDebt, payProjectDebt, deleteProjectDebt
     } = useProjects();
-    const { searchUserByNickname, sendProjectInvitation } = useCollaboration();
+    const { profile: collabProfile, searchUsersByNickname, sendProjectInvitation } = useCollaboration();
     const [inviteNick, setInviteNick] = useState('');
-    const [foundUser, setFoundUser] = useState<any>(null);
+    const [foundUsers, setFoundUsers] = useState<any[]>([]);
+    const [recentCollabs, setRecentCollabs] = useState<any[]>([]);
     const [searchingUser, setSearchingUser] = useState(false);
     const [isInviting, setIsInviting] = useState(false);
+
+    // Compute unique historical collaborators from all projects and recent local invites
+    const historicalCollabs = useMemo(() => {
+        const unique = new Map<string, { uid: string; nickname: string }>();
+
+        // 1. Add locally saved recent collaborators
+        recentCollabs.forEach(c => {
+            if (c.uid !== collabProfile?.uid) {
+                unique.set(c.uid, { uid: c.uid, nickname: c.nickname });
+            }
+        });
+
+        // 2. Add members of all active projects
+        projects.forEach(p => {
+            p.members?.forEach(m => {
+                if (m.uid !== collabProfile?.uid) {
+                    unique.set(m.uid, { uid: m.uid, nickname: m.nickname });
+                }
+            });
+        });
+
+        return Array.from(unique.values());
+    }, [projects, recentCollabs, collabProfile]);
     const { currentBalance } = useBalance();
     const { addTransaction } = useTransactions();
-    const [activeTab, setActiveTab] = useState<'overview' | 'budget' | 'ledger' | 'tasks' | 'milestones' | 'settings' | 'members'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'budget' | 'ledger' | 'tasks' | 'milestones' | 'settings' | 'members' | 'debts'>('overview');
 
     // Stats
     const stats = getProjectStats(project);
@@ -55,6 +81,75 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
     const [newBudgetLine, setNewBudgetLine] = useState({ name: '', amount: '' });
     const [newMilestone, setNewMilestone] = useState({ title: '', targetDate: '' });
     const [newTaskDescription, setNewTaskDescription] = useState('');
+
+    // Debt Form States & Effects
+    const [showDebtForm, setShowDebtForm] = useState(false);
+    const [debtForm, setDebtForm] = useState({
+        name: '',
+        creditor: collabProfile?.nickname ? `@${collabProfile.nickname}` : '',
+        debtor: '@todos',
+        principal: '',
+        interestRate: '0',
+        term: '12'
+    });
+    const [selectedDebtForPay, setSelectedDebtForPay] = useState<any | null>(null);
+    const [payAmount, setPayAmount] = useState('');
+    const [payNote, setPayNote] = useState('');
+
+    useEffect(() => {
+        if (collabProfile?.nickname && !debtForm.creditor) {
+            setDebtForm(prev => ({ ...prev, creditor: `@${collabProfile.nickname}` }));
+        }
+    }, [collabProfile]);
+
+    const handleAddDebtSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const principal = Number(debtForm.principal);
+        if (!debtForm.name.trim() || principal <= 0) {
+            toast.error("Ingresa un nombre y monto inicial válidos");
+            return;
+        }
+
+        addProjectDebt(project.id, {
+            name: debtForm.name.trim(),
+            creditor: debtForm.creditor.trim() || 'Banco',
+            debtor: debtForm.debtor.trim() || '@todos',
+            principal,
+            interestRate: Number(debtForm.interestRate) || 0,
+            term: Number(debtForm.term) || 1
+        });
+
+        setDebtForm({
+            name: '',
+            creditor: collabProfile?.nickname ? `@${collabProfile.nickname}` : '',
+            debtor: '@todos',
+            principal: '',
+            interestRate: '0',
+            term: '12'
+        });
+        setShowDebtForm(false);
+    };
+
+    const handlePayDebtSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const amount = Number(payAmount);
+        if (!selectedDebtForPay || amount <= 0) {
+            toast.error("Ingresa un monto de abono válido");
+            return;
+        }
+
+        payProjectDebt(
+            project.id,
+            selectedDebtForPay.id,
+            amount,
+            collabProfile?.nickname || 'Usuario',
+            payNote.trim() || undefined
+        );
+
+        setSelectedDebtForPay(null);
+        setPayAmount('');
+        setPayNote('');
+    };
 
     const handleAddBudgetLine = (e: React.FormEvent) => {
         e.preventDefault();
@@ -86,14 +181,52 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
 
 
 
+    // Load recent collaborators
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem('vaultly_recent_collaborators');
+            if (stored) {
+                setRecentCollabs(JSON.parse(stored));
+            }
+        } catch (e) {
+            console.error("Error loading recent collaborators:", e);
+        }
+    }, []);
+
+    // Debounced Live Search
+    useEffect(() => {
+        const queryVal = inviteNick.trim();
+        if (queryVal.length < 2) {
+            setFoundUsers([]);
+            return;
+        }
+
+        setSearchingUser(true);
+        const delayDebounce = setTimeout(async () => {
+            try {
+                const results = await searchUsersByNickname(queryVal);
+                setFoundUsers(results);
+            } catch (err) {
+                console.error("Live search error:", err);
+            } finally {
+                setSearchingUser(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(delayDebounce);
+    }, [inviteNick]);
+
     const handleSearchUser = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (!inviteNick.trim()) return;
+        const queryVal = inviteNick.trim();
+        if (!queryVal) return;
         setSearchingUser(true);
         try {
-            const user = await searchUserByNickname(inviteNick);
-            setFoundUser(user);
-            if (!user) toast.error("Usuario no encontrado");
+            const results = await searchUsersByNickname(queryVal);
+            setFoundUsers(results);
+            if (results.length === 0) {
+                toast.error("Usuario no encontrado");
+            }
         } catch (error: any) {
             console.error(error);
             toast.error("Error al buscar usuario: " + (error.message || "Intentelo más tarde"));
@@ -102,13 +235,21 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
         }
     };
 
-    const handleInvite = async () => {
-        if (!foundUser) return;
+    const handleInvite = async (userToInvite: any) => {
         setIsInviting(true);
         try {
-            await sendProjectInvitation(project.id, project.name, foundUser.nickname, foundUser.uid);
+            await sendProjectInvitation(project.id, project.name, userToInvite.nickname, userToInvite.uid);
+            
+            // Save to recent collaborators
+            setRecentCollabs(prev => {
+                const filtered = prev.filter(u => u.uid !== userToInvite.uid);
+                const updated = [userToInvite, ...filtered].slice(0, 5); // Keep last 5
+                localStorage.setItem('vaultly_recent_collaborators', JSON.stringify(updated));
+                return updated;
+            });
+
             setInviteNick('');
-            setFoundUser(null);
+            setFoundUsers([]);
         } finally {
             setIsInviting(false);
         }
@@ -234,6 +375,7 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
                             { id: 'milestones', icon: Flag, label: 'Hitos' },
                             { id: 'ledger', icon: List, label: 'Movimientos' },
                             { id: 'tasks', icon: CheckSquare, label: 'Tareas' },
+                            { id: 'debts', icon: Coins, label: 'Deudas' },
                             { id: 'members', icon: Users, label: 'Equipo' },
                             { id: 'settings', icon: Settings, label: 'Ajustes' },
                         ].map((tab) => (
@@ -376,6 +518,7 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
                                 { id: 'budget', icon: PieChart, label: 'Fondos' },
                                 { id: 'ledger', icon: List, label: 'Lista' },
                                 { id: 'tasks', icon: CheckSquare, label: 'Tareas' },
+                                { id: 'debts', icon: Coins, label: 'Deudas' },
                                 { id: 'members', icon: Users, label: 'Equipo' },
                                 { id: 'settings', icon: Settings, label: 'Ajustes' },
                             ].map((tab) => (
@@ -888,96 +1031,511 @@ const ProjectDetails = ({ project, onClose }: ProjectDetailsProps) => {
                                 </div>
                             </div>
                         )}
-
                         {activeTab === 'members' && (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 pt-2">
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 pt-2 pb-8">
                                 {/* Invite Section */}
-                                <div className="bg-zinc-100 dark:bg-zinc-900/50 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                                    <h3 className="font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
-                                        <Users size={20} className="text-emerald-500" />
-                                        Invitar Colaboradores
-                                    </h3>
-                                    <div className="flex gap-2">
-                                        <div className="flex-1 relative">
-                                            <input
-                                                type="text"
-                                                placeholder="Buscar usuario por nickname (ej. sebastian)"
-                                                className="w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 pl-10 focus:outline-none focus:ring-2 ring-emerald-500/50"
-                                                value={inviteNick}
-                                                onChange={(e) => setInviteNick(e.target.value)}
-                                                onKeyDown={(e) => e.key === 'Enter' && handleSearchUser()}
-                                            />
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                                <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-xl p-6 rounded-3xl border border-zinc-200/50 dark:border-zinc-800/80 space-y-5 shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 dark:text-emerald-400 rounded-2xl">
+                                            <Users size={20} />
                                         </div>
-                                        <button
-                                            onClick={handleSearchUser}
-                                            disabled={searchingUser || !inviteNick.trim()}
-                                            className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 rounded-xl font-bold disabled:opacity-50 hover:bg-zinc-800 transition-colors"
-                                        >
-                                            {searchingUser ? <Loader2 className="animate-spin" /> : 'Buscar'}
-                                        </button>
+                                        <div>
+                                            <h3 className="font-black text-base text-zinc-900 dark:text-zinc-100">
+                                                Invitar Colaboradores
+                                            </h3>
+                                            <p className="text-xs text-zinc-500">Agrega editores para compartir presupuestos y movimientos</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex-1 relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar usuario por nickname (ej. sebastian)"
+                                            className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800/80 rounded-2xl px-4 py-3.5 pl-11 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all font-semibold placeholder-zinc-450"
+                                            value={inviteNick}
+                                            onChange={(e) => setInviteNick(e.target.value)}
+                                        />
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                                     </div>
 
-                                    {/* Search Result */}
-                                    {foundUser && (
-                                        <div className="mt-4 bg-white dark:bg-zinc-950 p-4 rounded-xl border border-emerald-500/30 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold">
-                                                    {foundUser.nickname.substring(0, 2).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-zinc-900 dark:text-zinc-100">{foundUser.nickname}</p>
-                                                    <p className="text-xs text-zinc-500">Usuario registrado</p>
-                                                </div>
+                                    {/* Collaborator History (Suggestions) */}
+                                    {!inviteNick.trim() && historicalCollabs.length > 0 && (
+                                        <div className="space-y-2.5 pt-1 animate-in fade-in duration-300">
+                                            <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Sugerencias de Colaboración</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {historicalCollabs.map(collab => {
+                                                    const isAlreadyMember = project.members?.some(m => m.uid === collab.uid) || project.membersIds?.includes(collab.uid);
+                                                    const initials = collab.nickname.substring(0, 2).toUpperCase();
+                                                    return (
+                                                        <button
+                                                            key={collab.uid}
+                                                            onClick={() => !isAlreadyMember && handleInvite(collab)}
+                                                            disabled={isAlreadyMember || isInviting}
+                                                            className={clsx(
+                                                                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer select-none active:scale-95",
+                                                                isAlreadyMember
+                                                                    ? "bg-zinc-150/50 dark:bg-zinc-900/30 border-zinc-200 dark:border-zinc-800/50 text-zinc-400 cursor-not-allowed"
+                                                                    : "bg-zinc-50 dark:bg-zinc-950 hover:bg-emerald-500/5 hover:border-emerald-500/30 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300"
+                                                            )}
+                                                        >
+                                                            <div className="w-5 h-5 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 text-emerald-500 rounded-full flex items-center justify-center text-[9px] font-black tracking-tight shrink-0 uppercase">
+                                                                {initials}
+                                                            </div>
+                                                            <span>@{collab.nickname}</span>
+                                                            {isAlreadyMember && <span className="text-[9px] text-zinc-400 dark:text-zinc-500 font-medium">(Miembro)</span>}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
-                                            <button
-                                                onClick={handleInvite}
-                                                disabled={isInviting}
-                                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-emerald-900/20 disabled:opacity-50 flex items-center gap-2"
-                                            >
-                                                {isInviting && <Loader2 size={16} className="animate-spin" />}
-                                                {isInviting ? 'Enviando...' : 'Enviar Invitación'}
-                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Live Search Results Dropdown/List */}
+                                    {inviteNick.trim() && (
+                                        <div className="space-y-2 pt-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div className="flex justify-between items-center px-1">
+                                                <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-550 uppercase tracking-widest">
+                                                    {searchingUser ? 'Buscando Coincidencias...' : `Resultados (${foundUsers.length})`}
+                                                </p>
+                                                {searchingUser && <Loader2 size={12} className="animate-spin text-zinc-450" />}
+                                            </div>
+
+                                            <div className="divide-y divide-zinc-200/50 dark:divide-zinc-800/60 bg-zinc-50 dark:bg-zinc-955 rounded-2xl border border-zinc-250/50 dark:border-zinc-800/60 overflow-hidden shadow-inner">
+                                                {foundUsers.map(u => {
+                                                    const isAlreadyMember = project.members?.some(m => m.uid === u.uid) || project.membersIds?.includes(u.uid);
+                                                    const initials = u.nickname.substring(0, 2).toUpperCase();
+                                                    return (
+                                                        <div key={u.uid} className="flex items-center justify-between p-3.5 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/30 transition-colors">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-9 h-9 bg-gradient-to-br from-emerald-500/10 to-indigo-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/10 rounded-xl flex items-center justify-center font-black text-xs uppercase shadow-sm">
+                                                                    {initials}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-bold text-zinc-900 dark:text-zinc-100 text-xs flex items-center gap-1.5">
+                                                                        <span>@{u.nickname}</span>
+                                                                        {u.uid === collabProfile?.uid && <span className="text-[8px] font-black uppercase bg-zinc-200 dark:bg-zinc-850 text-zinc-500 px-1.5 py-0.5 rounded">Tú</span>}
+                                                                    </p>
+                                                                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">Miembro de Vaultly</p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => handleInvite(u)}
+                                                                disabled={isAlreadyMember || isInviting || u.uid === collabProfile?.uid}
+                                                                className={clsx(
+                                                                    "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer active:scale-95",
+                                                                    isAlreadyMember
+                                                                        ? "bg-zinc-200/50 dark:bg-zinc-900/30 text-zinc-450 border border-zinc-200 dark:border-zinc-800/80 cursor-not-allowed"
+                                                                        : u.uid === collabProfile?.uid
+                                                                            ? "hidden"
+                                                                            : "bg-emerald-650 hover:bg-emerald-600 text-white shadow-sm"
+                                                                )}
+                                                            >
+                                                                {isInviting ? <Loader2 size={12} className="animate-spin" /> : null}
+                                                                <span>{isAlreadyMember ? 'Ya es Miembro' : 'Invitar'}</span>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+
+                                                {!searchingUser && foundUsers.length === 0 && (
+                                                    <div className="p-8 text-center text-zinc-405 dark:text-zinc-500 text-xs italic">
+                                                        No se encontraron usuarios con "{inviteNick}"
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Current Members List (Placeholder for now) */}
-                                <div className="space-y-3">
-                                    <h3 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                                        Equipo del Proyecto <span className="text-xs bg-zinc-200 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-600 dark:text-zinc-400">{project.members?.length || 0}</span>
+                                {/* Current Members List */}
+                                <div className="space-y-3 pt-2">
+                                    <h3 className="font-black text-sm text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                                        <span>Equipo del Proyecto</span>
+                                        <span className="text-[10px] font-black bg-zinc-200 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-650 dark:text-zinc-400">
+                                            {project.members?.length || 0}
+                                        </span>
                                     </h3>
 
-                                    {project.members?.map(member => (
-                                        <div key={member.uid} className="flex items-center justify-between bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-500">
-                                                    <User size={20} />
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {project.members?.map(member => {
+                                            const isOwner = member.role === 'owner';
+                                            const initials = member.nickname.substring(0, 2).toUpperCase();
+                                            const isMe = member.uid === collabProfile?.uid;
+                                            
+                                            return (
+                                                <div key={member.uid} className="flex items-center justify-between bg-white/40 dark:bg-zinc-900/30 backdrop-blur-xl p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/80 shadow-sm relative overflow-hidden group">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-zinc-250 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900 rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 font-bold text-xs uppercase shrink-0 border border-zinc-300/30 dark:border-zinc-700/30">
+                                                            {initials}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="font-bold text-zinc-900 dark:text-zinc-150 text-xs truncate flex items-center gap-1.5">
+                                                                <span>@{member.nickname}</span>
+                                                                {isMe && <span className="text-[8px] font-black uppercase bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-455 px-1.5 py-0.2 rounded-md">Tú</span>}
+                                                            </p>
+                                                            <p className="text-[10px] text-zinc-400 mt-0.5 font-semibold">
+                                                                {isOwner ? 'Acceso Propietario' : 'Editor de Proyecto'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <span className={clsx("text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border shrink-0",
+                                                        isOwner 
+                                                            ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" 
+                                                            : "text-indigo-500 bg-indigo-500/10 border-indigo-500/20"
+                                                    )}>
+                                                        {isOwner ? 'Propietario' : 'Editor'}
+                                                    </span>
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-zinc-900 dark:text-zinc-100">
-                                                        {member.nickname} {member.role === 'owner' ? '(Propietario)' : ''}
-                                                    </p>
-                                                    <p className="text-xs text-zinc-500">
-                                                        {member.role === 'owner' ? 'Acceso total' : 'Editor'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <span className={clsx("text-xs font-bold px-3 py-1 rounded-full",
-                                                member.role === 'owner' ? "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/10" : "text-blue-500 bg-blue-50 dark:bg-blue-900/10"
-                                            )}>
-                                                {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                                            </span>
-                                        </div>
-                                    ))}
+                                            );
+                                        })}
+                                    </div>
 
                                     {(!project.members || project.members.length === 0) && (
-                                        <div className="text-center py-8 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
-                                            <p className="text-sm text-zinc-400">No hay miembros en este proyecto (¿Error de datos?)</p>
+                                        <div className="text-center py-10 border-2 border-dashed border-zinc-200 dark:border-zinc-800/80 rounded-2xl bg-zinc-50/20 dark:bg-zinc-955/10">
+                                            <p className="text-xs text-zinc-450 italic">No hay miembros en este proyecto</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
+                        )}
+                        {activeTab === 'debts' && (
+                            <motion.div
+                                key="debts"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                transition={{ duration: 0.2 }}
+                                className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 pt-2 pb-8"
+                            >
+                                {/* Consolidated Statistics Dashboard */}
+                                {(() => {
+                                    const projectDebts = project.debts || [];
+                                    const totalPrincipal = projectDebts.reduce((acc, d) => acc + d.principal, 0);
+                                    const totalRemaining = projectDebts.reduce((acc, d) => acc + d.amount, 0);
+                                    const totalPaid = Math.max(0, totalPrincipal - totalRemaining);
+                                    const overallProgress = totalPrincipal > 0 ? (totalPaid / totalPrincipal) * 100 : 0;
+
+                                    return (
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-xl p-5 rounded-3xl border border-zinc-200/50 dark:border-zinc-800/85 shadow-sm">
+                                                <span className="block text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Caja Pendiente (Deuda Activa)</span>
+                                                <span className="text-2xl font-mono font-black text-rose-650 dark:text-rose-455">
+                                                    {currency}{totalRemaining.toLocaleString()}
+                                                </span>
+                                                <span className="block text-[10px] text-zinc-450 mt-1 font-semibold">Consolidado de deudores</span>
+                                            </div>
+
+                                            <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-xl p-5 rounded-3xl border border-zinc-200/50 dark:border-zinc-800/85 shadow-sm">
+                                                <span className="block text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Total Amortizado</span>
+                                                <span className="text-2xl font-mono font-black text-emerald-600 dark:text-emerald-455">
+                                                    {currency}{totalPaid.toLocaleString()}
+                                                </span>
+                                                <span className="block text-[10px] text-zinc-450 mt-1 font-semibold">Abonado a acreedores</span>
+                                            </div>
+
+                                            <div className="bg-white/40 dark:bg-zinc-900/30 backdrop-blur-xl p-5 rounded-3xl border border-zinc-200/50 dark:border-zinc-800/85 shadow-sm flex flex-col justify-between">
+                                                <div>
+                                                    <span className="block text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Progreso de Pago</span>
+                                                    <span className="text-xl font-black text-zinc-800 dark:text-zinc-250">
+                                                        {overallProgress.toFixed(1)}%
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-zinc-250 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden mt-2">
+                                                    <div 
+                                                        className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                                                        style={{ width: `${overallProgress}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Header and toggle button */}
+                                <div className="flex justify-between items-center bg-white/40 dark:bg-zinc-900/30 backdrop-blur-xl p-4.5 rounded-3xl border border-zinc-200/50 dark:border-zinc-800/80 shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 dark:text-indigo-400 rounded-2xl">
+                                            <Coins className="animate-pulse" size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-black text-base text-zinc-900 dark:text-zinc-100">
+                                                Deudas Colaborativas
+                                            </h3>
+                                            <p className="text-xs text-zinc-500">Préstamos, gastos de compras compartidas y créditos</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowDebtForm(!showDebtForm)}
+                                        className="bg-indigo-650 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md hover:shadow-indigo-500/10 active:scale-95 cursor-pointer flex items-center gap-1.5"
+                                    >
+                                        <PlusCircle size={14} />
+                                        <span>Registrar Deuda</span>
+                                    </button>
+                                </div>
+
+                                {/* Add Debt Form */}
+                                {showDebtForm && (
+                                    <form onSubmit={handleAddDebtSubmit} className="bg-white/80 dark:bg-zinc-900/60 backdrop-blur-xl p-6 rounded-3xl border border-indigo-200 dark:border-indigo-950/60 shadow-lg space-y-5 animate-in slide-in-from-top-4 duration-300">
+                                        <div className="flex justify-between items-center border-b border-zinc-105 dark:border-zinc-800/60 pb-3">
+                                            <h4 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Registrar nueva deuda / crédito compartido</h4>
+                                            <button type="button" onClick={() => setShowDebtForm(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 cursor-pointer"><X size={16} /></button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-505 uppercase tracking-wider block">Concepto de Deuda</label>
+                                                <input
+                                                    required
+                                                    type="text"
+                                                    placeholder="ej. Préstamo de Capital inicial, Materiales"
+                                                    className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-850 dark:text-zinc-200 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all placeholder-zinc-400"
+                                                    value={debtForm.name}
+                                                    onChange={e => setDebtForm(prev => ({ ...prev, name: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-505 uppercase tracking-wider block">Acreedor (Quién prestó)</label>
+                                                <input
+                                                    required
+                                                    type="text"
+                                                    placeholder="ej. Banco, @sebastian"
+                                                    className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-850 dark:text-zinc-200 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all placeholder-zinc-400"
+                                                    value={debtForm.creditor}
+                                                    onChange={e => setDebtForm(prev => ({ ...prev, creditor: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-505 uppercase tracking-wider block">Deudor (Quién debe pagar)</label>
+                                                <input
+                                                    required
+                                                    type="text"
+                                                    placeholder="ej. @todos, @pepito"
+                                                    className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-850 dark:text-zinc-200 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all placeholder-zinc-400"
+                                                    value={debtForm.debtor}
+                                                    onChange={e => setDebtForm(prev => ({ ...prev, debtor: e.target.value }))}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-505 uppercase tracking-wider block">Monto Inicial ({currency})</label>
+                                                <input
+                                                    required
+                                                    type="number"
+                                                    placeholder="0"
+                                                    className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-850 dark:text-zinc-200 font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all placeholder-zinc-400"
+                                                    value={debtForm.principal}
+                                                    onChange={e => setDebtForm(prev => ({ ...prev, principal: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-505 uppercase tracking-wider block">Tasa Interés Anual (%)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-850 dark:text-zinc-200 font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all placeholder-zinc-400"
+                                                    value={debtForm.interestRate}
+                                                    onChange={e => setDebtForm(prev => ({ ...prev, interestRate: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-505 uppercase tracking-wider block">Plazo (Meses)</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="12"
+                                                    className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-850 dark:text-zinc-200 font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all placeholder-zinc-400"
+                                                    value={debtForm.term}
+                                                    onChange={e => setDebtForm(prev => ({ ...prev, term: e.target.value }))}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            className="w-full bg-indigo-650 hover:bg-indigo-600 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-widest transition-all cursor-pointer shadow-md shadow-indigo-900/10 active:scale-[0.99]"
+                                        >
+                                            Guardar Deuda
+                                        </button>
+                                    </form>
+                                )}
+
+                                {/* Pay/Contribution Modal Dialog */}
+                                {selectedDebtForPay && (
+                                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
+                                        <form onSubmit={handlePayDebtSubmit} className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl w-full max-w-md p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800/80 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+                                            <div className="flex justify-between items-center border-b border-zinc-150 dark:border-zinc-800/60 pb-3">
+                                                <h4 className="font-black text-base text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                                                    <Coins size={18} className="text-emerald-500 animate-bounce" />
+                                                    Abonar a Deuda
+                                                </h4>
+                                                <button type="button" onClick={() => setSelectedDebtForPay(null)} className="text-zinc-450 hover:text-zinc-650 dark:hover:text-zinc-200 p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 cursor-pointer"><X size={18} /></button>
+                                            </div>
+                                            <div className="bg-zinc-50 dark:bg-zinc-950 p-4.5 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 mb-2">
+                                                <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Deuda Seleccionada</p>
+                                                <p className="text-sm font-black text-zinc-800 dark:text-zinc-200 mt-0.5">{selectedDebtForPay.name}</p>
+                                                <p className="text-xs font-mono font-bold text-zinc-500 mt-1">Saldo Pendiente: {currency}{selectedDebtForPay.amount.toLocaleString()}</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-0.5">Monto a Abonar ({currency})</label>
+                                                <input
+                                                    required
+                                                    type="number"
+                                                    className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800/80 rounded-xl px-4 py-3 text-sm font-mono font-bold text-zinc-855 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all placeholder-zinc-450"
+                                                    placeholder="0"
+                                                    value={payAmount}
+                                                    onChange={e => setPayAmount(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-505 uppercase tracking-widest block mb-0.5">Nota / Comentario</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full bg-zinc-50 dark:bg-zinc-955 border border-zinc-200 dark:border-zinc-800/80 rounded-xl px-4 py-3 text-xs text-zinc-850 dark:text-zinc-200 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all placeholder-zinc-455"
+                                                    placeholder="ej. Pago cuota de junio, amortización parcial"
+                                                    value={payNote}
+                                                    onChange={e => setPayNote(e.target.value)}
+                                                />
+                                            </div>
+                                            <button type="submit" className="w-full bg-emerald-650 hover:bg-emerald-650 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-widest transition-all cursor-pointer shadow-md shadow-emerald-900/10 active:scale-[0.99] flex items-center justify-center gap-1.5">
+                                                <Check size={14} strokeWidth={2.5} />
+                                                <span>Registrar Abono</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                )}
+
+                                {/* Debts List Grid */}
+                                <div className="grid gap-5 md:grid-cols-2">
+                                    {(project.debts || []).map(debt => {
+                                        const paidAmount = debt.principal - debt.amount;
+                                        const progressPercent = Math.min(100, Math.max(0, (paidAmount / debt.principal) * 100));
+                                        const isPaid = debt.status === 'paid';
+                                        
+                                        return (
+                                            <div key={debt.id} className={clsx(
+                                                "p-6 rounded-3xl border transition-all relative overflow-hidden bg-white/40 dark:bg-zinc-900/30 backdrop-blur-xl shadow-sm group",
+                                                isPaid 
+                                                    ? "border-emerald-500/20 bg-emerald-500/5 opacity-80" 
+                                                    : "border-zinc-200/60 dark:border-zinc-800/80 hover:border-indigo-500/20"
+                                            )}>
+                                                {/* Left/Right glow indicators */}
+                                                <div className={clsx(
+                                                    "absolute left-0 inset-y-0 w-1",
+                                                    isPaid ? "bg-emerald-505" : "bg-indigo-500"
+                                                )} />
+
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <h4 className="font-black text-base text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">{debt.name}</h4>
+                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[9px] font-black text-zinc-450 dark:text-zinc-500 uppercase tracking-wider">
+                                                            <span>Acreedor: <strong className="text-zinc-700 dark:text-zinc-300 font-bold">{debt.creditor}</strong></span>
+                                                            <span>•</span>
+                                                            <span>Deudor: <strong className="text-indigo-650 dark:text-indigo-400 font-bold">{debt.debtor}</strong></span>
+                                                            {debt.interestRate !== undefined && debt.interestRate > 0 && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span className="text-amber-500 dark:text-amber-450 font-bold">Interés: {debt.interestRate}% Anual</span>
+                                                                </>
+                                                            )}
+                                                            {debt.term !== undefined && debt.term > 0 && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span className="text-purple-500 dark:text-purple-450 font-bold">Plazo: {debt.term} Meses</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <button 
+                                                            onClick={() => deleteProjectDebt(project.id, debt.id)}
+                                                            className="text-zinc-400 hover:text-rose-500 p-2 hover:bg-rose-500/5 dark:hover:bg-rose-955/20 rounded-xl transition-all cursor-pointer"
+                                                            title="Eliminar Deuda"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4 bg-zinc-50/50 dark:bg-zinc-955/40 p-4 rounded-2xl border border-zinc-150 dark:border-zinc-800/50 mb-4 shadow-inner">
+                                                    <div>
+                                                        <span className="block text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Saldo Restante</span>
+                                                        <span className={clsx("text-lg font-mono font-black", isPaid ? "text-emerald-505" : "text-zinc-900 dark:text-zinc-100")}>
+                                                            {currency}{debt.amount.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="block text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Monto Original</span>
+                                                        <span className="text-xs font-mono font-bold text-zinc-400 dark:text-zinc-500 block mt-1">
+                                                            {currency}{debt.principal.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Progress Bar */}
+                                                <div className="space-y-1.5 mb-5">
+                                                    <div className="flex justify-between text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                                                        <span>Amortizado: {progressPercent.toFixed(0)}%</span>
+                                                        <span>{currency}{paidAmount.toLocaleString()} pagados</span>
+                                                    </div>
+                                                    <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-805 rounded-full overflow-hidden border border-zinc-300/10 dark:border-zinc-700/10">
+                                                        <div 
+                                                            className={clsx("h-full rounded-full transition-all duration-500", isPaid ? "bg-emerald-500" : "bg-indigo-500")}
+                                                            style={{ width: `${progressPercent}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Payments List if present */}
+                                                {debt.payments && debt.payments.length > 0 && (
+                                                    <div className="border-t border-zinc-200/50 dark:border-zinc-800/60 pt-4.5 space-y-2.5 mb-5">
+                                                        <p className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Historial de Abonos</p>
+                                                        <div className="max-h-[120px] overflow-y-auto space-y-2 pr-1.5 no-scrollbar">
+                                                            {debt.payments.map(pay => (
+                                                                <div key={pay.id} className="flex justify-between items-center text-[10px] bg-zinc-50/50 dark:bg-zinc-950/20 p-2.5 rounded-xl border border-zinc-150/40 dark:border-zinc-800/40">
+                                                                    <div>
+                                                                        <span className="font-bold text-zinc-700 dark:text-zinc-350">@{pay.paidBy}</span>
+                                                                        {pay.note && <span className="text-zinc-400 dark:text-zinc-500 font-medium ml-1.5 italic">({pay.note})</span>}
+                                                                    </div>
+                                                                    <span className="font-mono font-black text-emerald-600 dark:text-emerald-455">
+                                                                        +{currency}{pay.amount.toLocaleString()}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Bottom Action Button */}
+                                                {!isPaid && (
+                                                    <button
+                                                        onClick={() => setSelectedDebtForPay(debt)}
+                                                        className="w-full py-2.5 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-650 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 text-xs font-black rounded-2xl transition-all border border-indigo-500/10 dark:border-indigo-500/20 active:scale-[0.98] uppercase tracking-widest cursor-pointer"
+                                                    >
+                                                        Registrar Abono
+                                                    </button>
+                                                )}
+                                                {isPaid && (
+                                                    <div className="w-full py-2.5 bg-emerald-500/5 dark:bg-emerald-950/10 text-emerald-655 dark:text-emerald-455 text-xs font-black rounded-2xl border border-emerald-500/10 text-center uppercase tracking-widest select-none">
+                                                        Totalmente Liquidado
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+
+                                    {(project.debts || []).length === 0 && (
+                                        <div className="col-span-full text-center py-16 bg-white/40 dark:bg-zinc-900/30 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/80 rounded-3xl flex flex-col items-center justify-center">
+                                            <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl text-zinc-400 mb-3">
+                                                <Coins size={28} strokeWidth={1.5} />
+                                            </div>
+                                            <p className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 max-w-xs leading-relaxed">
+                                                No hay deudas ni créditos compartidos registrados para este proyecto.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
                         )}
                     </AnimatePresence>
                 </div>

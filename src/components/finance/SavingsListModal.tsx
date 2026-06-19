@@ -52,17 +52,27 @@ const SavingsListModal = ({ isOpen, onClose }: SavingsListModalProps) => {
         if (transferState.type === 'withdraw') {
             if (transferState.targetType === 'goal') {
                 const goal = goals.find(g => g.id === transferState.targetId);
-                if (!goal || goal.currentAmount < val) { return toast.error('Fondos insuficientes en la meta.'); }
+                if (!goal || goal.currentAmount < val) { 
+                    return toast.error("Fondos Insuficientes", {
+                        description: "La meta de ahorro seleccionada no cuenta con fondos suficientes."
+                    }); 
+                }
                 withdraw(transferState.targetId, val);
             } else {
                 const fund = funds.find(f => f.id === transferState.targetId);
-                if (!fund || fund.currentAmount < val) { return toast.error('Fondos insuficientes en el fondo.'); }
+                if (!fund || fund.currentAmount < val) { 
+                    return toast.error("Fondos Insuficientes", {
+                        description: "El fondo seleccionado no cuenta con fondos suficientes."
+                    }); 
+                }
                 addFundTransaction(transferState.targetId, val, 'withdraw', 'Retiro desde Gestión');
             }
         } else {
             // Deposit
             if (availableBalance < val) {
-                return toast.error(`Saldo insuficiente. Disponible: ${currency}${availableBalance.toFixed(2)}`);
+                return toast.error("Saldo Insuficiente", {
+                    description: `Solo tienes ${currency}${availableBalance.toFixed(2)} disponible en Wallet.`
+                });
             }
 
             if (transferState.targetType === 'goal') {

@@ -49,22 +49,22 @@ const Expenses = () => {
             updateTransaction(editingTransaction.id, data);
             setEditingTransaction(null);
         } else {
-            addTransaction(data);
+            const txId = addTransaction(data);
+            if (!txId) return; // Halt if transaction was blocked due to insufficient funds
 
             // Relational Hooks processing
             if (data.relatedTo) {
                 if (data.relatedTo.type === 'credit') {
-                    addPayment(data.relatedTo.id, data.amount, data.description || 'Desde Gastos');
+                    addPayment(data.relatedTo.id, data.amount, data.description || 'Desde Gastos', true);
                 } else if (data.relatedTo.type === 'goal') {
-                    addContribution(data.relatedTo.id, data.amount, data.description || 'Aporte desde Gastos');
+                    addContribution(data.relatedTo.id, data.amount, data.description || 'Aporte desde Gastos', true);
                 } else if (data.relatedTo.type === 'fund') {
-                    addFundTx(data.relatedTo.id, data.amount, 'deposit', data.description || 'Aporte desde Gastos');
+                    addFundTx(data.relatedTo.id, data.amount, 'deposit', data.description || 'Aporte desde Gastos', true);
                 }
             }
 
             // Gamification Triggers
-            addXp(5); // Base XP for tracking expense
-            checkAchievement('TRANSACTION_ADDED');
+            checkAchievement('TRANSACTION_ADDED', data);
         }
     };
 

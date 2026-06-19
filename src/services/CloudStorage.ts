@@ -1,6 +1,6 @@
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import type { Transaction, Project, ScheduledTransaction, Preset, ProjectionsData } from '../types';
+import type { Transaction, Project, ScheduledTransaction, Preset, ProjectionsData, EmailNotificationSettings, AccessibilitySettings, SpendingLimitsSettings } from '../types';
 
 export interface AppData {
     transactions: Transaction[];
@@ -19,6 +19,9 @@ export interface AppData {
             defaultCalculationMethod: 'dynamic' | 'static';
             defaultRecoveryStrategy: 'spread' | 'catch_up';
         };
+        emailNotifications?: EmailNotificationSettings;
+        accessibility?: AccessibilitySettings;
+        spendingLimits?: SpendingLimitsSettings;
     };
     goals: any[];
     funds: any[];
@@ -42,7 +45,32 @@ export const INITIAL_DATA: AppData = {
     settings: {
         currency: '$',
         theme: 'classic',
-        hasSeenOnboarding: false
+        hasSeenOnboarding: false,
+        emailNotifications: {
+            enabled: false,
+            onGoalReached: true,
+            onBudgetExceeded: true,
+            onProjectInvitation: true,
+            onWeeklySummary: false,
+            onWeeklyBudgetControl: true,
+            frequency: 'instant',
+            theme: 'oscuro'
+        },
+        accessibility: {
+            fontSize: 'medium',
+            spacing: 'standard',
+            highContrast: false,
+            soundEffects: true
+        },
+        spendingLimits: {
+            global: {
+                enabled: false,
+                amount: 0,
+                period: 'monthly'
+            },
+            rules: {},
+            categories: {}
+        }
     },
     goals: [],
     funds: [],

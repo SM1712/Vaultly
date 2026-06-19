@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Plus, Save, CalendarClock, RotateCcw, AlignLeft, Loader2, Calendar } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Save, CalendarClock, RotateCcw, AlignLeft, Loader2, Calendar, Sparkles } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import { useScheduledTransactions } from '../../hooks/useScheduledTransactions';
+import { useTransactions } from '../../hooks/useTransactions';
+import { useProjections } from '../../hooks/useProjections';
+import { usePresets } from '../../hooks/usePresets';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { DatePicker } from '../ui/DatePicker';
@@ -18,13 +21,26 @@ interface TransactionFormProps {
         date: string;
         id?: string;
     };
-    credits?: any[]; // Reusing `any` to avoid excessive type imports inside component, or we could import Credit, Project types
+    credits?: any[];
     projects?: any[];
     goals?: any[];
     funds?: any[];
     getGoalMonthlyQuota?: (goal: any) => number;
     isGoalPaidThisMonth?: (goal: any) => boolean;
 }
+
+const defaultExpensePresets = [
+    { id: 'def-cafe', label: '☕ Café', amount: 2.5, category: 'Comida', type: 'expense' },
+    { id: 'def-bus', label: '🚌 Transporte', amount: 1.5, category: 'Transporte', type: 'expense' },
+    { id: 'def-lunch', label: '🍕 Almuerzo', amount: 10, category: 'Comida', type: 'expense' },
+    { id: 'def-movie', label: '🍿 Cine', amount: 12, category: 'Entretenimiento', type: 'expense' }
+];
+
+const defaultIncomePresets = [
+    { id: 'def-salary', label: '💼 Salario', amount: 1500, category: 'Sueldo', type: 'income' },
+    { id: 'def-invest', label: '📈 Rendimiento', amount: 50, category: 'Inversiones', type: 'income' },
+    { id: 'def-gift', label: '🎁 Regalo', amount: 20, category: 'Otros', type: 'income' }
+];
 
 const TransactionForm = ({
     type,
@@ -41,6 +57,9 @@ const TransactionForm = ({
 }: TransactionFormProps) => {
     const { currency } = useSettings();
     const { addScheduled } = useScheduledTransactions();
+    const { allTransactions } = useTransactions();
+    const { projections } = useProjections();
+    const { presets } = usePresets();
 
     const [amount, setAmount] = useState(initialData?.amount?.toString() || '');
     const [category, setCategory] = useState(initialData?.category || categories[0] || '');
@@ -56,6 +75,45 @@ const TransactionForm = ({
     // Pre-filter active credits
     const activeCredits = credits?.filter(c => c.status !== 'paid') || [];
 
+    // Filter presets matching current operation type
+    const typePresets = useMemo(() => presets.filter((p: any) => p.type === type), [presets, type]);
+
+    const activePresets = useMemo(() => {
+        return typePresets.length > 0
+            ? typePresets
+            : (type === 'expense' ? defaultExpensePresets : defaultIncomePresets);
+    }, [typePresets, type]);
+
+    // Apply quick preset selection
+    const handlePresetClick = (preset: any) => {
+        if (preset.amount) setAmount(preset.amount.toString());
+        setCategory(preset.category);
+        setDescription(preset.label || preset.description || '');
+    };
+
+    // Calculate budget metrics for a category in real-time
+    const getBudgetMetrics = (catName: string) => {
+        if (type !== 'expense') return null;
+        
+        const limitStr = projections.categoryBudgets?.[catName];
+        if (!limitStr) return null;
+        
+        const limit = Number(limitStr);
+        if (isNaN(limit) || limit <= 0) return null;
+
+        const now = new Date();
+        const spent = allTransactions
+            .filter((t: any) => {
+                if (t.type !== 'expense' || t.category !== catName) return false;
+                const [y, m] = t.date.split('-').map(Number);
+                return y === now.getFullYear() && m === (now.getMonth() + 1);
+            })
+            .reduce((acc: number, t: any) => acc + t.amount, 0);
+
+        const percent = (spent / limit) * 100;
+        return { spent, limit, percent };
+    };
+
     // Auto-populate Amount when a relation is selected
     useEffect(() => {
         if (!selectedRelationId) return;
@@ -63,7 +121,6 @@ const TransactionForm = ({
         if (activeTab === 'credit' && activeCredits.length > 0) {
             const credit = activeCredits.find(c => c.id === selectedRelationId);
             if (credit) {
-                // Simplified Quota Suggestion for UI
                 const monthlyRate = credit.interestRate / 100 / 12;
                 let quota = 0;
                 if (credit.interestRate === 0) {
@@ -75,7 +132,6 @@ const TransactionForm = ({
                     quota = denom === 0 ? p / t : (p * monthlyRate * Math.pow(1 + monthlyRate, t)) / denom;
                 }
 
-                // Set description implicitly
                 if (!description) setDescription(`Cuota de Crédito: ${credit.name}`);
                 setAmount(quota.toFixed(2));
             }
@@ -88,16 +144,12 @@ const TransactionForm = ({
                 if (isGoalPaidThisMonth && getGoalMonthlyQuota) {
                     const isPaid = isGoalPaidThisMonth(goal);
                     if (!isPaid) {
-                        // Not paid yet this month, suggest the exact quota
                         const quota = getGoalMonthlyQuota(goal);
-                        // Make sure we dont suggest more than remaining
                         suggested = Math.min(quota, remaining);
                     } else {
-                        // Already paid, fallback to small suggestion if user wants to add more
                         suggested = remaining < 100 ? remaining : (goal.targetAmount * 0.05);
                     }
                 } else {
-                    // Fallback if functions not provided
                     suggested = remaining < 100 ? remaining : (goal.targetAmount * 0.1);
                 }
 
@@ -128,8 +180,8 @@ const TransactionForm = ({
         if (!amount || !category) return;
 
         setIsSubmitting(true);
-        // Simulate a small delay for better UX feedback if it's instant
-        await new Promise(resolve => setTimeout(resolve, 600));
+        // Small delay for better visual feedback
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         if (isRecurring) {
             addScheduled({
@@ -143,7 +195,7 @@ const TransactionForm = ({
             const payload: any = {
                 amount: Number(amount),
                 type,
-                category: activeTab === 'regular' ? category : `🏦 Movimiento: ${activeTab}`, // Fallback category for list view
+                category: activeTab === 'regular' ? category : `🏦 Movimiento: ${activeTab}`,
                 description,
                 date,
             };
@@ -160,11 +212,9 @@ const TransactionForm = ({
 
         setIsSubmitting(false);
 
-        // Reset only if not editing (or handled by parent, but usually we want to clear form on create)
         if (!initialData) {
             setAmount('');
             setDescription('');
-            // Keep category and date for speed entry
             setIsRecurring(false);
         }
     };
@@ -279,6 +329,27 @@ const TransactionForm = ({
                 )}
             </div>
 
+            {/* QUICK PRESETS ROW (ATAJOS RAPIDOS) */}
+            {!initialData && activeTab === 'regular' && (
+                <div className="space-y-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 ml-1 flex items-center gap-1.5">
+                        <Sparkles size={12} className="text-amber-500" /> Atajos Rápidos
+                    </span>
+                    <div className="flex flex-wrap gap-2.5">
+                        {activePresets.map((preset: any) => (
+                            <button
+                                key={preset.id}
+                                type="button"
+                                onClick={() => handlePresetClick(preset)}
+                                className="px-4 py-2 text-xs font-semibold rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800/80 transition-all hover:scale-[1.02]"
+                            >
+                                {preset.label || preset.description} {preset.amount ? `(${currency}${preset.amount})` : ''}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* 2. Amount Hero Section */}
             <div className={clsx(
                 "w-full rounded-[2rem] p-8 sm:p-14 flex flex-col items-center justify-center relative transition-colors shadow-inner",
@@ -375,22 +446,46 @@ const TransactionForm = ({
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex flex-wrap gap-2.5 max-h-[180px] overflow-y-auto custom-scrollbar">
-                                {categories.map(cat => (
-                                    <button
-                                        key={cat}
-                                        type="button"
-                                        onClick={() => setCategory(cat)}
-                                        className={clsx(
-                                            "px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent shadow-sm",
-                                            category === cat
-                                                ? (isExpense ? "bg-rose-600 text-white shadow-rose-200 dark:shadow-rose-900 shadow-md transform -translate-y-[1px]" : "bg-emerald-600 text-white shadow-emerald-200 dark:shadow-emerald-900 shadow-md transform -translate-y-[1px]")
-                                                : "bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                                        )}
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
+                            <div className="flex flex-wrap gap-3 max-h-[220px] overflow-y-auto custom-scrollbar p-1">
+                                {categories.map(cat => {
+                                    const metrics = getBudgetMetrics(cat);
+                                    return (
+                                        <button
+                                            key={cat}
+                                            type="button"
+                                            onClick={() => setCategory(cat)}
+                                            className={clsx(
+                                                "relative px-5 py-3 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent shadow-sm flex flex-col items-center justify-center overflow-hidden min-h-[46px]",
+                                                category === cat
+                                                    ? (isExpense ? "bg-rose-600 text-white shadow-rose-200 dark:shadow-rose-900 shadow-md transform -translate-y-[1px]" : "bg-emerald-600 text-white shadow-emerald-200 dark:shadow-emerald-900 shadow-md transform -translate-y-[1px]")
+                                                    : "bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                                                metrics ? "pb-4" : ""
+                                            )}
+                                        >
+                                            <span className="flex items-center gap-1.5">
+                                                {cat}
+                                                {metrics && (
+                                                    <span className={clsx("text-[9px] font-mono", category === cat ? "text-white/80" : "text-zinc-400")}>
+                                                        ({Math.round(metrics.percent)}%)
+                                                    </span>
+                                                )}
+                                            </span>
+                                            
+                                            {/* Category online budget limit progress bar */}
+                                            {metrics && (
+                                                <div className="absolute bottom-1.5 left-3 right-3 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className={clsx(
+                                                            "h-full rounded-full",
+                                                            metrics.percent >= 100 ? "bg-rose-500" : metrics.percent >= 80 ? "bg-amber-500" : "bg-emerald-500"
+                                                        )}
+                                                        style={{ width: `${Math.min(100, metrics.percent)}%` }}
+                                                    />
+                                                </div>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -453,7 +548,7 @@ const TransactionForm = ({
                             </p>
                         </div>
 
-                        {/* iOS Style Switch */}
+                        {/* Switch */}
                         <div className={clsx("w-14 h-8 rounded-full flex items-center p-1 transition-colors duration-300 shrink-0", isRecurring ? "bg-indigo-500" : "bg-zinc-200 dark:bg-zinc-800")}>
                             <div className={clsx("w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ease-spring", isRecurring ? "translate-x-6" : "translate-x-0")} />
                         </div>

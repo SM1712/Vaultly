@@ -28,7 +28,9 @@ export const SettingsData = () => {
         link.href = jsonString;
         link.download = `vault_backup_${new Date().toISOString().split('T')[0]}.json`;
         link.click();
-        toast.success("Copia de seguridad descargada");
+        toast.success("Copia Descargada", {
+            description: "La copia de seguridad se ha guardado en tu dispositivo."
+        });
     };
 
     const handleImportClick = () => {
@@ -48,10 +50,14 @@ export const SettingsData = () => {
                     throw new Error("Formato inválido");
                 }
                 updateData(parsedData);
-                toast.success("Datos restaurados correctamente");
+                toast.success("Datos Restaurados", {
+                    description: "Tus datos financieros han sido importados con éxito."
+                });
             } catch (error) {
                 console.error("Import error:", error);
-                toast.error("Error al importar el archivo. Formato inválido.");
+                toast.error("Importación Fallida", {
+                    description: "El archivo JSON proporcionado tiene un formato inválido o está corrupto."
+                });
             }
         };
         reader.readAsText(file);
@@ -61,7 +67,9 @@ export const SettingsData = () => {
     const handleConfirmReset = async () => {
         await resetData();
         setShowDeleteConfirm(false);
-        toast.success("Datos eliminados correctamente");
+        toast.success("Datos Eliminados", {
+            description: "Se han borrado todos los datos financieros locales de tu cuenta."
+        });
     };
 
     return (

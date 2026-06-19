@@ -1,62 +1,46 @@
-import { useState, useEffect } from 'react';
 import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 
 export const SyncStatus = () => {
     const { user } = useAuth();
-    const [status, setStatus] = useState<'synced' | 'syncing' | 'offline'>('synced');
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const { isSaving, isOfflineMode } = useData();
 
-    // Monitor Network Connectivity
-    useEffect(() => {
-        const handleOnline = () => {
-            setIsOnline(true);
-            setStatus('syncing');
-            setTimeout(() => setStatus('synced'), 2000); // Simulate check
-        };
-        const handleOffline = () => {
-            setIsOnline(false);
-            setStatus('offline');
-        };
-
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        return () => {
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, []);
-
-    // Monitor Firestore Metadata (if possible, or just imply from network)
-    // Firestore doesn't expose a global "syncing" event easily for all collections without wrappers.
-    // For now, network status is our best proxy for "Connected to Cloud".
-
-    // We can also check if we are authenticated.
     if (!user) return null;
 
-    if (!isOnline) {
+    if (isOfflineMode) {
         return (
-            <button onClick={() => window.location.reload()} className="flex items-center gap-2 text-yellow-500 bg-yellow-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-yellow-500/20 hover:bg-yellow-500/20 transition-all" title="Sin conexión. Click para recargar.">
-                <CloudOff size={14} />
+            <button
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-2 text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full text-xs font-semibold border border-amber-500/20 hover:bg-amber-500/20 transition-all duration-300 shadow-[0_0_10px_rgba(245,158,11,0.05)] animate-pulse"
+                title="Modo local (sin conexión o cambios pendientes de guardar). Haz clic para recargar."
+            >
+                <CloudOff size={14} className="animate-[bounce_2s_infinite]" />
                 <span>Modo Local</span>
             </button>
         );
     }
 
-    if (status === 'syncing') {
+    if (isSaving) {
         return (
-            <button disabled className="flex items-center gap-2 text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-blue-500/20 cursor-wait">
+            <button
+                disabled
+                className="flex items-center gap-2 text-indigo-400 bg-indigo-500/10 px-3 py-1.5 rounded-full text-xs font-semibold border border-indigo-500/20 cursor-wait shadow-[0_0_10px_rgba(99,102,241,0.05)]"
+            >
                 <RefreshCw size={14} className="animate-spin" />
-                <span>Sincronizando...</span>
+                <span>Guardando...</span>
             </button>
         );
     }
 
+    // Fully synced premium feedback
     return (
-        <button onClick={() => window.location.reload()} className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full text-xs font-medium border border-emerald-500/20 hover:bg-emerald-500/20 transition-all" title="Nube Activa. Click para recargar.">
-            <Cloud size={14} />
-            <span>Nube Activa</span>
-        </button>
+        <div
+            className="flex items-center gap-2 text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-full text-xs font-semibold border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.05)] transition-all duration-300"
+            title="Tus datos están a salvo en la nube."
+        >
+            <Cloud size={14} className="animate-[pulse_3s_infinite]" />
+            <span>Sincronizado</span>
+        </div>
     );
 };

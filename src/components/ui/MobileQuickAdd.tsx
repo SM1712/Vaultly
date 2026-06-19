@@ -75,9 +75,7 @@ const MobileQuickAdd = () => {
         const isExpense = type === 'expense';
         toast(isExpense ? 'Gasto registrado' : 'Ingreso registrado', {
             description: `${currency}${val.toLocaleString()} - ${category || 'Otros'}`,
-            className: isExpense
-                ? "!bg-rose-50 dark:!bg-rose-950/30 !text-rose-600 dark:!text-rose-400 !border-rose-200 dark:!border-rose-800"
-                : "!bg-emerald-50 dark:!bg-emerald-950/30 !text-emerald-600 dark:!text-emerald-400 !border-emerald-200 dark:!border-emerald-800",
+            className: isExpense ? "glass-toast-expense" : "glass-toast-income",
             icon: isExpense ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />
         });
 
@@ -169,9 +167,7 @@ const MobileQuickAdd = () => {
                                             const isPresetExpense = preset.type === 'expense';
                                             toast("Atajo ejecutado", {
                                                 description: `${preset.label}: ${currency}${preset.amount}`,
-                                                className: isPresetExpense
-                                                    ? "!bg-rose-50 dark:!bg-rose-950/30 !text-rose-600 dark:!text-rose-400 !border-rose-200 dark:!border-rose-800"
-                                                    : "!bg-emerald-50 dark:!bg-emerald-950/30 !text-emerald-600 dark:!text-emerald-400 !border-emerald-200 dark:!border-emerald-800",
+                                                className: isPresetExpense ? "glass-toast-expense" : "glass-toast-income",
                                                 icon: isPresetExpense ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />
                                             });
 

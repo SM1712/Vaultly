@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Colortly } from '../systems/Colortly';
+import { VaultlyArt } from '../systems/VaultlyArt';
 import type { ReactNode } from 'react';
 
 type Theme = 'dark' | 'light';
-export type ThemeStyle = 'classic' | 'clay' | 'mist' | 'royal' | 'bloom' | 'sage' | 'sand' | 'coffee' | 'nordic' | 'comic' | 'pop';
+export type ThemeStyle = 'neolux' | 'classic' | 'brutalist' | 'glassneon' | 'cyberpunk' | 'ocean' | 'sunset' | 'royal' | 'forest';
 
 export type SidebarPosition = 'left' | 'right' | 'top' | 'bottom';
 export type SidebarVisibility = 'pinned' | 'auto' | 'floating';
@@ -12,6 +12,7 @@ interface ThemeContextType {
     theme: Theme;
     themeStyle: ThemeStyle;
     activeThemeType: 'preset' | 'custom';
+    setActiveThemeType: (type: 'preset' | 'custom') => void;
     toggleTheme: () => void;
     setThemeStyle: (style: ThemeStyle) => void;
 
@@ -56,21 +57,39 @@ interface ThemeContextType {
 export interface CustomThemeConfig {
     hue: number;
     saturation: number;
-    texture: 'none' | 'noise' | 'glass' | 'dots' | 'grid';
+    accentGlow: 'none' | 'aurora' | 'cyberpunk' | 'warm-sunset' | 'retro-green';
+    bgType: 'solid' | 'gradient' | 'mesh';
+    texture: 'none' | 'noise' | 'glass' | 'dots' | 'grid' | 'stripes' | 'wave';
     textureTarget: 'bg' | 'card' | 'both';
     textureIntensity: number;
-    radius: 'none' | 'sm' | 'md' | 'lg' | 'full';
-    borderStyle: 'clean' | 'contrast' | 'shadow';
+    glassBlur: number;
+    glassOpacity: number;
+    radius: 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    borderStyle: 'clean' | 'contrast' | 'shadow' | 'brutalist';
+    borderThickness: number;
+    shadowStyle: 'none' | 'soft' | 'glow' | 'brutalist';
+    fontFamily: 'outfit' | 'inter' | 'serif' | 'mono' | 'syne';
+    letterSpacing: 'tight' | 'normal' | 'wide';
+    commaStyle: 'standard' | 'curly' | 'monospaced' | 'accented';
 }
 
 const DEFAULT_CUSTOM_THEME: CustomThemeConfig = {
-    hue: 220,
-    saturation: 90,
+    hue: 250,
+    saturation: 85,
+    accentGlow: 'none',
+    bgType: 'solid',
     texture: 'none',
     textureTarget: 'bg',
     textureIntensity: 20,
+    glassBlur: 16,
+    glassOpacity: 75,
     radius: 'md',
-    borderStyle: 'clean'
+    borderStyle: 'clean',
+    borderThickness: 1,
+    shadowStyle: 'soft',
+    fontFamily: 'outfit',
+    letterSpacing: 'normal',
+    commaStyle: 'standard'
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -88,7 +107,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     // Style (Color Palette)
     const [themeStyle, setThemeStyleState] = useState<ThemeStyle>(() => {
-        return (localStorage.getItem('vault_theme_style') as ThemeStyle) || 'classic';
+        return (localStorage.getItem('vault_theme_style') as ThemeStyle) || 'neolux';
     });
 
     // Apply Mode
@@ -99,10 +118,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('vault_theme', theme);
     }, [theme]);
 
-    // Apply Style (Managed by Colortly Brain for Presets)
+    // Apply Style (Managed by Vaultly Art for Presets)
     useEffect(() => {
         if (activeThemeType === 'preset') {
-            Colortly.applyTheme(themeStyle, theme);
+            VaultlyArt.applyTheme(themeStyle, theme);
             localStorage.setItem('vault_theme_style', themeStyle);
         }
     }, [themeStyle, theme, activeThemeType]);
@@ -193,14 +212,14 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     // Custom Theme State
     const [customTheme, setCustomTheme] = useState<CustomThemeConfig>(() => {
-        const saved = localStorage.getItem('vault_custom_theme_config');
+        const saved = localStorage.getItem('vault_art_theme_config');
         return saved ? { ...DEFAULT_CUSTOM_THEME, ...JSON.parse(saved) } : DEFAULT_CUSTOM_THEME;
     });
 
     const updateCustomTheme = (updates: Partial<CustomThemeConfig>) => {
         setCustomTheme(prev => {
             const newState = { ...prev, ...updates };
-            localStorage.setItem('vault_custom_theme_config', JSON.stringify(newState));
+            localStorage.setItem('vault_art_theme_config', JSON.stringify(newState));
             return newState;
         });
         setActiveThemeType('custom');
@@ -210,32 +229,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     // Apply Custom Theme (Persisted)
     useEffect(() => {
         if (activeThemeType !== 'custom') return;
-
-        const root = document.documentElement;
-        // Radius
-        const radiusMap: Record<string, string> = { 'none': '0px', 'sm': '0.25rem', 'md': '0.75rem', 'lg': '1.25rem', 'full': '9999px' };
-        root.style.setProperty('--radius-theme', radiusMap[customTheme.radius]);
-        root.setAttribute('data-radius', customTheme.radius);
-
-        // Texture
-        root.setAttribute('data-texture', customTheme.texture);
-        root.setAttribute('data-texture-target', customTheme.textureTarget);
-        root.style.setProperty('--texture-intensity', (customTheme.textureIntensity / 100).toString());
-
-        // Border Style
-        root.setAttribute('data-border-style', customTheme.borderStyle);
-
-        // Colors
-        const h = customTheme.hue;
-        const s = customTheme.saturation;
-        root.style.setProperty('--color-primary', `hsl(${h}, ${s}%, 50%)`);
-        const lightnessMap: Record<number, number> = {
-            50: 98, 100: 95, 200: 90, 300: 82, 400: 64,
-            500: 50, 600: 40, 700: 30, 800: 20, 900: 12, 950: 6
-        };
-        Object.entries(lightnessMap).forEach(([stop, l]) => {
-            root.style.setProperty(`--color-app-${stop}`, `hsl(${h}, ${s}%, ${l}%)`);
-        });
+        VaultlyArt.applyCustomTheme(customTheme, theme);
     }, [customTheme, activeThemeType, theme]); // Re-run custom theme if mode changes but type is custom
 
 
@@ -247,6 +241,14 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         setThemeStyleState(style);
         setActiveThemeType('preset');
         localStorage.setItem('vault_active_theme_type', 'preset');
+
+        // Copy style values to customTheme so visual parameters are preserved as a starting point
+        const preset = VaultlyArt.getTheme(style);
+        if (preset) {
+            const { id, name, description, type, primaryColor, ...styleConfig } = preset;
+            setCustomTheme(styleConfig);
+            localStorage.setItem('vault_art_theme_config', JSON.stringify(styleConfig));
+        }
     };
 
     // Reading Mode State
@@ -279,6 +281,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
             theme,
             themeStyle,
             activeThemeType,
+            setActiveThemeType,
             toggleTheme,
             setThemeStyle,
             isSidebarCollapsed,

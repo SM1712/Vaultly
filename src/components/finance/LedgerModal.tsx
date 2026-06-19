@@ -129,36 +129,80 @@ const LedgerModal = ({ isOpen, onClose }: LedgerModalProps) => {
             const monthName = selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
             const fileName = `Libro_Contable_${selectedDate.getFullYear()}_${String(selectedDate.getMonth() + 1).padStart(2, '0')}.pdf`;
 
-            // Title
+            // Primary and Accent Colors (Obsidian Theme)
+            const primaryColor: [number, number, number] = [24, 24, 27]; // zinc-900
+            const accentColor: [number, number, number] = [99, 102, 241]; // indigo
+
+            // PÁGINA 1: Header (Editorial/Premium style)
+            // Accent line at the very top (4mm height)
+            doc.setFillColor(...accentColor);
+            doc.rect(0, 0, 210, 4, 'F');
+
+            // Top branding text
+            doc.setTextColor(...primaryColor);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.text('VAULTLY', 14, 16);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(115, 115, 115); // zinc-400
+            doc.text('FINANCE UNIFIED LEDGER', 35, 16);
+
+            doc.setFontSize(7.5);
+            doc.text(`GENERADO EL: ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()}`, 194, 16, { align: 'right' });
+
+            // Thin horizontal rule under branding
+            doc.setDrawColor(228, 228, 231); // zinc-200
+            doc.setLineWidth(0.5);
+            doc.line(14, 20, 194, 20);
+
+            // Report Title
+            doc.setTextColor(...primaryColor);
             doc.setFontSize(22);
-            doc.setTextColor(40, 40, 40);
-            doc.text("Libro Contable Unificado", 14, 20);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Libro Contable Unificado`, 14, 31);
 
-            // Subtitle
-            doc.setFontSize(14);
-            doc.setTextColor(100, 100, 100);
-            doc.text(`Periodo: ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}`, 14, 30);
+            doc.setFontSize(8.5);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(82, 82, 91); // zinc-600
+            doc.text(`Periodo Contable: ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}  |  Divisa: ${currency}  |  Ámbito: Diario General`, 14, 37);
 
-            // Summary Box
-            doc.setFillColor(245, 245, 245);
-            doc.roundedRect(14, 40, 180, 25, 3, 3, 'F');
+            // Thin separator under title
+            doc.line(14, 41, 194, 41);
 
-            doc.setFontSize(10);
-            doc.setTextColor(100, 100, 100);
-            doc.text("ENTRADAS", 25, 48);
-            doc.text("SALIDAS", 90, 48);
-            doc.text("NETO", 155, 48);
+            // Summary Card (3-Column Layout)
+            doc.setDrawColor(228, 228, 231);
+            doc.setFillColor(250, 250, 252);
+            doc.roundedRect(14, 46, 180, 24, 2, 2, 'FD');
 
-            doc.setFontSize(14);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(16, 185, 129); // Emerald
-            doc.text(`+${currency}${stats.income.toFixed(2)}`, 25, 58);
+            // Column 1: Entradas (Income)
+            doc.setFontSize(7);
+            doc.setTextColor(115, 115, 115);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INGRESOS TOTALES (ENTRADAS)', 20, 52);
+            doc.setFontSize(11);
+            doc.setTextColor(16, 185, 129); // Emerald 500
+            doc.text(`+${currency}${stats.income.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 20, 62);
 
-            doc.setTextColor(225, 29, 72); // Rose
-            doc.text(`-${currency}${stats.expense.toFixed(2)}`, 90, 58);
+            // Column 2: Salidas (Expenses)
+            doc.setFontSize(7);
+            doc.setTextColor(115, 115, 115);
+            doc.setFont('helvetica', 'bold');
+            doc.text('EGRESOS TOTALES (SALIDAS)', 82, 52);
+            doc.setFontSize(11);
+            doc.setTextColor(225, 29, 72); // Rose 600
+            doc.text(`-${currency}${stats.expense.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 82, 62);
 
-            doc.setTextColor(stats.balance >= 0 ? 40 : 225, stats.balance >= 0 ? 40 : 29, stats.balance >= 0 ? 40 : 72);
-            doc.text(`${stats.balance >= 0 ? '+' : ''}${currency}${Math.abs(stats.balance).toFixed(2)}`, 155, 58);
+            // Column 3: Balance Neto (Net)
+            doc.setFontSize(7);
+            doc.setTextColor(115, 115, 115);
+            doc.setFont('helvetica', 'bold');
+            doc.text('BALANCE NETO DEL PERIODO', 144, 52);
+            doc.setFontSize(11);
+            const isBalancePositive = stats.balance >= 0;
+            const balanceTextColor = isBalancePositive ? [5, 150, 105] : [225, 29, 72];
+            doc.setTextColor(balanceTextColor[0], balanceTextColor[1], balanceTextColor[2]);
+            doc.text(`${isBalancePositive ? '+' : ''}${currency}${stats.balance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 144, 62);
 
             // Table Data Preparation
             const tableData = filteredEntries.map(t => [
@@ -169,56 +213,79 @@ const LedgerModal = ({ isOpen, onClose }: LedgerModalProps) => {
                 t.type === 'income' ? `+${currency}${t.amount.toFixed(2)}` : `-${currency}${t.amount.toFixed(2)}`
             ]);
 
-            // Table
+            // Table Drawing
             autoTable(doc, {
-                startY: 75,
+                startY: 78,
                 head: [['Fecha', 'Descripción', 'Categoría', 'Origen', 'Monto']],
                 body: tableData,
-                theme: 'grid',
+                theme: 'plain',
                 headStyles: {
-                    fillColor: [24, 24, 27], // Zinc 900
-                    textColor: 255,
-                    fontStyle: 'bold'
+                    fillColor: primaryColor,
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 8,
+                    cellPadding: 4
                 },
                 styles: {
-                    fontSize: 9,
-                    cellPadding: 3
+                    font: 'helvetica',
+                    fontSize: 7.5,
+                    cellPadding: 3.5,
+                    textColor: [63, 63, 70],
+                    lineColor: [228, 228, 231],
+                    lineWidth: 0.1
+                },
+                alternateRowStyles: {
+                    fillColor: [250, 250, 252]
                 },
                 columnStyles: {
-                    0: { cellWidth: 25 },
+                    0: { cellWidth: 22 },
                     1: { cellWidth: 'auto' },
                     2: { cellWidth: 35 },
-                    3: { cellWidth: 25 },
-                    4: { cellWidth: 30, halign: 'right', fontStyle: 'bold' }
+                    3: { cellWidth: 22 },
+                    4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' }
                 },
                 didParseCell: (data) => {
-                    // Colorize Amount Column
                     if (data.section === 'body' && data.column.index === 4) {
                         const type = filteredEntries[data.row.index].type;
                         if (type === 'income') {
-                            data.cell.styles.textColor = [16, 185, 129];
+                            data.cell.styles.textColor = [5, 150, 105]; // Emerald 600
                         } else {
-                            data.cell.styles.textColor = [225, 29, 72];
+                            data.cell.styles.textColor = [225, 29, 72]; // Rose 600
                         }
                     }
                 }
             });
 
-            // Footer
-            const pageCount = (doc as any).internal.getNumberOfPages();
+            // Footer / Watermark on all pages
+            const pageCount = doc.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(150);
-                doc.text(`Generado el ${new Date().toLocaleDateString('es-ES')} - Vaultly`, 14, doc.internal.pageSize.height - 10);
-                doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
+                
+                // Top accent line
+                doc.setFillColor(...accentColor);
+                doc.rect(0, 0, 210, 4, 'F');
+                
+                // Footer separator line
+                doc.setDrawColor(228, 228, 231);
+                doc.setLineWidth(0.5);
+                doc.line(14, 282, 194, 282);
+
+                doc.setFontSize(7.5);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(115, 115, 115);
+                doc.text(`Generado vía Vaultly App - Página ${i} de ${pageCount}`, 14, 288);
+                doc.text(`CONFIDENCIAL - Libro Contable Unificado`, 194, 288, { align: 'right' });
             }
 
             doc.save(fileName);
-            toast.success("PDF descargado correctamente");
+            toast.success("Descarga Completada", {
+                description: "El reporte en PDF del libro contable se ha generado y descargado correctamente."
+            });
         } catch (error) {
             console.error("Error generating PDF:", error);
-            toast.error("Error al generar el PDF");
+            toast.error("Exportación Fallida", {
+                description: "Hubo un problema al estructurar o guardar el archivo PDF."
+            });
         } finally {
             setIsExporting(false);
         }

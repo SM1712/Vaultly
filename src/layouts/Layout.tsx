@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import RouteLoader from '../components/ui/RouteLoader';
 import Sidebar from '../components/Sidebar';
 import SettingsMenu from '../components/settings/SettingsMenu';
@@ -10,7 +10,6 @@ import { FinanceProvider } from '../context/FinanceContext';
 import { SettingsProvider } from '../context/SettingsContext';
 import { ProjectsProvider } from '../context/ProjectsContext';
 import { Menu } from 'lucide-react';
-import { Toaster } from 'sonner';
 import { clsx } from 'clsx';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import { useGamification } from '../context/GamificationContext';
@@ -59,6 +58,7 @@ const GlobalLevelUpManager = () => {
 const Layout = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const {
         sidebarPosition,
         sidebarVisibility,
@@ -66,8 +66,20 @@ const Layout = () => {
         setIsMobileMenuOpen
     } = useTheme();
 
-    // Projections needs full width without padding
-    const isFullWidthPage = location.pathname === '/projections';
+    // Responsive Mobile Redirection
+    useEffect(() => {
+        const checkDevice = () => {
+            const isMobile = window.innerWidth < 768;
+            const preference = localStorage.getItem('vaultly_preferred_view');
+            if (isMobile && preference !== 'desktop') {
+                navigate('/m', { replace: true });
+            }
+        };
+
+        checkDevice();
+        window.addEventListener('resize', checkDevice);
+        return () => window.removeEventListener('resize', checkDevice);
+    }, [navigate]);
 
     // Desktop Layout Logic
     const isVertical = sidebarPosition === 'left' || sidebarPosition === 'right';
@@ -88,11 +100,11 @@ const Layout = () => {
     // Padding Logic
     const mainStyles: React.CSSProperties = {};
     if (!isOverlayMode) {
-        if (sidebarPosition === 'top') mainStyles.paddingTop = '4rem';
-        if (sidebarPosition === 'bottom') mainStyles.paddingBottom = '4rem';
+        if (sidebarPosition === 'top') mainStyles.paddingTop = '5.25rem'; // Increased from 4rem to add breathing room below top navbar
+        if (sidebarPosition === 'bottom') mainStyles.paddingBottom = '5.25rem'; // Increased from 4rem to add breathing room above bottom navbar
     } else if (isFloating) {
         // Add padding for Dock
-        mainStyles.paddingBottom = '6rem'; // Enough space for dock + fab
+        mainStyles.paddingBottom = '7rem'; // Increased from 6rem to prevent dock overlapping content
     }
 
     return (
@@ -140,10 +152,7 @@ const Layout = () => {
                         </div>
 
                         <main
-                            className={clsx(
-                                "flex-1 overflow-auto w-full relative transition-all duration-300",
-                                isFullWidthPage ? "p-0" : "p-4 lg:p-8 max-w-[1600px] mx-auto"
-                            )}
+                            className="flex-1 overflow-auto w-full relative transition-all duration-300 p-4 lg:p-8 max-w-[1600px] mx-auto"
                             style={mainStyles}
                         >
                             <Suspense fallback={<RouteLoader />}>
@@ -154,7 +163,6 @@ const Layout = () => {
                         <MobileQuickAdd />
                         <SettingsMenu isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
                         <GlobalLevelUpManager />
-                        <Toaster position="top-center" />
                     </div>
                 </ProjectsProvider>
             </SettingsProvider>

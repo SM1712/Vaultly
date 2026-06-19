@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { clsx } from 'clsx';
 import Modal from '../ui/Modal';
 import { SettingsSidebar } from './SettingsSidebar';
-import { LayoutGrid, Bell, Palette, List, CalendarClock, Zap, Database, BookOpen, Sparkles, User } from 'lucide-react';
+import { LayoutGrid, Bell, Palette, List, CalendarClock, Zap, Database, BookOpen, Sparkles, User, ShieldAlert, Eye, Coins } from 'lucide-react';
 
 // Modules
 import { SettingsProfile } from './modules/SettingsProfile';
@@ -14,6 +14,8 @@ import { SettingsScheduled } from './modules/SettingsScheduled';
 import { SettingsPresets } from './modules/SettingsPresets';
 import { SettingsData } from './modules/SettingsData';
 import { SettingsAbout, SettingsHelp } from './modules/SettingsAbout';
+import { SettingsLimits } from './modules/SettingsLimits';
+import { SettingsAccessibility } from './modules/SettingsAccessibility';
 
 interface SettingsLayoutProps {
     isOpen: boolean;
@@ -27,25 +29,27 @@ export const SettingsLayout = ({ isOpen, onClose }: SettingsLayoutProps) => {
     // Group Definitions
     const menuGroups = [
         {
-            title: 'Perfil & Gamificación',
+            title: 'Perfil & Comunidad',
             items: [
                 { id: 'profile', label: 'Mi Perfil & Nivel', icon: User },
             ]
         },
         {
-            title: 'General',
+            title: 'Control Financiero',
             items: [
-                { id: 'preferences', label: 'Preferencias', icon: LayoutGrid },
-                { id: 'notifications', label: 'Notificaciones', icon: Bell },
-                { id: 'appearance', label: 'Apariencia', icon: Palette },
-            ]
-        },
-        {
-            title: 'Finanzas',
-            items: [
+                { id: 'limits', label: 'Límites de Gastos', icon: ShieldAlert },
                 { id: 'categories', label: 'Categorías', icon: List },
                 { id: 'scheduled', label: 'Programados', icon: CalendarClock },
                 { id: 'presets', label: 'Atajos Rápidos', icon: Zap },
+            ]
+        },
+        {
+            title: 'Preferencias & Interfaz',
+            items: [
+                { id: 'preferences', label: 'Ajustes Generales', icon: LayoutGrid },
+                { id: 'notifications', label: 'Pulsos (Alertas)', icon: Bell },
+                { id: 'accessibility', label: 'Accesibilidad', icon: Eye },
+                { id: 'appearance', label: 'Diseño & Temas', icon: Palette },
             ]
         },
         {
@@ -111,14 +115,16 @@ export const SettingsLayout = ({ isOpen, onClose }: SettingsLayoutProps) => {
                     </div>
 
                     <div className={clsx("p-4 md:p-8 md:max-w-3xl mx-auto pb-20 md:pb-8", activeTab === 'help' && "h-full")}>
-                        {activeTab === 'profile' && <SettingsProfile />}
-                        {activeTab === 'preferences' && <SettingsPreferences />}
-                        {activeTab === 'notifications' && <SettingsNotifications />}
-                        {activeTab === 'appearance' && <SettingsAppearance />}
-
+                        {activeTab === 'profile' && <SettingsProfile onClose={handleClose} />}
+                        {activeTab === 'limits' && <SettingsLimits />}
                         {activeTab === 'categories' && <SettingsCategories />}
                         {activeTab === 'scheduled' && <SettingsScheduled />}
                         {activeTab === 'presets' && <SettingsPresets />}
+
+                        {activeTab === 'preferences' && <SettingsPreferences />}
+                        {activeTab === 'notifications' && <SettingsNotifications />}
+                        {activeTab === 'accessibility' && <SettingsAccessibility />}
+                        {activeTab === 'appearance' && <SettingsAppearance />}
 
                         {activeTab === 'data' && <SettingsData />}
                         {activeTab === 'help' && <SettingsHelp onClose={handleClose} />}

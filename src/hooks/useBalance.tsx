@@ -32,10 +32,15 @@ export const useBalance = () => {
             // Since t.date is usually just Day, parseISO gives start of that day (00:00).
             // So checks against endOfPeriod (23:59) work fine.
             if (isBefore(tDate, endOfPeriod) || isEqual(tDate, endOfPeriod)) {
-                if (t.type === 'income') {
-                    incomeCents += toCents(t.amount);
-                } else {
-                    expenseCents += toCents(t.amount);
+                // EXCLUDE transactions related to goals or funds to prevent double counting
+                const isSavingsTransfer = t.relatedTo && (t.relatedTo.type === 'goal' || t.relatedTo.type === 'fund');
+                
+                if (!isSavingsTransfer) {
+                    if (t.type === 'income') {
+                        incomeCents += toCents(t.amount);
+                    } else {
+                        expenseCents += toCents(t.amount);
+                    }
                 }
             }
         });

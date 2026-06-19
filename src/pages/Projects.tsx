@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProjects } from '../hooks/useProjects';
 import { useSettings } from '../context/SettingsContext';
-import { FolderKanban, Plus, Pencil, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { FolderKanban, Plus, Pencil, Trash2, Loader2, AlertTriangle, Sparkles, PlusCircle } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import { clsx } from 'clsx';
 import ProjectDetails from '../components/finance/ProjectDetails';
@@ -26,7 +26,6 @@ const Projects = () => {
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
-        // ... (unchanged)
         e.preventDefault();
         setIsSubmitting(true);
 
@@ -53,7 +52,6 @@ const Projects = () => {
     };
 
     const handleEdit = (e: React.MouseEvent, project: Project) => {
-        // ... (unchanged)
         e.stopPropagation();
         setFormData({
             name: project.name,
@@ -61,7 +59,6 @@ const Projects = () => {
         });
         setEditingProjectId(project.id);
         setShowForm(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDelete = (e: React.MouseEvent, id: string) => {
@@ -78,11 +75,9 @@ const Projects = () => {
         }
     };
 
-
-
     const getStatusColor = (status: Project['status']) => {
         switch (status) {
-            case 'planning': return 'text-zinc-500 bg-zinc-100 border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700';
+            case 'planning': return 'text-zinc-400 bg-zinc-900 border-zinc-800';
             case 'active': return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
             case 'completed': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
             case 'paused': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
@@ -104,19 +99,33 @@ const Projects = () => {
     };
 
     return (
-        <div className="space-y-8">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Cartera de Proyectos</h2>
-                    <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">Gestión avanzada de presupuestos y obras</p>
+        <div className="space-y-8 min-h-screen text-zinc-100">
+            {/* Header Premium */}
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-zinc-900 via-zinc-950 to-black p-8 sm:p-10 border border-zinc-800 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                {/* Aurora effect */}
+                <div className="absolute top-[-30%] left-[-20%] w-[60%] h-[80%] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none animate-pulse" />
+
+                <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8 z-10">
+                    <div className="space-y-3">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-widest">
+                            <Sparkles size={14} /> Gestión Colaborativa
+                        </div>
+                        <h1 className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-zinc-50 via-zinc-300 to-zinc-500 tracking-tight">
+                            Cartera de Proyectos
+                        </h1>
+                        <p className="text-zinc-400 text-base max-w-lg">
+                            Lleva el control de tus presupuestos compartidos y obras en curso. Asigna fondos internos o registra inyecciones de socios.
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={() => setShowForm(true)}
+                        className="group relative flex items-center justify-center gap-3 bg-zinc-100 hover:bg-white text-zinc-950 px-6 py-4 rounded-3xl font-black transition-all shadow-xl hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:-translate-y-1 active:translate-y-0 duration-300"
+                    >
+                        <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+                        <span>Nuevo Proyecto</span>
+                    </button>
                 </div>
-                <button
-                    onClick={() => setShowForm(!showForm)}
-                    className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
-                >
-                    <Plus size={18} />
-                    <span>Nuevo Proyecto</span>
-                </button>
             </div>
 
             <InvitationsList />
@@ -125,56 +134,56 @@ const Projects = () => {
             <Modal
                 isOpen={showForm}
                 onClose={() => setShowForm(false)}
-                title={editingProjectId ? 'Editar Proyecto' : 'Iniciar Nuevo Proyecto'}
+                title={editingProjectId ? 'Configurar Proyecto' : 'Iniciar Nuevo Proyecto'}
             >
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-5 pt-2">
                     <div className="space-y-4">
                         {/* Name Input */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                                <FolderKanban size={14} /> Nombre del Proyecto
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                                Nombre del Proyecto
                             </label>
                             <input
                                 required
                                 type="text"
-                                placeholder="Ej. Remodelación Cocina, Viaje 2026..."
-                                className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-bold text-lg"
+                                placeholder="Ej. Remodelación Cocina, Campaña 2026..."
+                                className="w-full bg-zinc-950/40 border border-zinc-900 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-zinc-800 transition-all font-bold"
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                             />
                         </div>
 
                         {/* Description Input */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                                <Pencil size={14} /> Descripción
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                                Propósito o Descripción
                             </label>
                             <textarea
                                 rows={3}
-                                placeholder="Breve descripción de la obra, objetivos o notas importantes..."
-                                className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none text-sm"
+                                placeholder="Notas generales sobre el presupuesto o alcances de la obra..."
+                                className="w-full bg-zinc-950/40 border border-zinc-900 rounded-xl px-4 py-3 text-xs text-zinc-200 focus:outline-none focus:border-zinc-800 transition-all resize-none leading-relaxed"
                                 value={formData.description}
                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
                             />
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-zinc-900">
                         <button
                             type="button"
                             onClick={() => setShowForm(false)}
                             disabled={isSubmitting}
-                            className="px-4 py-2 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium transition-colors disabled:opacity-50"
+                            className="px-4 py-2.5 text-xs text-zinc-500 hover:text-zinc-350 font-bold uppercase tracking-wider transition-colors disabled:opacity-50"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-zinc-900/20 dark:shadow-zinc-100/20 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="bg-zinc-100 hover:bg-white text-zinc-950 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center gap-1.5 disabled:opacity-75 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : (editingProjectId ? <Pencil size={18} /> : <Plus size={18} />)}
-                            {isSubmitting ? 'Guardando...' : (editingProjectId ? 'Guardar Cambios' : 'Crear Proyecto')}
+                            {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : (editingProjectId ? <Pencil size={14} /> : <Plus size={14} />)}
+                            <span>{isSubmitting ? 'Guardando...' : (editingProjectId ? 'Guardar' : 'Crear')}</span>
                         </button>
                     </div>
                 </form>
@@ -208,77 +217,79 @@ const Projects = () => {
                                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
                                 key={project.id}
                                 onClick={() => setSelectedProject(project)}
-                                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm dark:shadow-none transition-all hover:border-emerald-500/50 hover:shadow-md cursor-pointer group relative overflow-hidden"
+                                className="group relative flex flex-col bg-zinc-900/30 backdrop-blur-xl border border-zinc-900 hover:border-zinc-800 rounded-[2rem] p-7 shadow-sm transition-all duration-500 hover:-translate-y-1 cursor-pointer overflow-hidden"
                             >
-                                {/* Card Content */}
-                                <div className="relative z-10">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-zinc-600 dark:text-zinc-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 dark:group-hover:bg-emerald-900/30 dark:group-hover:text-emerald-400 transition-colors">
-                                                <FolderKanban size={20} />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-lg leading-tight">{project.name}</h3>
-                                                <span
-                                                    onClick={(e) => cycleStatus(e, project)}
-                                                    className={clsx("text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border mt-1 inline-block cursor-pointer hover:opacity-80 transition-opacity select-none", getStatusColor(project.status))}
-                                                    title="Clic para cambiar estado"
-                                                >
-                                                    {project.status === 'planning' ? 'Planificación' :
-                                                        project.status === 'active' ? 'En Curso' :
-                                                            project.status === 'completed' ? 'Completado' :
-                                                                project.status === 'paused' ? 'Pausado' : 'Cancelado'}
-                                                </span>
-                                            </div>
+                                {/* Glowing Center */}
+                                <div className="absolute -right-24 -top-24 w-48 h-48 rounded-full blur-[70px] opacity-10 bg-emerald-500 pointer-events-none transition-opacity duration-700 group-hover:opacity-20" />
+
+                                <div className="relative z-10 flex justify-between items-start mb-6">
+                                    <div className="flex items-center gap-3.5">
+                                        <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-zinc-400 group-hover:bg-emerald-500/10 group-hover:text-emerald-400 group-hover:border-emerald-500/20 transition-all duration-300">
+                                            <FolderKanban size={22} />
                                         </div>
-                                        <div className="flex gap-1">
-                                            <button
-                                                onClick={(e) => handleEdit(e, project)}
-                                                className="p-2 text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                                title="Editar"
+                                        <div>
+                                            <h3 className="font-black text-zinc-100 text-lg leading-tight truncate w-[140px]" title={project.name}>{project.name}</h3>
+                                            <span
+                                                onClick={(e) => cycleStatus(e, project)}
+                                                className={clsx("text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-lg border mt-1.5 inline-block transition-colors select-none", getStatusColor(project.status))}
+                                                title="Clic para cambiar estado"
                                             >
-                                                <Pencil size={18} />
-                                            </button>
-                                            <button
-                                                onClick={(e) => handleDelete(e, project.id)}
-                                                className="p-2 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
-                                                title="Eliminar"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                                                {project.status === 'planning' ? 'Planificación' :
+                                                    project.status === 'active' ? 'En Curso' :
+                                                        project.status === 'completed' ? 'Completado' :
+                                                            project.status === 'paused' ? 'Pausado' : 'Cancelado'}
+                                            </span>
                                         </div>
+                                    </div>
+
+                                    {/* Quick Actions */}
+                                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => handleEdit(e, project)}
+                                            className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 rounded-xl transition-colors"
+                                            title="Editar"
+                                        >
+                                            <Pencil size={14} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDelete(e, project.id)}
+                                            className="p-2 bg-zinc-900 hover:bg-rose-950/45 text-zinc-400 hover:text-rose-500 border border-zinc-800 hover:border-rose-900/30 rounded-xl transition-colors"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4 py-2">
+                                {/* Content Details */}
+                                <div className="space-y-5">
+                                    <div className="grid grid-cols-2 gap-4 border-t border-zinc-900 pt-4">
                                         <div>
-                                            <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Balance</p>
-                                            <p className={clsx("font-mono font-bold text-lg", stats.currentBalance >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                                            <p className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Caja Disponible</p>
+                                            <p className={clsx("font-mono font-black text-lg", stats.currentBalance >= 0 ? "text-emerald-500" : "text-rose-500")}>
                                                 {currency}{stats.currentBalance.toLocaleString()}
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-[10px] uppercase text-zinc-500 mb-0.5">Ejecutado</p>
-                                            <p className="font-mono font-bold text-zinc-500 text-lg">{currency}{stats.totalExpenses.toLocaleString()}</p>
+                                            <p className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Gastado</p>
+                                            <p className="font-mono font-bold text-zinc-400 text-lg">{currency}{stats.totalExpenses.toLocaleString()}</p>
                                         </div>
                                     </div>
 
-                                    {/* Progress Bar */}
-                                    <div>
-                                        <div className="flex justify-between text-xs mb-1.5">
-                                            <span className="text-zinc-500">
-                                                {stats.totalExpenses > 0 ? 'Presupuesto Ejecutado' : 'Fondos vs Objetivo'}
+                                    {/* Progress */}
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between text-xs mb-1">
+                                            <span className="text-zinc-500 font-bold text-[10px] uppercase">
+                                                {stats.totalExpenses > 0 ? 'Ejecución del Presupuesto' : 'Financiamiento'}
                                             </span>
-                                            <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">
+                                            <span className="font-mono font-bold text-[10px] text-zinc-300">
                                                 {stats.totalExpenses > 0 ? stats.percentConsumed.toFixed(0) : stats.percentFunded.toFixed(0)}%
                                             </span>
                                         </div>
-                                        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                        <div className="h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-zinc-900">
                                             <div
-                                                className={clsx("h-full transition-all duration-500",
-                                                    (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 100 ? "bg-rose-500" :
-                                                        (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 80 ? "bg-emerald-500" : "bg-emerald-500"
+                                                className={clsx("h-full transition-all duration-500 rounded-full",
+                                                    (stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded) > 100 ? "bg-rose-500" : "bg-emerald-500"
                                                 )}
                                                 style={{ width: `${Math.min((stats.totalExpenses > 0 ? stats.percentConsumed : stats.percentFunded), 100)}%` }}
                                             />
@@ -288,7 +299,6 @@ const Projects = () => {
                             </motion.div>
                         );
                     })}
-
                 </AnimatePresence>
 
                 {/* Empty State */}
@@ -296,14 +306,17 @@ const Projects = () => {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="col-span-full py-16 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/20"
+                        className="col-span-full py-24 text-center border border-zinc-900 rounded-[2.5rem] bg-zinc-950/20 backdrop-blur-sm flex flex-col items-center"
                     >
-                        <div className="inline-flex p-4 bg-white dark:bg-zinc-900 rounded-full text-zinc-400 mb-4 shadow-sm">
-                            <FolderKanban size={32} />
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 bg-emerald-500/15 blur-3xl rounded-full" />
+                            <div className="relative p-6 bg-zinc-900 border border-zinc-800 text-zinc-500 rounded-3xl">
+                                <FolderKanban size={48} strokeWidth={1.2} />
+                            </div>
                         </div>
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Sin Proyectos Activos</h3>
-                        <p className="text-zinc-500 dark:text-zinc-500 text-sm mt-1 max-w-sm mx-auto">
-                            Comienza creando tu primer proyecto para llevar un control financiero detallado y separado de tu flujo principal.
+                        <h3 className="text-xl font-bold text-zinc-300 mb-2">Sin proyectos activos</h3>
+                        <p className="text-zinc-500 text-center max-w-sm px-6">
+                            Comienza creando tu primer proyecto para gestionar capitales colaborativos y partidas presupuestarias independientes.
                         </p>
                     </motion.div>
                 )}
@@ -311,14 +324,12 @@ const Projects = () => {
 
             {/* Project Details Modal */}
             <AnimatePresence>
-                {
-                    selectedProject && (
-                        <ProjectDetails
-                            project={projects.find(p => p.id === selectedProject.id) || selectedProject}
-                            onClose={() => setSelectedProject(null)}
-                        />
-                    )
-                }
+                {selectedProject && (
+                    <ProjectDetails
+                        project={projects.find(p => p.id === selectedProject.id) || selectedProject}
+                        onClose={() => setSelectedProject(null)}
+                    />
+                )}
             </AnimatePresence>
 
             {/* Delete Confirmation Modal */}
@@ -328,38 +339,36 @@ const Projects = () => {
                 title="Eliminar Proyecto"
                 maxWidth="max-w-sm"
             >
-                <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-full">
-                        <AlertTriangle size={32} />
+                <div className="flex flex-col items-center text-center space-y-4 pt-2">
+                    <div className="w-12 h-12 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-full flex items-center justify-center mb-1">
+                        <AlertTriangle size={22} />
                     </div>
-                    <div>
-                        <p className="text-zinc-600 dark:text-zinc-300">
-                            ¿Estás seguro de que quieres eliminar este proyecto?
-                        </p>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                            Esta acción no se puede deshacer y borrará todas las transacciones asociadas.
+                    <div className="space-y-1">
+                        <h4 className="text-sm font-black text-zinc-200">¿Proceder con la eliminación?</h4>
+                        <p className="text-xs text-zinc-500 leading-relaxed">
+                            Al eliminar esta cartera de proyectos, se limpiarán en cascada todas las inyecciones de capital del ledger wallet. Esta acción no se puede deshacer.
                         </p>
                     </div>
-                    <div className="flex gap-3 w-full pt-2">
+                    <div className="flex gap-3 w-full pt-3">
                         <button
                             onClick={() => setProjectToDelete(null)}
                             disabled={isDeleting}
-                            className="flex-1 px-4 py-2 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            className="flex-1 px-4 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 rounded-xl font-bold text-xs transition-colors disabled:opacity-50"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={confirmDelete}
                             disabled={isDeleting}
-                            className="flex-1 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-bold transition-colors shadow-lg shadow-rose-500/20 disabled:opacity-70 flex items-center justify-center gap-2"
+                            className="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-xs transition-colors shadow-md shadow-rose-600/20 disabled:opacity-70 flex items-center justify-center gap-2"
                         >
-                            {isDeleting ? <Loader2 size={16} className="animate-spin" /> : null}
-                            {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : null}
+                            <span>{isDeleting ? 'Eliminando' : 'Eliminar'}</span>
                         </button>
                     </div>
                 </div>
             </Modal>
-        </div >
+        </div>
     );
 };
 

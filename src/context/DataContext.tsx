@@ -31,6 +31,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     // Timer ref for debounce
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Local changes timestamp to prevent incoming old Firestore snapshots from overwriting local edits
+    const lastLocalChangeTimeRef = useRef<number>(0);
+
     // Initial Load & Realtime Sync
     useEffect(() => {
         if (!user) {
@@ -46,7 +49,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         if (localBackup) {
             console.log("[DataContext] Loaded local backup (Optimistic)");
             setData(localBackup);
-            // Don't turn off loading yet, wait for cloud confirmation or timeout
+            lastLocalChangeTimeRef.current = localBackup.lastUpdated || 0;
         }
 
         // 2. Subscribe to Cloud
@@ -54,6 +57,13 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             user.uid,
             (cloudData) => {
                 if (cloudData) {
+                    // Conflict Resolution: Check if incoming cloud data is older than our last local change
+                    const cloudLastUpdated = cloudData.lastUpdated || 0;
+                    if (cloudLastUpdated < lastLocalChangeTimeRef.current) {
+                        console.log("[DataContext] Ignored older cloud snapshot to prevent overwriting local pending changes");
+                        return;
+                    }
+
                     // Deep merge
                     const mergedData = {
                         ...INITIAL_DATA,
@@ -62,8 +72,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                         categories: { ...INITIAL_DATA.categories, ...(cloudData.categories || {}) }
                     };
 
-                    // Conflict Resolution: (Simple for now: Cloud wins if newer)
-                    // TODO: Improve this if needed. For now, we trust cloud as source of truth on connect.
                     setData(mergedData);
 
                     // Also update local backup to match cloud
@@ -74,6 +82,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
                         console.log("[DataContext] New user setup");
                         setData(INITIAL_DATA);
                         CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA).catch(console.error);
+                    } else {
+                        console.log("[DataContext] Cloud master doc does not exist, but localBackup exists. Syncing localBackup to cloud.");
+                        CloudStorage.saveMasterDoc(user.uid, localBackup).catch(console.error);
                     }
                 }
                 setIsLoading(false);
@@ -132,6 +143,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }, [isOnline, needsSync, user]); // Removed data from deps to avoid infinite re-triggering
 
     const updateData = (updates: Partial<AppData>) => {
+        lastLocalChangeTimeRef.current = Date.now();
         setData(prev => {
             const next = { ...prev, ...updates };
             // Update state immediately
@@ -144,13 +156,18 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         if (!user) return;
         try {
             setIsSaving(true);
+            lastLocalChangeTimeRef.current = Date.now();
             await CloudStorage.saveMasterDoc(user.uid, INITIAL_DATA);
             CloudStorage.saveLocalBackup(user.uid, INITIAL_DATA);
             setData(INITIAL_DATA);
-            toast.success("Mundo reinstalado desde cero.");
+            toast.success("Mundo Reinstalado", {
+                description: "Se han eliminado todos los datos y se ha reestablecido la configuración inicial."
+            });
         } catch (error) {
             console.error("Failed to nuke data:", error);
-            toast.error("Fallo en la detonación.");
+            toast.error("Error al Reestablecer", {
+                description: "No se pudieron borrar los datos de la nube. Inténtelo más tarde."
+            });
         } finally {
             setIsSaving(false);
         }

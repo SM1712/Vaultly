@@ -1,28 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Space+Mono:wght@400;700&family=Syne:wght@500;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
     body {
-        /* Default base background */
         background-color: var(--color-app-50);
-        color: var(--color-zinc-900);
-        transition: background-color 0.3s ease, color 0.3s ease;
+        color: var(--color-app-950);
+        transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.35s cubic-bezier(0.4, 0, 0.2, 1), font-family 0.2s ease, letter-spacing 0.2s ease;
         min-height: 100vh;
         overflow-x: hidden;
         position: relative;
     }
 
     .dark body {
-        background-color: #000000;
-        /* Deepest black base */
-        color: var(--color-zinc-50);
-        /* Ambient Aurora Effect */
-        background-image:
-            radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-primary), transparent 85%) 0%, transparent 60%),
-            radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--color-primary), transparent 90%) 0%, transparent 50%),
-            radial-gradient(circle at 0% 20%, color-mix(in srgb, var(--color-primary), transparent 95%) 0%, transparent 50%);
-        background-attachment: fixed;
+        background-color: var(--color-app-950);
+        color: var(--color-app-50);
     }
 
     /* Reading Mode Overlay */
@@ -30,21 +24,17 @@
         content: "";
         position: fixed;
         inset: 0;
-        background-color: #f59e0b;
-        /* Amber-500 */
+        background-color: #f59e0b; /* Amber-500 */
         mix-blend-mode: multiply;
-        opacity: 0.15;
+        opacity: 0.12;
         pointer-events: none;
         z-index: 99999;
-        /* Topmost filter */
     }
 
-    /* In Dark Mode, we might want a different blend or opacity */
     .dark:root[data-reading-mode='true'] body::after {
-        background-color: #d97706;
-        /* Amber-600 */
+        background-color: #d97706; /* Amber-600 */
         mix-blend-mode: overlay;
-        opacity: 0.25;
+        opacity: 0.2;
     }
 }
 
@@ -55,9 +45,7 @@
 
     .no-scrollbar {
         -ms-overflow-style: none;
-        /* IE and Edge */
         scrollbar-width: none;
-        /* Firefox */
     }
 }
 
@@ -66,10 +54,13 @@
    ========================================= */
 :root {
     /* Default Styling Values */
-    --radius-theme: 0.75rem;
-    /* 12px default */
+    --radius-theme: 0.5rem;
     --texture-intensity: 0.2;
-    /* 20% default */
+    --glass-blur: 16px;
+    --glass-opacity: 0.75;
+    --border-thickness: 1px;
+    --font-family-theme: 'Outfit', sans-serif;
+    --letter-spacing-theme: 0em;
 
     /* Map Tailwind palettes to Dynamic App Colors */
     --color-zinc-50: var(--color-app-50);
@@ -96,8 +87,6 @@
     --color-gray-900: var(--color-app-900);
     --color-gray-950: var(--color-app-950);
 
-    /* Fonts & Scheme */
-    font-family: 'Outfit', sans-serif;
     color-scheme: light;
 }
 
@@ -106,83 +95,139 @@
 }
 
 /* =========================================
-   2. RADIUS SYSTEM
-   Tailwind config reads var(--radius-theme), we just update the var.
+   2. TYPOGRAPHY & LETTER SPACING
    ========================================= */
-:root[data-radius='none'] {
-    --radius-theme: 0px;
+:root[data-font-family='outfit'] { --font-family-theme: 'Outfit', sans-serif; }
+:root[data-font-family='inter'] { --font-family-theme: 'Inter', sans-serif; }
+:root[data-font-family='serif'] { --font-family-theme: 'Playfair Display', Georgia, serif; }
+:root[data-font-family='mono'] { --font-family-theme: 'Space Mono', monospace; }
+:root[data-font-family='syne'] { --font-family-theme: 'Syne', sans-serif; }
+
+:root[data-letter-spacing='tight'] { --letter-spacing-theme: -0.04em; }
+:root[data-letter-spacing='normal'] { --letter-spacing-theme: 0em; }
+:root[data-letter-spacing='wide'] { --letter-spacing-theme: 0.06em; }
+
+body, input, select, textarea, button {
+    font-family: var(--font-family-theme), sans-serif !important;
+    letter-spacing: var(--letter-spacing-theme) !important;
 }
 
-:root[data-radius='sm'] {
-    --radius-theme: 0.25rem;
+/* Comma Art style wrapper */
+.art-comma, .art-dot {
+    color: var(--comma-color, inherit);
+    font-family: var(--comma-font, inherit);
+    font-weight: var(--comma-weight, inherit);
+    font-size: var(--comma-size, inherit);
+    transform: var(--comma-transform, none);
+    display: inline-block;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-/* 4px */
-:root[data-radius='md'] {
-    --radius-theme: 0.75rem;
-}
-
-/* 12px */
-:root[data-radius='lg'] {
-    --radius-theme: 1.25rem;
-}
-
-/* 20px */
-:root[data-radius='full'] {
-    --radius-theme: 9999px;
-}
-
 
 /* =========================================
-   3. TEXTURE "ATMOSPHERE" ENGINE
-   Supports targeting: [data-texture-target='bg|card|both']
+   3. THEME CARD (Basic, Textures & Materials)
    ========================================= */
+.theme-card {
+    background-color: #ffffff;
+    border: var(--border-thickness, 1px) solid var(--color-app-200);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-theme);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
 
-/* --- NOISE --- */
-/* Base Noise (High Res) */
+.dark .theme-card {
+    background-color: var(--color-app-800);
+    border: var(--border-thickness, 1px) solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* --- GLASS TEXTURE --- */
+:root[data-texture='glass'] .theme-card {
+    background: rgba(255, 255, 255, var(--glass-opacity, 0.75)) !important;
+    backdrop-filter: blur(var(--glass-blur, 16px)) saturate(125%) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur, 16px)) saturate(125%) !important;
+    border: var(--border-thickness, 1px) solid rgba(255, 255, 255, 0.45) !important;
+}
+
+:root[data-texture='glass'].dark .theme-card {
+    background: rgba(18, 18, 24, var(--glass-opacity, 0.7)) !important;
+    backdrop-filter: blur(var(--glass-blur, 16px)) saturate(115%) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur, 16px)) saturate(115%) !important;
+    border-top: var(--border-thickness, 1px) solid rgba(255, 255, 255, 0.08) !important;
+    border-bottom: var(--border-thickness, 1px) solid rgba(0, 0, 0, 0.2) !important;
+    border-left: var(--border-thickness, 1px) solid rgba(255, 255, 255, 0.04) !important;
+    border-right: var(--border-thickness, 1px) solid rgba(255, 255, 255, 0.04) !important;
+}
+
+/* --- DOTS TEXTURE --- */
+:root[data-texture='dots']:where([data-texture-target='card'], [data-texture-target='both']) .theme-card {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-app-300), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
+    background-size: 14px 14px;
+}
+:root[data-texture='dots']:where([data-texture-target='card'], [data-texture-target='both']).dark .theme-card {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-app-600), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
+    background-size: 14px 14px;
+}
+
+/* --- GRID TEXTURE --- */
+:root[data-texture='grid']:where([data-texture-target='card'], [data-texture-target='both']) .theme-card {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
+    background-size: 14px 14px;
+}
+:root[data-texture='grid']:where([data-texture-target='card'], [data-texture-target='both']).dark .theme-card {
+    background-image:
+        linear-gradient(color-mix(in srgb, var(--color-app-600), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-app-600), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
+    background-size: 14px 14px;
+}
+
+/* --- STRIPES TEXTURE --- */
+:root[data-texture='stripes']:where([data-texture-target='card'], [data-texture-target='both']) .theme-card {
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 8px, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 9px);
+    background-size: 20px 20px;
+}
+:root[data-texture='stripes']:where([data-texture-target='card'], [data-texture-target='both']).dark .theme-card {
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, color-mix(in srgb, var(--color-app-600), transparent calc(100% - (var(--texture-intensity) * 100%))) 8px, color-mix(in srgb, var(--color-app-600), transparent calc(100% - (var(--texture-intensity) * 100%))) 9px);
+    background-size: 20px 20px;
+}
+
+/* --- WAVE TEXTURE --- */
+:root[data-texture='wave']:where([data-texture-target='card'], [data-texture-target='both']) .theme-card {
+    background-image: radial-gradient(circle at 100% 150%, transparent 24%, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 24%, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 28%, transparent 28%, transparent);
+    background-size: 20px 20px;
+}
+:root[data-texture='wave']:where([data-texture-target='card'], [data-texture-target='both']).dark .theme-card {
+    background-image: radial-gradient(circle at 100% 150%, transparent 24%, color-mix(in srgb, var(--color-app-600), transparent calc(100% - (var(--texture-intensity) * 100%))) 24%, color-mix(in srgb, var(--color-app-600), transparent calc(100% - (var(--texture-intensity) * 100%))) 28%, transparent 28%, transparent);
+    background-size: 20px 20px;
+}
+
+/* --- GLOBAL BACKGROUNDS & TEXTURES --- */
+/* Noise */
 :root[data-texture='noise']:where([data-texture-target='bg'], [data-texture-target='both']) body::before {
     content: "";
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 50;
-    /* Lower than Dock (100) and Modals (top layer) but above base content */
-    /* High freq noise for digital grain look - UPDATED for HD */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
-    background-size: 110px 110px;
-    /* Smaller tile size for crisper look */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 100px 100px;
     opacity: var(--texture-intensity);
     mix-blend-mode: overlay;
 }
 
-/* --- DOTS --- */
+/* Dots */
 :root[data-texture='dots']:where([data-texture-target='bg'], [data-texture-target='both']) body {
-    background-image: radial-gradient(color-mix(in srgb, var(--color-app-300), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px,
-            transparent 1px);
+    background-image: radial-gradient(color-mix(in srgb, var(--color-app-300), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
     background-size: 20px 20px;
     background-attachment: fixed;
 }
-
-/* Dots on Cards */
-:root[data-texture='dots']:where([data-texture-target='card'], [data-texture-target='both']) .bg-white,
-:root[data-texture='dots']:where([data-texture-target='card'], [data-texture-target='both']) .bg-zinc-50 {
-    background-image: radial-gradient(color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px,
-            transparent 1px);
-    background-size: 16px 16px;
-    border: 1px solid var(--color-app-200);
+:root[data-texture='dots']:where([data-texture-target='bg'], [data-texture-target='both']).dark body {
+    background-image: radial-gradient(color-mix(in srgb, var(--color-app-600), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
 }
-
-:root[data-texture='dots']:where([data-texture-target='card'], [data-texture-target='both']) .dark .bg-zinc-900 {
-    background-image: radial-gradient(color-mix(in srgb, var(--color-app-700), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px,
-            transparent 1px);
-    background-size: 16px 16px;
-    /* Dark Mode Fix: Subtle Border + Inner Light */
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-}
-
-
-/* --- GRID --- */
+/* Grid */
 :root[data-texture='grid']:where([data-texture-target='bg'], [data-texture-target='both']) body {
     background-image:
         linear-gradient(color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
@@ -190,146 +235,318 @@
     background-size: 20px 20px;
     background-attachment: fixed;
 }
-
-/* Grid on Cards */
-:root[data-texture='grid']:where([data-texture-target='card'], [data-texture-target='both']) .bg-white,
-:root[data-texture='grid']:where([data-texture-target='card'], [data-texture-target='both']) .bg-zinc-50 {
+:root[data-texture='grid']:where([data-texture-target='bg'], [data-texture-target='both']).dark body {
     background-image:
-        linear-gradient(color-mix(in srgb, var(--color-app-100), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
-        linear-gradient(90deg, color-mix(in srgb, var(--color-app-100), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
-    background-size: 16px 16px;
-    background-color: var(--color-zinc-50);
-    border: 1px solid var(--color-app-200);
+        linear-gradient(color-mix(in srgb, var(--color-app-700), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, var(--color-app-700), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
+}
+/* Stripes */
+:root[data-texture='stripes']:where([data-texture-target='bg'], [data-texture-target='both']) body {
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 12px, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 12px, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 13px);
+    background-size: 24px 24px;
+    background-attachment: fixed;
+}
+:root[data-texture='stripes']:where([data-texture-target='bg'], [data-texture-target='both']).dark body {
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 12px, color-mix(in srgb, var(--color-app-700), transparent calc(100% - (var(--texture-intensity) * 100%))) 12px, color-mix(in srgb, var(--color-app-700), transparent calc(100% - (var(--texture-intensity) * 100%))) 13px);
+}
+/* Wave */
+:root[data-texture='wave']:where([data-texture-target='bg'], [data-texture-target='both']) body {
+    background-image: radial-gradient(circle at 100% 150%, transparent 24%, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 24%, color-mix(in srgb, var(--color-app-200), transparent calc(100% - (var(--texture-intensity) * 100%))) 28%, transparent 28%, transparent);
+    background-size: 32px 32px;
+    background-attachment: fixed;
+}
+:root[data-texture='wave']:where([data-texture-target='bg'], [data-texture-target='both']).dark body {
+    background-image: radial-gradient(circle at 100% 150%, transparent 24%, color-mix(in srgb, var(--color-app-700), transparent calc(100% - (var(--texture-intensity) * 100%))) 24%, color-mix(in srgb, var(--color-app-700), transparent calc(100% - (var(--texture-intensity) * 100%))) 28%, transparent 28%, transparent);
 }
 
-:root[data-texture='grid']:where([data-texture-target='card'], [data-texture-target='both']) .dark .bg-zinc-900 {
-    background-image:
-        linear-gradient(color-mix(in srgb, var(--color-app-800), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px),
-        linear-gradient(90deg, color-mix(in srgb, var(--color-app-800), transparent calc(100% - (var(--texture-intensity) * 100%))) 1px, transparent 1px);
-    background-size: 16px 16px;
-    background-color: var(--color-zinc-900);
-    /* Dark Mode Fix: Subtle Border + Inner Light */
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+/* =========================================
+   4. BORDERS & SHADOW SYSTEMS
+   ========================================= */
+
+/* Border overrides */
+:root[data-border-style='clean'] .theme-card {
+    border: var(--border-thickness, 1px) solid var(--color-app-200) !important;
+}
+:root[data-border-style='clean'].dark .theme-card {
+    border: var(--border-thickness, 1px) solid rgba(255, 255, 255, 0.04) !important;
 }
 
-
-/* --- GLASS --- */
-:root[data-texture='glass'] .bg-white,
-:root[data-texture='glass'] .bg-zinc-50 {
-    background: rgba(255, 255, 255, calc(0.1 + (var(--texture-intensity) * 0.7))) !important;
-    backdrop-filter: blur(calc(var(--texture-intensity) * 20px + 4px)) saturate(150%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+:root[data-border-style='contrast'] .theme-card {
+    border: var(--border-thickness, 1.5px) solid var(--color-app-950) !important;
+}
+:root[data-border-style='contrast'].dark .theme-card {
+    border: var(--border-thickness, 1.5px) solid rgba(255, 255, 255, 0.2) !important;
 }
 
-:root[data-texture='glass'] .dark .bg-zinc-900 {
-    /* More sophisticated dark glass */
-    background: rgba(10, 10, 15, calc(0.4 + (var(--texture-intensity) * 0.6))) !important;
-    backdrop-filter: blur(calc(var(--texture-intensity) * 20px + 4px)) saturate(110%) !important;
-    /* Soft top light border */
-    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2) !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.05) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
-    /* Inner flow */
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+:root[data-border-style='shadow'] .theme-card {
+    border: var(--border-thickness, 1px) solid var(--color-app-100) !important;
+}
+:root[data-border-style='shadow'].dark .theme-card {
+    border: var(--border-thickness, 1px) solid rgba(255, 255, 255, 0.03) !important;
 }
 
-/* Subtle bg gradient for glass to blur */
-:root[data-texture='glass'] body {
-    background: radial-gradient(circle at 50% 0%, var(--color-primary), transparent 50%), var(--color-app-50);
+:root[data-border-style='brutalist'] .theme-card {
+    border: var(--border-thickness, 3px) solid #000000 !important;
+}
+:root[data-border-style='brutalist'].dark .theme-card {
+    border: var(--border-thickness, 3px) solid #ffffff !important;
+}
+
+/* Shadow overrides */
+:root[data-shadow-style='none'] .theme-card {
+    box-shadow: none !important;
+}
+
+:root[data-shadow-style='soft'] .theme-card {
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02) !important;
+}
+:root[data-shadow-style='soft'].dark .theme-card {
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+:root[data-shadow-style='glow'] .theme-card {
+    box-shadow: 0 8px 30px var(--color-primary-glow, rgba(99, 102, 241, 0.15)) !important;
+}
+:root[data-shadow-style='glow'].dark .theme-card {
+    box-shadow: 0 8px 30px var(--color-primary-glow, rgba(99, 102, 241, 0.15)) !important;
+}
+
+:root[data-shadow-style='brutalist'] .theme-card {
+    box-shadow: 6px 6px 0px #000000 !important;
+}
+:root[data-shadow-style='brutalist'].dark .theme-card {
+    box-shadow: 6px 6px 0px #ffffff !important;
+}
+
+/* =========================================
+   5. BACKGROUND GRADIENTS & ACCENT GLOWS
+   ========================================= */
+
+/* Bg Gradient */
+:root[data-bg-type='gradient'] body {
+    background-image: linear-gradient(135deg, var(--color-app-50) 0%, var(--color-app-200) 100%);
+    background-attachment: fixed;
+}
+:root[data-bg-type='gradient'].dark body {
+    background-image: linear-gradient(135deg, var(--color-app-950) 0%, var(--color-app-900) 100%);
     background-attachment: fixed;
 }
 
-.dark:root[data-texture='glass'] body {
-    background: radial-gradient(circle at 50% 0%, var(--color-primary), transparent 50%), var(--color-app-950);
+/* Bg Mesh flow animation */
+@keyframes meshFlow {
+    0% { background-position: 0% 50%, 100% 50%, 50% 0%; }
+    50% { background-position: 100% 50%, 0% 50%, 50% 100%; }
+    100% { background-position: 0% 50%, 100% 50%, 50% 0%; }
+}
+
+:root[data-bg-type='mesh'] body {
+    background-image:
+        radial-gradient(circle at 20% 30%, color-mix(in srgb, var(--color-primary), transparent 93%) 0%, transparent 60%),
+        radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--color-primary), transparent 95%) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, color-mix(in srgb, var(--color-primary), transparent 96%) 0%, transparent 55%);
+    background-size: 200% 200%, 200% 200%, 200% 200%;
+    animation: meshFlow 25s ease infinite;
     background-attachment: fixed;
+}
+
+/* Accent Glows overlays */
+:root[data-accent-glow='aurora'] body::after {
+    content: "";
+    position: fixed;
+    top: -20%;
+    left: -20%;
+    right: -20%;
+    bottom: -20%;
+    z-index: -1;
+    pointer-events: none;
+    background: 
+        radial-gradient(circle at 50% -10%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 10% 40%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 20%, rgba(236, 72, 153, 0.08) 0%, transparent 40%);
+    filter: blur(80px);
+    opacity: 0.8;
+}
+
+:root[data-accent-glow='cyberpunk'] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    pointer-events: none;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+    background-size: 100% 4px, 6px 100%;
+    opacity: 0.15;
+}
+
+:root[data-accent-glow='warm-sunset'] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 120%, rgba(249, 115, 22, 0.12) 0%, rgba(239, 68, 68, 0.06) 40%, transparent 70%);
+}
+
+:root[data-accent-glow='retro-green'] body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.05) 1px, transparent 1px, transparent 2px);
 }
 
 
 /* =========================================
-   4. BORDER STYLE ENGINE
-   Modes: Clean (Def), Contrast, Shadow
+   5. STANDARD COMPONENT OVERRIDES (Form & Modals)
    ========================================= */
 
-/* --- CONTRAST --- */
-/* Target specific Tailwind classes to override them cleanly */
-:root[data-border-style='contrast'] .border,
-:root[data-border-style='contrast'] .border-2 {
-    /* Make borders darker */
-    border-color: var(--color-app-900) !important;
+/* Ensure input containers are solid and high-contrast */
+input, select, textarea {
+    background-color: #ffffff;
+    border: 1px solid var(--color-app-300);
+    color: var(--color-app-950);
+    border-radius: var(--radius-theme);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-:root[data-border-style='contrast'] .dark .border,
-:root[data-border-style='contrast'] .dark .border-2 {
-    /* In dark mode, contrast means lighter than bg, but not WHITE */
-    border-color: rgba(255, 255, 255, 0.2) !important;
+.dark input, .dark select, .dark textarea {
+    background-color: var(--color-app-950);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
 
-:root[data-border-style='contrast'] .border {
-    /* Make thin borders slightly thicker */
-    border-width: 2px !important;
+input:focus, select:focus, textarea:focus {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary), transparent 85%) !important;
+    outline: none !important;
 }
 
-/* Add border to cards that might not have one */
-:root[data-border-style='contrast'] .bg-white,
-:root[data-border-style='contrast'] .bg-zinc-50 {
-    border: 2px solid var(--color-app-900);
+/* Quick Bar Input overrides to reset tag input styles */
+.quick-bar-input {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    height: auto !important;
+    border-radius: 0 !important;
+}
+.quick-bar-input:focus {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
 
-:root[data-border-style='contrast'] .dark .bg-zinc-900 {
-    border: 2px solid rgba(255, 255, 255, 0.15);
+/* Interactive card focus indicator */
+.theme-card-interactive {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.theme-card-interactive:focus-within {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 3px var(--color-primary-glow, rgba(99, 102, 241, 0.15)) !important;
 }
 
-/* --- SHADOW --- */
-:root[data-border-style='shadow'] .bg-white,
-:root[data-border-style='shadow'] .bg-zinc-50,
-:root[data-border-style='shadow'] .dark .bg-zinc-900,
-:root[data-border-style='shadow'] .card {
-    border: 1px solid var(--color-app-100);
-    /* Very light border definition */
-    /* Soft, modern double-layer shadow */
-    box-shadow:
-        0 4px 6px -1px rgba(0, 0, 0, 0.05),
-        0 10px 15px -3px rgba(0, 0, 0, 0.05);
-    transition: box-shadow 0.3s ease;
-}
-
-/* Ensure clean mode removes these if switched back */
-:root[data-border-style='clean'] .bg-white {
-    box-shadow: none;
-    /* Or default tailwind shadow if class present, but this resets our override */
-}
-
-
-/* =========================================
-   5. UTILS & EXTRAS
-   ========================================= */
-/* Colortly Dynamic Utils */
-.text-primary {
-    color: var(--color-primary);
-}
-
-.bg-primary {
+/* Buttons style refinement */
+.btn-primary {
     background-color: var(--color-primary);
+    color: #ffffff;
+    border-radius: var(--radius-theme);
+    font-weight: 500;
+    transition: opacity 0.2s, transform 0.1s;
+}
+.btn-primary:hover {
+    opacity: 0.9;
+}
+.btn-primary:active {
+    transform: scale(0.98);
 }
 
-.border-primary {
-    border-color: var(--color-primary);
+/* Premium Vaultly Art Customizer Button */
+.btn-art-apply {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary), #fff 20%) 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 15px var(--color-primary-glow, rgba(99, 102, 241, 0.25)) !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.btn-art-apply:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px var(--color-primary-glow, rgba(99, 102, 241, 0.35)) !important;
+    filter: brightness(1.05);
+}
+.btn-art-apply:active {
+    transform: translateY(0px) scale(0.97) !important;
+}
+.btn-art-apply::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: skewX(-20deg);
+}
+.btn-art-apply:hover::after {
+    animation: shineSweep 1.8s infinite;
 }
 
-/* Selection Override */
+.btn-art-applied {
+    background: rgba(16, 185, 129, 0.08) !important;
+    color: #10b981 !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    box-shadow: none !important;
+    cursor: default;
+    transition: all 0.3s ease !important;
+}
+.dark .btn-art-applied {
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+@keyframes shineSweep {
+    0% { left: -150%; }
+    55% { left: 150%; }
+    100% { left: 150%; }
+}
+
+
+/* Modals background forcing (never transparent glass) */
+.modal-content-base {
+    background-color: #ffffff !important;
+    color: var(--color-app-950) !important;
+    border: 1px solid var(--color-app-200) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.dark .modal-content-base {
+    background-color: #0b0b0e !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75) !important;
+}
+
+
+/* =========================================
+   6. UTILS & DYNAMIC COLORS
+   ========================================= */
+.text-primary { color: var(--color-primary); }
+.bg-primary { background-color: var(--color-primary); }
+.border-primary { border-color: var(--color-primary); }
+
 ::selection {
     background-color: var(--color-app-200);
     color: var(--color-app-900);
 }
 
-/* Default Scrollbar (can be overridden by OS/Browser, but providing style) */
 @layer base {
     ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
     }
 
     ::-webkit-scrollbar-track {
@@ -346,5 +563,331 @@
     }
 }
 
-/* Force class-based dark mode helper */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================
+   7. ACCESSIBILITY STYLING SYSTEM
+   ========================================= */
+
+/* Font Size Scaling (Affects all rem units) */
+html[data-font-size='small'] {
+    font-size: 14px !important;
+}
+html[data-font-size='medium'] {
+    font-size: 16px !important;
+}
+html[data-font-size='large'] {
+    font-size: 18px !important;
+}
+
+/* UI Spacing Configurations (Compact / Cozy / Standard) */
+html[data-spacing='compact'] main {
+    padding: 0.75rem !important;
+}
+html[data-spacing='compact'] .theme-card {
+    padding: 0.75rem !important;
+}
+html[data-spacing='compact'] .p-8,
+html[data-spacing='compact'] .p-6,
+html[data-spacing='compact'] .p-5,
+html[data-spacing='compact'] .p-4 {
+    padding: 0.75rem !important;
+}
+html[data-spacing='compact'] .py-8,
+html[data-spacing='compact'] .py-6,
+html[data-spacing='compact'] .py-5,
+html[data-spacing='compact'] .py-4 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+html[data-spacing='compact'] .px-8,
+html[data-spacing='compact'] .px-6,
+html[data-spacing='compact'] .px-5,
+html[data-spacing='compact'] .px-4 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+html[data-spacing='compact'] .gap-6,
+html[data-spacing='compact'] .gap-8,
+html[data-spacing='compact'] .gap-4 {
+    gap: 0.5rem !important;
+}
+
+html[data-spacing='cozy'] main {
+    padding: 1.5rem !important;
+}
+html[data-spacing='cozy'] .theme-card {
+    padding: 1.5rem !important;
+}
+html[data-spacing='cozy'] .gap-6,
+html[data-spacing='cozy'] .gap-8 {
+    gap: 2rem !important;
+}
+
+/* High Contrast Styling Overrides */
+html[data-high-contrast='true'] {
+    --radius-theme: 0px !important;
+}
+html[data-high-contrast='true'] .theme-card {
+    border: 2px solid #000000 !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+}
+html[data-high-contrast='true'].dark .theme-card {
+    border: 2px solid #ffffff !important;
+    background-color: #020205 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+html[data-high-contrast='true'] input,
+html[data-high-contrast='true'] select,
+html[data-high-contrast='true'] textarea {
+    border: 2px solid #000000 !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+html[data-high-contrast='true'].dark input,
+html[data-high-contrast='true'].dark select,
+html[data-high-contrast='true'].dark textarea {
+    border: 2px solid #ffffff !important;
+    background-color: #020205 !important;
+    color: #ffffff !important;
+}
+html[data-high-contrast='true'] button:not(.btn-primary) {
+    border: 2px solid #000000 !important;
+}
+html[data-high-contrast='true'].dark button:not(.btn-primary) {
+    border: 2px solid #ffffff !important;
+}
+html[data-high-contrast='true'] .text-zinc-400,
+html[data-high-contrast='true'] .text-zinc-500 {
+    color: #18181b !important;
+    font-weight: 600 !important;
+}
+html[data-high-contrast='true'].dark .text-zinc-400,
+html[data-high-contrast='true'].dark .text-zinc-500 {
+    color: #f4f4f5 !important;
+    font-weight: 600 !important;
+}
+
+/* Glassmorphic Toasts (Sonner) */
+.glass-toast {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(9, 9, 11, 0.08) !important;
+    color: #09090b !important;
+    backdrop-filter: blur(16px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    font-family: 'Outfit', sans-serif !important;
+    padding: 14px 18px !important;
+    transition: all 0.3s ease !important;
+}
+
+.dark .glass-toast {
+    background: rgba(18, 18, 22, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f4f4f5 !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Success Toast override */
+.glass-toast[data-type="success"] {
+    background: rgba(240, 253, 250, 0.85) !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    color: #065f46 !important;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+.glass-toast[data-type="success"] [data-title] {
+    color: #065f46 !important;
+    font-weight: 600 !important;
+}
+.glass-toast[data-type="success"] [data-description] {
+    color: #047857 !important;
+}
+
+.dark .glass-toast[data-type="success"] {
+    background: rgba(9, 28, 22, 0.85) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    color: #34d399 !important;
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15), 0 1px 3px rgba(255, 255, 255, 0.02) !important;
+}
+.dark .glass-toast[data-type="success"] [data-title] {
+    color: #34d399 !important;
+    font-weight: 600 !important;
+}
+.dark .glass-toast[data-type="success"] [data-description] {
+    color: #a7f3d0 !important;
+}
+
+/* Error Toast override */
+.glass-toast[data-type="error"] {
+    background: rgba(255, 241, 242, 0.85) !important;
+    border: 1px solid rgba(244, 63, 94, 0.3) !important;
+    color: #9f1239 !important;
+    box-shadow: 0 10px 30px rgba(244, 63, 94, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+.glass-toast[data-type="error"] [data-title] {
+    color: #9f1239 !important;
+    font-weight: 600 !important;
+}
+.glass-toast[data-type="error"] [data-description] {
+    color: #b91c1c !important;
+}
+
+.dark .glass-toast[data-type="error"] {
+    background: rgba(28, 9, 12, 0.85) !important;
+    border: 1px solid rgba(244, 63, 94, 0.4) !important;
+    color: #fb7185 !important;
+    box-shadow: 0 12px 40px rgba(244, 63, 94, 0.15), 0 1px 3px rgba(255, 255, 255, 0.02) !important;
+}
+.dark .glass-toast[data-type="error"] [data-title] {
+    color: #fb7185 !important;
+    font-weight: 600 !important;
+}
+.dark .glass-toast[data-type="error"] [data-description] {
+    color: #fecdd3 !important;
+}
+
+/* Info Toast override */
+.glass-toast[data-type="info"] {
+    background: rgba(238, 242, 255, 0.85) !important;
+    border: 1px solid rgba(99, 102, 241, 0.3) !important;
+    color: #3730a3 !important;
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+.glass-toast[data-type="info"] [data-title] {
+    color: #3730a3 !important;
+    font-weight: 600 !important;
+}
+.glass-toast[data-type="info"] [data-description] {
+    color: #4f46e5 !important;
+}
+
+.dark .glass-toast[data-type="info"] {
+    background: rgba(12, 12, 28, 0.85) !important;
+    border: 1px solid rgba(99, 102, 241, 0.4) !important;
+    color: #818cf8 !important;
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.15), 0 1px 3px rgba(255, 255, 255, 0.02) !important;
+}
+.dark .glass-toast[data-type="info"] [data-title] {
+    color: #818cf8 !important;
+    font-weight: 600 !important;
+}
+.dark .glass-toast[data-type="info"] [data-description] {
+    color: #c7d2fe !important;
+}
+
+/* Warning Toast override */
+.glass-toast[data-type="warning"] {
+    background: rgba(254, 243, 199, 0.85) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    color: #92400e !important;
+    box-shadow: 0 10px 30px rgba(245, 158, 11, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+.glass-toast[data-type="warning"] [data-title] {
+    color: #92400e !important;
+    font-weight: 600 !important;
+}
+.glass-toast[data-type="warning"] [data-description] {
+    color: #b45309 !important;
+}
+
+.dark .glass-toast[data-type="warning"] {
+    background: rgba(28, 20, 8, 0.85) !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    color: #fbbf24 !important;
+    box-shadow: 0 12px 40px rgba(245, 158, 11, 0.15), 0 1px 3px rgba(255, 255, 255, 0.02) !important;
+}
+.dark .glass-toast[data-type="warning"] [data-title] {
+    color: #fbbf24 !important;
+    font-weight: 600 !important;
+}
+.dark .glass-toast[data-type="warning"] [data-description] {
+    color: #fde68a !important;
+}
+
+/* Custom premium classes for Expense, Income and LevelUp toasts */
+.glass-toast-expense {
+    background: rgba(255, 241, 242, 0.8) !important;
+    border: 1px solid rgba(244, 63, 94, 0.3) !important;
+    color: #9f1239 !important;
+    backdrop-filter: blur(16px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(244, 63, 94, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+.dark .glass-toast-expense {
+    background: rgba(28, 9, 12, 0.8) !important;
+    border: 1px solid rgba(244, 63, 94, 0.4) !important;
+    color: #fb7185 !important;
+    box-shadow: 0 12px 40px rgba(244, 63, 94, 0.15), 0 1px 3px rgba(255, 255, 255, 0.02) !important;
+}
+
+.glass-toast-income {
+    background: rgba(240, 253, 250, 0.8) !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    color: #065f46 !important;
+    backdrop-filter: blur(16px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+.dark .glass-toast-income {
+    background: rgba(9, 28, 22, 0.85) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    color: #34d399 !important;
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15), 0 1px 3px rgba(255, 255, 255, 0.02) !important;
+}
+
+.glass-toast-levelup {
+    background: rgba(243, 232, 255, 0.8) !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    color: #6b21a8 !important;
+    backdrop-filter: blur(16px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+.dark .glass-toast-levelup {
+    background: rgba(24, 12, 36, 0.85) !important;
+    border: 1px solid rgba(168, 85, 247, 0.4) !important;
+    color: #c084fc !important;
+    box-shadow: 0 12px 40px rgba(168, 85, 247, 0.15), 0 1px 3px rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Close button styling */
+.glass-toast [data-close-button] {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    color: inherit !important;
+    transition: all 0.2s ease !important;
+}
+.dark .glass-toast [data-close-button] {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.glass-toast [data-close-button]:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+    transform: scale(1.05);
+}
+.dark .glass-toast [data-close-button]:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Custom enter/exit micro-animations */
+@keyframes slideUpAndFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.glass-toast-animated {
+    animation: slideUpAndFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}

@@ -43,7 +43,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     const requestPermission = async () => {
         if (!('Notification' in window)) {
-            toast.error("Tu navegador no soporta notificaciones.");
+            toast.error("Navegador no Soportado", {
+                description: "Este navegador de internet no tiene soporte nativo para notificaciones."
+            });
             return;
         }
 
@@ -51,10 +53,14 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         setPermission(result);
 
         if (result === 'granted') {
-            toast.success("Permiso concedido. ¡Ahora recibirás alertas!");
+            toast.success("Notificaciones Habilitadas", {
+                description: "¡Permiso concedido! Ahora recibirás alertas en tiempo real en tu dispositivo."
+            });
             saveSettings({ ...settings, enabled: true });
         } else {
-            toast.error("Permiso denegado. No podremos avisarte.");
+            toast.error("Permiso Denegado", {
+                description: "No podremos enviarte alertas a tu sistema. Puedes habilitarlo en los ajustes del sitio."
+            });
             saveSettings({ ...settings, enabled: false });
         }
     };

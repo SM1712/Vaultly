@@ -219,7 +219,9 @@ const TutorialLogic = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         if (isMobile) {
-            toast.error("El modo entrenamiento solo está disponible en PC.");
+            toast.error("Entrenamiento No Disponible", {
+                description: "El modo de entrenamiento interactivo solo está optimizado para pantallas de PC."
+            });
             navigate('/');
         }
     }, [isMobile, navigate]);
@@ -261,7 +263,10 @@ const TutorialLogic = ({ children }: { children: React.ReactNode }) => {
         if (currentStep.action === 'detect_income_added') {
             const hasIncome = transactions.some(t => t.type === 'income');
             if (hasIncome) {
-                toast.success("¡Ingreso detectado!", { icon: '⛽' });
+                toast.success("Ingreso Detectado", {
+                    description: "¡Excelente! Has registrado tu primer ingreso en el simulador.",
+                    icon: '⛽'
+                });
                 setStepIndex(prev => prev + 1);
             }
         }
@@ -269,14 +274,20 @@ const TutorialLogic = ({ children }: { children: React.ReactNode }) => {
         if (currentStep.action === 'detect_expense_added') {
             const hasExpense = transactions.some(t => t.type === 'expense');
             if (hasExpense) {
-                toast.success("¡Gasto registrado!", { icon: '📉' });
+                toast.success("Gasto Detectado", {
+                    description: "Muy bien. Has registrado un egreso en tu cuenta de pruebas.",
+                    icon: '📉'
+                });
                 setStepIndex(prev => prev + 1);
             }
         }
 
         if (currentStep.action === 'detect_goal_added') {
             if (goals && goals.length > 0) {
-                toast.success("¡Meta creada!", { icon: '🎯' });
+                toast.success("Meta Detectada", {
+                    description: "¡Perfecto! Tu primera meta de ahorro ha sido configurada.",
+                    icon: '🎯'
+                });
                 setStepIndex(prev => prev + 1);
             }
         }
@@ -285,7 +296,9 @@ const TutorialLogic = ({ children }: { children: React.ReactNode }) => {
 
     const handleExit = () => {
         navigate('/');
-        toast.info("Has vuelto al mundo real.");
+        toast.info("Mundo Real", {
+            description: "Has salido de la simulación y regresado a tu panel principal."
+        });
     };
 
     return (

@@ -13,7 +13,9 @@ export const useLocalNotifications = () => {
         });
 
         // Always show toast for immediate feedback
-        toast("Notificación de prueba enviada");
+        toast.info("Prueba de Sistema", {
+            description: "Si lees esto, las notificaciones locales funcionan correctamente.",
+        });
     }, [notify]);
 
     const notifyAchievement = useCallback((title: string, xp: number) => {
@@ -22,6 +24,11 @@ export const useLocalNotifications = () => {
             tag: 'achievement',
             data: { url: '/profile' }
         });
+
+        toast.success(`🏆 ¡Logro Desbloqueado!`, {
+            description: `${title} (+${xp} XP)`,
+            duration: 5000,
+        });
     }, [notify]);
 
     const notifyLevelUp = useCallback((newLevel: number, newTitle: string) => {
@@ -29,6 +36,12 @@ export const useLocalNotifications = () => {
             body: `Ahora eres Nivel ${newLevel}: ${newTitle}`,
             tag: 'levelup',
             requireInteraction: true,
+        });
+
+        toast(`🌟 ¡Nivel Arriba!`, {
+            description: `¡Felicidades! Ahora eres Nivel ${newLevel}: ${newTitle}`,
+            duration: 6000,
+            className: "glass-toast-levelup",
         });
     }, [notify]);
 

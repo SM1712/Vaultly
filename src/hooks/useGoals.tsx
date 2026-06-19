@@ -1,11 +1,48 @@
 import { useCallback } from 'react';
 import { useData } from '../context/DataContext';
-import type { Goal } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { EmailService } from '../services/EmailService';
+import type { Goal, Transaction } from '../types';
 import { toCents, fromCents, safeAdd, safeSub } from '../utils/financialUtils';
 import { isBefore, isEqual, endOfDay, parseISO } from 'date-fns';
+import { toast } from 'sonner';
+import { useNotifications } from '../context/NotificationContext';
+
+// Helper to calculate available balance inline and prevent circular hook dependencies
+const getAvailableBalance = (data: any) => {
+    const txs = data.transactions || [];
+    let balanceCents = 0;
+    txs.forEach((t: any) => {
+        const isSavingsTransfer = t.relatedTo && (t.relatedTo.type === 'goal' || t.relatedTo.type === 'fund');
+        if (!isSavingsTransfer) {
+            if (t.type === 'income') balanceCents += toCents(t.amount);
+            else balanceCents -= toCents(t.amount);
+        }
+    });
+
+    const goals = data.goals || [];
+    goals.forEach((g: any) => {
+        (g.history || []).forEach((h: any) => {
+            if (h.type === 'deposit') balanceCents -= toCents(h.amount);
+            else balanceCents += toCents(h.amount);
+        });
+    });
+
+    const funds = data.funds || [];
+    funds.forEach((f: any) => {
+        (f.history || []).forEach((h: any) => {
+            if (h.type === 'deposit') balanceCents -= toCents(h.amount);
+            else balanceCents += toCents(h.amount);
+        });
+    });
+
+    return fromCents(balanceCents);
+};
 
 export const useGoals = () => {
     const { data, updateData } = useData();
+    const { user } = useAuth();
+    const { notify } = useNotifications();
     const goals: Goal[] = data.goals || [];
 
     // --- Helpers defined first to avoid ReferenceError ---
@@ -45,16 +82,34 @@ export const useGoals = () => {
 
     const deleteGoal = useCallback((id: string) => {
         const newGoals = goals.filter(g => g.id !== id);
-        updateData({ goals: newGoals });
-    }, [goals, updateData]);
+        // Cascade delete: clean up transactions related to this goal
+        const newTransactions = (data.transactions || []).filter(t => !(t.relatedTo?.type === 'goal' && t.relatedTo?.id === id));
+        updateData({ goals: newGoals, transactions: newTransactions });
+        toast.success("Meta Eliminada", {
+            description: "La meta de ahorro ha sido eliminada y se liberó su saldo correspondiente."
+        });
+    }, [goals, data.transactions, updateData]);
 
-    const addContribution = useCallback((id: string, amount: number, note?: string) => {
+    const addContribution = useCallback((id: string, amount: number, note?: string, skipTransaction: boolean = false) => {
         const goal = goals.find(g => g.id === id);
         if (!goal) return;
 
+        // 1. Balance safeguard (if not skipped, e.g. manual saving directly from Goals page)
+        if (!skipTransaction) {
+            const balance = getAvailableBalance(data);
+            const currency = data.settings?.currency || '$';
+            if (amount > balance) {
+                toast.error("Fondos Insuficientes", {
+                    description: `Solo tienes ${currency}${balance.toLocaleString()} disponible en Wallet.`
+                });
+                return;
+            }
+        }
+
         const today = new Date().toISOString().split('T')[0];
+        const newTxId = crypto.randomUUID();
         const newHistoryItem = {
-            id: crypto.randomUUID(),
+            id: newTxId,
             date: today,
             amount: amount,
             type: 'deposit' as const,
@@ -74,16 +129,111 @@ export const useGoals = () => {
         };
 
         const newGoals = goals.map(g => g.id === id ? updatedGoal : g);
-        updateData({ goals: newGoals });
-    }, [goals, updateData]);
+        const updates: Partial<typeof data> = { goals: newGoals };
 
-    const withdraw = useCallback((id: string, amount: number, note?: string, recoveryStrategy?: 'spread' | 'catch_up') => {
+        // 2. Synchronize with main transactions ledger
+        if (!skipTransaction) {
+            const newTx: Transaction = {
+                id: newTxId,
+                type: 'expense',
+                amount: amount,
+                category: 'Ahorro / Metas',
+                date: today,
+                description: `Aporte a Meta: ${goal.name}${note ? ` (${note})` : ''}`,
+                relatedTo: {
+                    type: 'goal',
+                    id: id
+                }
+            };
+            updates.transactions = [...(data.transactions || []), newTx];
+        }
+
+        updateData(updates);
+        if (!skipTransaction) {
+            const currency = data.settings?.currency || '$';
+            toast.success("Aporte Registrado", {
+                description: `Se aportaron ${currency}${amount.toLocaleString()} a tu meta "${goal.name}".`
+            });
+        }
+
+        // Check triggers for milestones
+        const targetAmount = goal.targetAmount;
+        if (targetAmount > 0) {
+            const oldPercent = ((goal.currentAmount || 0) / targetAmount) * 100;
+            const newPercent = (newAmount / targetAmount) * 100;
+            const currency = data.settings?.currency || '$';
+            
+            // Trigger 50% Milestone
+            if (oldPercent < 50 && newPercent >= 50 && newPercent < 100) {
+                toast.info("🎯 Meta a Mitad de Camino", {
+                    description: `Has alcanzado el 50% (${currency}${newAmount.toLocaleString()} de ${currency}${targetAmount.toLocaleString()}) de tu meta "${goal.name}".`,
+                    duration: 6000,
+                });
+
+                notify("🎯 Meta al 50%", {
+                    body: `Has alcanzado la mitad de tu meta "${goal.name}".`,
+                    tag: `goal-milestone-50-${goal.id}`,
+                });
+
+                if (user?.email) {
+                    const emailPrefs = data.settings?.emailNotifications;
+                    const userDisplayName = user.displayName || 'Usuario';
+                    EmailService.sendGoalMilestoneEmail(
+                        user.email,
+                        goal.name,
+                        50,
+                        newAmount,
+                        targetAmount,
+                        userDisplayName,
+                        emailPrefs
+                    ).catch(err => console.error("Milestone email failed", err));
+                }
+            }
+            // Trigger 100% Complete
+            else if (oldPercent < 100 && newPercent >= 100) {
+                toast.success("🏆 ¡Meta Cumplida!", {
+                    description: `¡Felicidades! Has completado el 100% (${currency}${newAmount.toLocaleString()} de ${currency}${targetAmount.toLocaleString()}) de tu meta "${goal.name}".`,
+                    duration: 8000,
+                });
+
+                notify("🏆 ¡Meta Completada!", {
+                    body: `¡Felicidades! Has completado el 100% de tu meta "${goal.name}".`,
+                    tag: `goal-milestone-100-${goal.id}`,
+                });
+
+                if (user?.email) {
+                    const emailPrefs = data.settings?.emailNotifications;
+                    const userDisplayName = user.displayName || 'Usuario';
+                    EmailService.sendGoalMilestoneEmail(
+                        user.email,
+                        goal.name,
+                        100,
+                        newAmount,
+                        targetAmount,
+                        userDisplayName,
+                        emailPrefs
+                    ).catch(err => console.error("Goal complete email failed", err));
+                }
+            }
+        }
+    }, [goals, data, updateData, user]);
+
+    const withdraw = useCallback((id: string, amount: number, note?: string, recoveryStrategy?: 'spread' | 'catch_up', skipTransaction: boolean = false) => {
         const goal = goals.find(g => g.id === id);
         if (!goal) return;
 
+        if (amount > (goal.currentAmount || 0)) {
+            const currency = data.settings?.currency || '$';
+            toast.error("Retiro Inválido", {
+                description: `No puedes retirar más de lo guardado en esta meta (${currency}${(goal.currentAmount || 0).toLocaleString()}).`
+            });
+            return;
+        }
+
         const today = new Date().toISOString().split('T')[0];
+        const newTxId = crypto.randomUUID();
         const newHistoryItem = {
-            id: crypto.randomUUID(),
+            id: newTxId,
             date: today,
             amount: amount,
             type: 'withdrawal' as const,
@@ -103,8 +253,33 @@ export const useGoals = () => {
         };
 
         const newGoals = goals.map(g => g.id === id ? updatedGoal : g);
-        updateData({ goals: newGoals });
-    }, [goals, updateData]);
+        const updates: Partial<typeof data> = { goals: newGoals };
+
+        // Synchronize withdrawal as main wallet income
+        if (!skipTransaction) {
+            const newTx: Transaction = {
+                id: newTxId,
+                type: 'income',
+                amount: amount,
+                category: 'Ahorro / Metas',
+                date: today,
+                description: `Retiro de Meta: ${goal.name}${note ? ` (${note})` : ''}`,
+                relatedTo: {
+                    type: 'goal',
+                    id: id
+                }
+            };
+            updates.transactions = [...(data.transactions || []), newTx];
+        }
+
+        updateData(updates);
+        if (!skipTransaction) {
+            const currency = data.settings?.currency || '$';
+            toast.success("Retiro Registrado", {
+                description: `Se retiraron ${currency}${amount.toLocaleString()} desde tu meta "${goal.name}".`
+            });
+        }
+    }, [goals, data, updateData]);
 
     const contributeToGoal = useCallback((id: string, amount: number) => {
         addContribution(id, amount, 'Cuota Mensual');

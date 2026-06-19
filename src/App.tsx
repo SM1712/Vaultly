@@ -24,10 +24,22 @@ import Projections from './pages/Projections';
 import OnboardingPage from './pages/OnboardingPage';
 import Calendar from './pages/Calendar';
 import Reports from './pages/Reports';
+import GamificationPage from './pages/GamificationPage';
 import { Toaster } from 'sonner';
 import LoadingScreen from './components/ui/LoadingScreen';
 import RouteLoader from './components/ui/RouteLoader';
 import { ViewTransitionHandler } from './components/ui/ViewTransitionHandler';
+
+// Lazy loaded mobile parallel views
+const MobileLayout = lazy(() => import('./layouts/MobileLayout'));
+const MobileDashboard = lazy(() => import('./pages/mobile/MobileDashboard'));
+const MobileTransactions = lazy(() => import('./pages/mobile/MobileTransactions'));
+const MobileSavings = lazy(() => import('./pages/mobile/MobileSavings'));
+const MobileCredits = lazy(() => import('./pages/mobile/MobileCredits'));
+const MobileStats = lazy(() => import('./pages/mobile/MobileStats'));
+const MobileSettings = lazy(() => import('./pages/mobile/MobileSettings'));
+const MobileGamification = lazy(() => import('./pages/mobile/MobileGamification'));
+const MobileProjects = lazy(() => import('./pages/mobile/MobileProjects'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -64,10 +76,10 @@ const ProtectedRoute = () => {
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   useEffect(() => {
-    // Reduced splash screen time for better optimization
+    // Extended splash screen time to allow premium boot animations to finish gracefully
     const timer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 500);
+    }, 1600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -114,6 +126,7 @@ function App() {
                         <Route path="/login" element={<Login />} />
 
                         <Route element={<ProtectedRoute />}>
+                          {/* Desktop Layout & Pages */}
                           <Route path="/" element={<Layout />}>
                             <Route index element={<Dashboard />} />
                             <Route path="expenses" element={<Expenses />} />
@@ -125,8 +138,23 @@ function App() {
                             <Route path="projects" element={<Projects />} />
                             <Route path="calendar" element={<Calendar />} />
                             <Route path="reports" element={<Reports />} />
-                            {/* Redirección por defecto */}
+                            <Route path="gamification" element={<GamificationPage />} />
+                            {/* Redirección por defecto para escritorio */}
                             <Route path="*" element={<Navigate to="/" replace />} />
+                          </Route>
+
+                          {/* Mobile Layout & Pages (Parallel App) */}
+                          <Route path="/m" element={<MobileLayout />}>
+                            <Route index element={<MobileDashboard />} />
+                            <Route path="transactions" element={<MobileTransactions />} />
+                            <Route path="savings" element={<MobileSavings />} />
+                            <Route path="credits" element={<MobileCredits />} />
+                            <Route path="stats" element={<MobileStats />} />
+                            <Route path="settings" element={<MobileSettings />} />
+                            <Route path="gamification" element={<MobileGamification />} />
+                            <Route path="projects" element={<MobileProjects />} />
+                            {/* Redirección por defecto para móvil */}
+                            <Route path="*" element={<Navigate to="/m" replace />} />
                           </Route>
                         </Route>
 
@@ -146,7 +174,17 @@ function App() {
                         </Route>
                       </Routes>
                     </Suspense>
-                    <Toaster richColors position="top-center" />
+                    <Toaster 
+                        richColors 
+                        position="bottom-right" 
+                        visibleToasts={3}
+                        expand={false}
+                        duration={3000}
+                        closeButton
+                        toastOptions={{
+                            className: 'glass-toast glass-toast-animated',
+                        }}
+                    />
                     {/* <DebugFooter /> Removed per user request */}
                   </ViewTransitionHandler>
                 </HashRouter>

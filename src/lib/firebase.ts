@@ -14,11 +14,9 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Initialize Firestore with robust persistence settings
-// export const db = initializeFirestore(app, {
-//     localCache: persistentLocalCache({
-//         tabManager: persistentMultipleTabManager()
-//     })
-// });
-import { getFirestore } from "firebase/firestore";
-export const db = getFirestore(app);
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+export const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+    })
+});
