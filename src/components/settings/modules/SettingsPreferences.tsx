@@ -1,4 +1,6 @@
 import { useSettings } from '../../../context/SettingsContext';
+import { Smartphone } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const SettingsPreferences = () => {
     const { currency, setCurrency, goalPreferences, setGoalPreferences } = useSettings();
@@ -92,6 +94,28 @@ export const SettingsPreferences = () => {
                         </div>
                     </label>
                 </div>
+            </div>
+
+            {/* Layout preference selection */}
+            <div className="bg-zinc-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-800">
+                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-2 flex items-center gap-2">
+                    <Smartphone size={20} className="text-primary" /> Diseño de Pantalla
+                </h3>
+                <p className="text-sm text-zinc-500 mb-4 leading-relaxed">
+                    Cambia la preferencia de visualización. Si estás en un celular, puedes volver al diseño optimizado para pantallas pequeñas.
+                </p>
+                <button
+                    onClick={() => {
+                        localStorage.setItem('vaultly_preferred_view', 'mobile');
+                        toast.success('Cambiando a versión móvil...');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 500);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white hover:bg-primary/90 rounded-xl font-bold text-xs shadow-md shadow-primary/20 active:scale-[0.98] transition-transform"
+                >
+                    <Smartphone size={14} /> Volver a Vista Móvil
+                </button>
             </div>
         </div>
     );

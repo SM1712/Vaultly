@@ -9,10 +9,11 @@ import { LogoCombined } from '../components/ui/Logo';
 import { FinanceProvider } from '../context/FinanceContext';
 import { SettingsProvider } from '../context/SettingsContext';
 import { ProjectsProvider } from '../context/ProjectsContext';
-import { Menu } from 'lucide-react';
+import { Menu, Smartphone } from 'lucide-react';
 import { clsx } from 'clsx';
 import LevelUpModal from '../components/gamification/LevelUpModal';
 import { useGamification } from '../context/GamificationContext';
+import { toast } from 'sonner';
 
 import { useFunds } from '../hooks/useFunds';
 import { useBalance } from '../hooks/useBalance';
@@ -57,6 +58,7 @@ const GlobalLevelUpManager = () => {
 
 const Layout = () => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isMobileScreen, setIsMobileScreen] = useState(window.innerWidth < 768);
     const location = useLocation();
     const navigate = useNavigate();
     const {
@@ -66,10 +68,23 @@ const Layout = () => {
         setIsMobileMenuOpen
     } = useTheme();
 
+    const isPreferredDesktop = localStorage.getItem('vaultly_preferred_view') === 'desktop';
+
+    const handleBackToMobile = () => {
+        localStorage.setItem('vaultly_preferred_view', 'mobile');
+        toast.success('Cambiando a versión móvil...');
+        setTimeout(() => {
+            navigate('/m', { replace: true });
+            window.location.reload();
+        }, 300);
+    };
+
     // Responsive Mobile Redirection
     useEffect(() => {
         const checkDevice = () => {
-            const isMobile = window.innerWidth < 768;
+            const width = window.innerWidth;
+            const isMobile = width < 768;
+            setIsMobileScreen(isMobile);
             const preference = localStorage.getItem('vaultly_preferred_view');
             if (isMobile && preference !== 'desktop') {
                 navigate('/m', { replace: true });
@@ -113,6 +128,20 @@ const Layout = () => {
                 <ProjectsProvider>
                     <AutoDepositManager />
                     <AutoScheduledManager />
+                    {isMobileScreen && isPreferredDesktop && (
+                        <div className="bg-amber-500 dark:bg-amber-600 text-white text-[11px] font-bold py-2 px-4 flex items-center justify-between z-[70] shadow-sm relative animate-in slide-in-from-top duration-300 border-b border-amber-600 dark:border-amber-700 shrink-0 w-full">
+                            <div className="flex items-center gap-1.5">
+                                <Smartphone size={13} className="animate-pulse flex-shrink-0" />
+                                <span>Vista de escritorio forzada</span>
+                            </div>
+                            <button
+                                onClick={handleBackToMobile}
+                                className="bg-white dark:bg-zinc-950 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-amber-50 dark:hover:bg-zinc-900 active:scale-95 transition-all shadow-sm"
+                            >
+                                Volver a Vista Móvil
+                            </button>
+                        </div>
+                    )}
                     <div className={layoutClasses}>
                         {/* Mobile Header */}
                         <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 shrink-0 z-30">

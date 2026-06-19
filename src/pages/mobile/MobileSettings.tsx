@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Compass, Sliders, Moon, Sun, Check, Volume2, 
     VolumeX, Monitor, LogOut, ChevronRight, Lock, Zap,
-    Palette, Loader2, X, FolderKanban
+    Palette, Loader2, X, FolderKanban, Database, Trash2
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useGamification } from '../../context/GamificationContext';
@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import { useLocalNotifications } from '../../hooks/useLocalNotifications';
 import { useCollaboration } from '../../context/CollaborationContext';
+import { useData } from '../../context/DataContext';
 import { ACHIEVEMENTS, getTitleForLevel } from '../../context/GamificationConstants';
 import { clsx } from 'clsx';
 import { toast } from 'sonner';
@@ -28,11 +29,14 @@ const MobileSettings = () => {
     const { profile: gameProfile, achievements } = useGamification();
     const { isSoundEnabled, toggleSound } = useLocalNotifications();
     const { accessibility, updateAccessibility } = useSettings();
+    const { resetData } = useData();
 
     // Expanded accordion states
     const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
     const [isColortlyOpen, setIsColortlyOpen] = useState(true);
     const [isAccessibilityOpen, setIsAccessibilityOpen] = useState(false);
+    const [isDataOpen, setIsDataOpen] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const [newNick, setNewNick] = useState('');
     const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
@@ -108,6 +112,16 @@ const MobileSettings = () => {
         setTimeout(() => {
             navigate('/', { replace: true });
         }, 300);
+    };
+
+    const handleConfirmReset = async () => {
+        triggerHaptic();
+        try {
+            await resetData();
+            setShowDeleteConfirm(false);
+        } catch (error) {
+            console.error("Failed to reset data:", error);
+        }
     };
 
     const handleLogout = async () => {
@@ -533,6 +547,74 @@ const MobileSettings = () => {
                 >
                     {isSoundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                 </button>
+            </div>
+
+            {/* Gestión de Datos Accordion */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/40 dark:border-zinc-800/40 rounded-3xl shadow-sm overflow-hidden">
+                <button
+                    onClick={() => { triggerHaptic(); setIsDataOpen(!isDataOpen); }}
+                    className="w-full p-4 flex justify-between items-center text-left hover:bg-zinc-50 dark:hover:bg-zinc-900/80 active:bg-zinc-105"
+                >
+                    <div className="flex items-center gap-2.5">
+                        <Database className="text-rose-500" size={20} />
+                        <span className="text-xs font-black text-zinc-800 dark:text-zinc-200">Gestión de Datos</span>
+                    </div>
+                    <ChevronRight 
+                        size={18} 
+                        className={clsx("text-zinc-400 transition-transform duration-200", isDataOpen && "rotate-90")} 
+                    />
+                </button>
+
+                <AnimatePresence>
+                    {isDataOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="px-4 pb-4 border-t border-zinc-100 dark:border-zinc-800/50 pt-4 space-y-4"
+                        >
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold leading-relaxed">
+                                Administra la información financiera de tu cuenta. Estas acciones afectan tus datos sincronizados.
+                            </p>
+
+                            <div className="space-y-3">
+                                {/* Delete all data button */}
+                                {!showDeleteConfirm ? (
+                                    <button
+                                        onClick={() => { triggerHaptic(); setShowDeleteConfirm(true); }}
+                                        className="w-full flex items-center justify-center gap-2 p-3.5 bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 rounded-2xl hover:bg-rose-100/50 transition-all font-black text-xs border border-rose-200 dark:border-rose-900/30"
+                                    >
+                                        <Trash2 size={16} />
+                                        Eliminar todos los datos
+                                    </button>
+                                ) : (
+                                    <div className="p-4 bg-rose-50 dark:bg-rose-900/10 rounded-2xl border border-rose-200 dark:border-rose-900/30 text-center space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                                        <p className="text-rose-700 dark:text-rose-350 font-black text-xs">
+                                            ¿Estás absolutamente seguro?
+                                        </p>
+                                        <p className="text-rose-600/80 dark:text-rose-400/80 text-[10px] font-medium leading-normal">
+                                            Se eliminarán todas tus transacciones, metas y presupuestos de forma permanente. Esta acción no se puede deshacer.
+                                        </p>
+                                        <div className="flex gap-2 justify-center mt-1">
+                                            <button
+                                                onClick={() => { triggerHaptic(); setShowDeleteConfirm(false); }}
+                                                className="px-3.5 py-2 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold text-xs rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50"
+                                            >
+                                                Cancelar
+                                            </button>
+                                            <button
+                                                onClick={handleConfirmReset}
+                                                className="px-3.5 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 shadow-sm"
+                                            >
+                                                Sí, eliminar todo
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* View options: Force Desktop */}
